@@ -1,10 +1,13 @@
 #!/bin/bash
-if [ "$#" -eq 1 ]; then
+if [ "$#" -eq 2 ]; then
 	L=$1
+	S=$2
 else
-	echo "Enter L File and Source file"
-	read L
+	echo "Enter L File"
+	read L S
 fi
 
 flex $L
 gcc -std=c99 lex.yy.c -lfl -o run
+
+cat $S | ./run

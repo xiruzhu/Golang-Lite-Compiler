@@ -1,47 +1,11 @@
-#include <stdio.h> /* for printf */
-#include <stdlib.h>
-#include <string.h>
-
-typedef enum {
-  int_val,
-  float_val,
-  str_val,
-  err_val,
-  ops_val,
-  rw_val,
-  id_val,
-  key_val,
-  end_val //it's 1, if true
-}var;
-
-union value{
-  int		int_val;
-  float		float_val;
-  char *	str_val;
-  char *	err_val;
-  int       ops_val;
-  int       rw_val;
-  char *	id_val;
-  char *	key_val;
-  int       end_val; //it's 1, if true
-};
-
-typedef struct node{
-	int type;
-	union value val;
-
-	int num_child_nodes;//Number of direct childs
-	int max_child_nodes;
-	struct node ** childs;
-	struct node *  parent;  //pointer to parent
-}node;
+#include "abstract_tree.h"
 
 //Creates a node
 node * create_node(int type, union value val){
 	//Given a type and a union value
 	node * ret = (node *)calloc(1, sizeof(node));
 	ret->childs = (node **)calloc(8, sizeof(node *));
-	if(ret == NULL || ret->childs){
+	if(ret == NULL || ret->childs == NULL){
 		fprintf(stderr, "Mem Alloc Error\n");
 		exit(1);
 	}
@@ -100,7 +64,6 @@ int free_node(node * tree){
 		}
 	}
 	free(tree);
-
 	return 0;
 }
 
@@ -120,7 +83,7 @@ int delete_node(node * tree, node * deleted){
 			return 0;
 	}
 	return 1;
-}	
+}
 
 //The purpose of this function is the transfer all children of old parent to new parent
 int adopt_children(node * new_parent, node * old_parent){
@@ -139,5 +102,5 @@ int main(){
 	union value test;
 	test.int_val = 5;
 	node * root = create_node(int_val, test);
-
+	free(root);
 }
