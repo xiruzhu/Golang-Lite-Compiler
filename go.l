@@ -22,10 +22,9 @@ float_lit		{decimal}"."{decimal}|{decimal}"."{exponent}|{decimal}"."{decimal}{ex
 
 escaped_char    '\'("a"|"b"|"f"|"n"|"r"|"t"|"v"|`\`|"'"|`"`)
 string_lit		{raw_string_lit}|{interpreted_string_lit}
-raw_string_lit	\'(" "|[!-~]|escaped_char)*\'
-interpreted_string_lit	\"(" "|[!-~]|escaped_char)*\"
-
-ID				{letter}({letter}|{decimal_digits})*
+raw_string_lit	\'(" "|'!'|[#-_]|[a-~]|escaped_char)*\'
+interpreted_string_lit	\"(" "|'!'|[#-_]|[a-~]|escaped_char)*\"
+ID				[a-z|A-Z][a-z|A-Z|0-9|"_"]*
 semi_colon		";"
 break			"break"
 case			"case"
@@ -52,7 +51,6 @@ struct			"struct"
 switch			"switch"
 type			"type"
 var             "var"
-
 int             "int"
 float           "float64"
 bool            "bool"
@@ -61,14 +59,13 @@ string          "string"
 print           "print"
 println         "println"
 append			"append"
-
 add				"+"
 minus			"-"
 mult			"*"
 div				"/"
 mod				"%"
 amp				"&"
-vb				"|"
+vb				'|'
 caret			"^"
 ls				"<<"
 rs				">>"
@@ -110,25 +107,18 @@ dot				"."
 colon 			":"
 
 %%
+"\n"			num_line++;
 "//".*		{
 			printf("Eating ...%s\n", yytext);
 			num_char += strlen(yytext);
 			}
 
 \/\*([^\*]|\*+^\/)*\*\/ {
+			printf("Eating ...%s\n", yytext);
 			for(int i = 0; i < strlen(yytext); i++)
 				if(yytext[i] == '\n')
 					num_line++;
 			}
-
-{ID}			printf("%s\n", yytext);
-{int_lit}		printf("%s\n", yytext);
-{float}			printf("%s\n", yytext);
-{string_lit}	printf("%s\n", yytext);
-"\n"		num_line++;
-" "|"\t"	num_char++;
-
-{semi_colon}	{printf("%s\n", yytext);}
 {break}			{printf("%s\n", yytext);}
 {case}			{printf("%s\n", yytext);}
 {chan}			{printf("%s\n", yytext);}
@@ -154,7 +144,6 @@ colon 			":"
 {switch}		{printf("%s\n", yytext);}
 {type}			{printf("%s\n", yytext);}
 {var}			{printf("%s\n", yytext);}
-{float}         {printf("%s\n", yytext);}
 {bool}          {printf("%s\n", yytext);}
 {rune}          {printf("%s\n", yytext);}
 {string}        {printf("%s\n", yytext);}
@@ -166,7 +155,6 @@ colon 			":"
 {div}			{printf("%s\n", yytext);}
 {mod}			{printf("%s\n", yytext);}
 {amp}			{printf("%s\n", yytext);}
-{vb}			{printf("%s\n", yytext);}
 {caret}			{printf("%s\n", yytext);}
 {ls}			{printf("%s\n", yytext);}
 {rs}			{printf("%s\n", yytext);}
@@ -206,18 +194,19 @@ colon 			":"
 {comma}			{printf("%s\n", yytext);}
 {dot}			{printf("%s\n", yytext);}
 {colon} 		{printf("%s\n", yytext);}
-
+{vb}			{printf("%s\n", yytext);}
+{int_lit}		{printf("%s\n", yytext);}
+{float}			{printf("%s\n", yytext);}
+{string_lit}	{printf("%s\n", yytext);}
+{semi_colon}	{printf("%s\n", yytext);}
+{ID}			{printf("%s\n", yytext);}
+" "|"\t"		num_char++;
 
 %%
 
 int main(){
 	printf("Init Flex\n");
 	yylex();
-	for(int i = 0; i < numToken; i++){
-		printf("Value [%s]\n", tokens[i]);
-		free(tokens[i]);
-	}
-
 	return 0;
 }
 
