@@ -12,6 +12,7 @@ void yyerror(char * err_msg) {
 					for(int i = 0; i < strlen(yytext); i++)
 						printf("Character [%d]: %d\n", i, yytext[i]);
 			   }
+
 int yylex(void);
 
 union value{

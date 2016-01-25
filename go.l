@@ -246,6 +246,7 @@ colon 			":"
 					yylval.str_val = val;
 					return ID_;
 				}
+
 " "|"\t"		char_num++;
 ""
 "\n"			{line_num++; return new_line_;}
