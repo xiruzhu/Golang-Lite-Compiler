@@ -31,94 +31,60 @@ union value{
   char    char_val;
 }
 
-%token break_
-%token case_
-%token chan_
-%token const_
-%token continue_
-%token default_
-%token defer_
-%token else_
-%token fallthrough_
-%token for_
-%token func_
-%token go_
-%token goto_
-%token if_
-%token import_
-%token interface_
-%token map_
-%token package_
-%token range_
-%token return_
-%token select_
-%token struct_
-%token switch_
-%token type_
-%token var_
-%token bool_
-%token rune_
-%token string_
-%token print_
-%token println_
+%token<str_val> break_
+%token<str_val> case_
+%token<str_val> chan_
+%token<str_val> const_
+%token<str_val> continue_
+%token<str_val> default_
+%token<str_val> defer_
+%token<str_val> else_
+%token<str_val> fallthrough_
+%token<str_val> for_
+%token<str_val> func_
+%token<str_val> go_
+%token<str_val> goto_
+%token<str_val> if_
+%token<str_val> import_
+%token<str_val> interface_
+%token<str_val> map_
+%token<str_val> package_
+%token<str_val> range_
+%token<str_val> return_
+%token<str_val> select_
+%token<str_val> struct_
+%token<str_val> switch_
+%token<str_val> type_
+%token<str_val> var_
+%token<str_val> bool_
 %token append_
-%token minus_
-%token mult_
-%token div_
-%token mod_
-%token amp_
-%token caret_
-%token ls_
-%token rs_
-%token unknown_
-%token add_eq_
-%token minus_eq_
-%token mult_eq_
-%token div_eq_
-%token mod_eq_
-%token amp_eq_
-%token vb_eq_
-%token caret_eq_
-%token ls_eq_
-%token rs_eq_
-%token unknown_eq_
-%token and_
-%token or_
-%token arrow_
-%token incre_
-%token decre_
-%token equality_
-%token lt_
-%token gt_
-%token eq_
-%token not_
-%token not_eq_
-%token lteq_
-%token gteq_
-%token decla_
-%token etc_
-%token lrbrac_
-%token rrbrac_
-%token lsbrac_
-%token rsbrac_
-%token lcbrac_
-%token rcbrac_
-%token comma_
-%token dot_
-%token colon_
-%token vb_
-%token int_lit_
-%token float_
-%token string_lit_
-%token semi_colon_
+%token print_ println_
+
+
+%token '+' '-' '*' '/' '%'
+%token '&' '|' '^' '<<' '>>' '&^'
+%token '+=' '-=' '*=' '/*' '%='
+%token '&=' '|=' '^=' '<<=' '>>=' '&^='
+%token '&&' '||' '<-' '++' '--'
+%token '==' '<' '>' '=' '!'
+%token '!=' '<=' '>=' ':=' '...'
+%token '(' ')' '[' ']' '{' '}' ';' ':' ',' '.'
+
+
+%token string_ float_ int_ rune_
+%token int_lit_ string_lit_ float_lit_ rune_lit_
 %token ID_
+
 %token new_line_
 %token error_
 
-%start go_prog
-%left add_ minus_
-%left mult_ div_
-%left uminus_
+%left '||'
+%left '&&'
+%left '=' '!=' '<' '>' '<=' '>='
+%left '+' '-' '|' '^'
+%left '*' '/' '%' '<<' '>>' '&' '&^'
+%left unary
+
 
 %%
 
