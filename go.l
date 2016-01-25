@@ -250,6 +250,6 @@ colon 			":"
 " "|"\t"		char_num++;
 ""
 "\n"			{line_num++; return new_line_;}
-
+			//ok
 %%
 
