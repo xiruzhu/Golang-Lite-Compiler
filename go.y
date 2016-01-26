@@ -5,6 +5,7 @@
 extern char *yytext; /* string from scanner */
 extern int line_num;
 extern int line_char;
+
 void yyerror(char * err_msg) {
           fprintf (stderr ,"Syntax error after \"%s\" at line [%d]\n", yytext, line_num);
           for(int i = 0; i < strlen(yytext); i++)
@@ -15,7 +16,6 @@ union value{
   int     int_val;
   float   float_val;
   char *  str_val;
-  char    char_val;
 };
 %}
 
@@ -23,7 +23,6 @@ union value{
   int     int_val;
   float   float_val;
   char *  str_val;
-  char    char_val;
 }
 
 %token break_

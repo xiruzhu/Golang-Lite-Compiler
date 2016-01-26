@@ -28,6 +28,9 @@ escaped_char    '\'("a"|"b"|"f"|"n"|"r"|"t"|"v"|`\`|"'"|`"`)
 string_lit		{raw_string_lit}|{interpreted_string_lit}
 raw_string_lit	\'(" "|'!'|[#-_]|[a-~]|escaped_char)*\'
 interpreted_string_lit	\"(" "|'!'|[#-_]|[a-~]|escaped_char)*\"
+
+rune_lit		\'" "|'!'|[#-_]|[a-~]|escaped_char\'
+
 ID				[a-z|A-Z][a-z|A-Z|0-9|"_"]*
 semi_colon		";"
 break			"break"
@@ -246,6 +249,18 @@ colon 			":"
 					strcpy(val, yytext);
 					yylval.str_val = val;
 					return ID_;
+				}
+
+{rune_lit}		{
+					char * val = (char *)malloc(strlen(yytext) + 1);
+					if(val == NULL){
+						printf("Mem Alloc Failed\n");
+						exit(1);
+					}
+					printf("%s\n", yytext);
+					strcpy(val, yytext);
+					yylval.str_val = val;
+					return rune_lit_;
 				}
 
 " "|"\t"		char_num++;
