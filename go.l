@@ -69,7 +69,7 @@ mult			"*"
 div				"/"
 mod				"%"
 amp				"&"
-vb				"|"
+vb				'|'
 caret			"^"
 ls				"<<"
 rs				">>"
@@ -153,52 +153,52 @@ colon 			":"
 {print}         {printf("%s\n", yytext); return print_;}
 {println}       {printf("%s\n", yytext); return println_;}
 {append}		{printf("%s\n", yytext); return append_;}
-{add}			{printf("%s\n", yytext); return '+';}
-{minus}			{printf("%s\n", yytext); return '-';}
-{mult}			{printf("%s\n", yytext); return '*';}
-{div}			{printf("%s\n", yytext); return '/';}
-{mod}			{printf("%s\n", yytext); return '%';}
-{amp}			{printf("%s\n", yytext); return '&';}
-{caret}			{printf("%s\n", yytext); return '^';}
-{ls}			{printf("%s\n", yytext); return '<<';}
-{rs}			{printf("%s\n", yytext); return '>>;}
-{unknown} 		{printf("%s\n", yytext); return '&^';}
-{add_eq}		{printf("%s\n", yytext); return '+=';}
-{minus_eq}		{printf("%s\n", yytext); return '-=';}
-{mult_eq}		{printf("%s\n", yytext); return '*=';}
-{div_eq}		{printf("%s\n", yytext); return '/=';}
-{mod_eq}		{printf("%s\n", yytext); return '%=';}
-{amp_eq}		{printf("%s\n", yytext); return '&=';}
-{vb_eq}			{printf("%s\n", yytext); return '/=';}
-{caret_eq}		{printf("%s\n", yytext); return '%=';}
-{ls_eq}			{printf("%s\n", yytext); return '<<=';}
-{rs_eq}			{printf("%s\n", yytext); return '>>=';}
-{unknown_eq}	{printf("%s\n", yytext); return '&^=';}
-{and}           {printf("%s\n", yytext); return '&&';}
-{or}			{printf("%s\n", yytext); return '||';}
-{arrow} 		{printf("%s\n", yytext); return '<-';}
-{incre}         {printf("%s\n", yytext); return '++';}
-{decre}			{printf("%s\n", yytext); return '--';}
-{equality}		{printf("%s\n", yytext); return '==';}
-{lt}            {printf("%s\n", yytext); return '<';}
-{gt}            {printf("%s\n", yytext); return '>';}
-{eq}            {printf("%s\n", yytext); return '=';}
-{not}           {printf("%s\n", yytext); return '!';}
-{not_eq}        {printf("%s\n", yytext); return '!=';}
-{lteq}          {printf("%s\n", yytext); return '<=';}
-{gteq}			{printf("%s\n", yytext); return '>=';}
-{decla}         {printf("%s\n", yytext); return ':=';}
-{etc}           {printf("%s\n", yytext); return '...';}
-{lrbrac}		{printf("%s\n", yytext); return '(';}
-{rrbrac}		{printf("%s\n", yytext); return ')';}
-{lsbrac}		{printf("%s\n", yytext); return '[';}
-{rsbrac}		{printf("%s\n", yytext); return ']';}
-{lcbrac}		{printf("%s\n", yytext); return '{';}
-{rcbrac}		{printf("%s\n", yytext); return '}';}
-{comma}			{printf("%s\n", yytext); return ',';}
-{dot}			{printf("%s\n", yytext); return '.';}
-{colon} 		{printf("%s\n", yytext); return ':';}
-{vb}			{printf("%s\n", yytext); return '|';}
+{add}			{printf("%s\n", yytext); return add_;}
+{minus}			{printf("%s\n", yytext); return minus_;}
+{mult}			{printf("%s\n", yytext); return mult_;}
+{div}			{printf("%s\n", yytext); return div_;}
+{mod}			{printf("%s\n", yytext); return mod_;}
+{amp}			{printf("%s\n", yytext); return amp_;}
+{caret}			{printf("%s\n", yytext); return caret_;}
+{ls}			{printf("%s\n", yytext); return ls_;}
+{rs}			{printf("%s\n", yytext); return rs_;}
+{unknown} 		{printf("%s\n", yytext); return unknown_;}
+{add_eq}		{printf("%s\n", yytext); return add_eq_;}
+{minus_eq}		{printf("%s\n", yytext); return minus_eq_;}
+{mult_eq}		{printf("%s\n", yytext); return mult_eq_;}
+{div_eq}		{printf("%s\n", yytext); return div_eq_;}
+{mod_eq}		{printf("%s\n", yytext); return mod_eq_;}
+{amp_eq}		{printf("%s\n", yytext); return amp_eq_;}
+{vb_eq}			{printf("%s\n", yytext); return vb_eq_;}
+{caret_eq}		{printf("%s\n", yytext); return caret_eq_;}
+{ls_eq}			{printf("%s\n", yytext); return ls_eq_;}
+{rs_eq}			{printf("%s\n", yytext); return rs_eq_;}
+{unknown_eq}	{printf("%s\n", yytext); return unknown_eq_;}
+{and}           {printf("%s\n", yytext); return and_;}
+{or}			{printf("%s\n", yytext); return or_;}
+{arrow} 		{printf("%s\n", yytext); return arrow_;}
+{incre}         {printf("%s\n", yytext); return incre_;}
+{decre}			{printf("%s\n", yytext); return decre_;}
+{equality}		{printf("%s\n", yytext); return equality_;}
+{lt}            {printf("%s\n", yytext); return lt_;}
+{gt}            {printf("%s\n", yytext); return gt_;}
+{eq}            {printf("%s\n", yytext); return eq_;}
+{not}           {printf("%s\n", yytext); return not_;}
+{not_eq}        {printf("%s\n", yytext); return not_eq_;}
+{lteq}          {printf("%s\n", yytext); return lteq_;}
+{gteq}			{printf("%s\n", yytext); return gteq_;}
+{decla}         {printf("%s\n", yytext); return decla_;}
+{etc}           {printf("%s\n", yytext); return etc_;}
+{lrbrac}		{printf("%s\n", yytext); return lrbrac_;}
+{rrbrac}		{printf("%s\n", yytext); return rrbrac_;}
+{lsbrac}		{printf("%s\n", yytext); return lsbrac_;}
+{rsbrac}		{printf("%s\n", yytext); return rsbrac_;}
+{lcbrac}		{printf("%s\n", yytext); return lcbrac_;}
+{rcbrac}		{printf("%s\n", yytext); return rcbrac_;}
+{comma}			{printf("%s\n", yytext); return comma_;}
+{dot}			{printf("%s\n", yytext); return dot_;}
+{colon} 		{printf("%s\n", yytext); return colon_;}
+{vb}			{printf("%s\n", yytext); return vb_;}
 
 {int_lit}		{
 					char ** temp;
@@ -219,7 +219,7 @@ colon 			":"
 						printf("Integer parse error %s\n", yytext);
 						return error_;
 					}
-					return float_lit;
+					return float_lit_;
 				}
 
 {string_lit}	{
@@ -234,7 +234,7 @@ colon 			":"
 					return string_lit_;
 				}
 
-{semi_colon}	{printf("%s\n", yytext); return ';';}
+{semi_colon}	{printf("%s\n", yytext); return semi_colon_;}
 
 {ID}			{
 					char * val = (char *)malloc(strlen(yytext) + 1);
@@ -251,6 +251,4 @@ colon 			":"
 " "|"\t"		char_num++;
 ""
 "\n"			{line_num++; return new_line_;}
-			//ok
 %%
-
