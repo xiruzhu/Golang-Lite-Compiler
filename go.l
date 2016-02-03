@@ -150,6 +150,8 @@ colon 			":"
 {switch}		{printf("%s\n", yytext); return switch_;}
 {type}			{printf("%s\n", yytext); return type_;}
 {var}			{printf("%s\n", yytext); return var_;}
+{int} 	        {printf("%s\n", yytext); return int_;}
+{float}         {printf("%s\n", yytext); return float_;}
 {bool}          {printf("%s\n", yytext); return bool_;}
 {rune}          {printf("%s\n", yytext); return rune_;}
 {string}        {printf("%s\n", yytext); return string_;}

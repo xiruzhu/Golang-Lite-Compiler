@@ -70,68 +70,70 @@ extern int yydebug;
     switch_ = 280,
     type_ = 281,
     var_ = 282,
-    bool_ = 283,
-    rune_ = 284,
-    string_ = 285,
-    print_ = 286,
-    println_ = 287,
-    append_ = 288,
-    add_ = 289,
-    minus_ = 290,
-    mult_ = 291,
-    div_ = 292,
-    mod_ = 293,
-    amp_ = 294,
-    caret_ = 295,
-    ls_ = 296,
-    rs_ = 297,
-    unknown_ = 298,
-    add_eq_ = 299,
-    minus_eq_ = 300,
-    mult_eq_ = 301,
-    div_eq_ = 302,
-    mod_eq_ = 303,
-    amp_eq_ = 304,
-    vb_eq_ = 305,
-    caret_eq_ = 306,
-    ls_eq_ = 307,
-    rs_eq_ = 308,
-    unknown_eq_ = 309,
-    and_ = 310,
-    or_ = 311,
-    arrow_ = 312,
-    incre_ = 313,
-    decre_ = 314,
-    equality_ = 315,
-    lt_ = 316,
-    gt_ = 317,
-    eq_ = 318,
-    not_ = 319,
-    not_eq_ = 320,
-    lteq_ = 321,
-    gteq_ = 322,
-    decla_ = 323,
-    etc_ = 324,
-    lrbrac_ = 325,
-    rrbrac_ = 326,
-    lsbrac_ = 327,
-    rsbrac_ = 328,
-    lcbrac_ = 329,
-    rcbrac_ = 330,
-    comma_ = 331,
-    dot_ = 332,
-    colon_ = 333,
-    vb_ = 334,
-    int_lit_ = 335,
-    float_lit_ = 336,
-    string_lit_ = 337,
-    rune_lit_ = 338,
-    semi_colon_ = 339,
-    id_ = 340,
-    new_line_ = 341,
-    error_ = 342,
-    lteq = 343,
-    unary = 344
+    int_ = 283,
+    float_ = 284,
+    bool_ = 285,
+    rune_ = 286,
+    string_ = 287,
+    print_ = 288,
+    println_ = 289,
+    append_ = 290,
+    add_ = 291,
+    minus_ = 292,
+    mult_ = 293,
+    div_ = 294,
+    mod_ = 295,
+    amp_ = 296,
+    caret_ = 297,
+    ls_ = 298,
+    rs_ = 299,
+    unknown_ = 300,
+    add_eq_ = 301,
+    minus_eq_ = 302,
+    mult_eq_ = 303,
+    div_eq_ = 304,
+    mod_eq_ = 305,
+    amp_eq_ = 306,
+    vb_eq_ = 307,
+    caret_eq_ = 308,
+    ls_eq_ = 309,
+    rs_eq_ = 310,
+    unknown_eq_ = 311,
+    and_ = 312,
+    or_ = 313,
+    arrow_ = 314,
+    incre_ = 315,
+    decre_ = 316,
+    equality_ = 317,
+    lt_ = 318,
+    gt_ = 319,
+    eq_ = 320,
+    not_ = 321,
+    not_eq_ = 322,
+    lteq_ = 323,
+    gteq_ = 324,
+    decla_ = 325,
+    etc_ = 326,
+    lrbrac_ = 327,
+    rrbrac_ = 328,
+    lsbrac_ = 329,
+    rsbrac_ = 330,
+    lcbrac_ = 331,
+    rcbrac_ = 332,
+    comma_ = 333,
+    dot_ = 334,
+    colon_ = 335,
+    vb_ = 336,
+    int_lit_ = 337,
+    float_lit_ = 338,
+    string_lit_ = 339,
+    rune_lit_ = 340,
+    semi_colon_ = 341,
+    id_ = 342,
+    new_line_ = 343,
+    error_ = 344,
+    lteq = 345,
+    unary = 346
   };
 #endif
 /* Tokens.  */
@@ -160,68 +162,70 @@ extern int yydebug;
 #define switch_ 280
 #define type_ 281
 #define var_ 282
-#define bool_ 283
-#define rune_ 284
-#define string_ 285
-#define print_ 286
-#define println_ 287
-#define append_ 288
-#define add_ 289
-#define minus_ 290
-#define mult_ 291
-#define div_ 292
-#define mod_ 293
-#define amp_ 294
-#define caret_ 295
-#define ls_ 296
-#define rs_ 297
-#define unknown_ 298
-#define add_eq_ 299
-#define minus_eq_ 300
-#define mult_eq_ 301
-#define div_eq_ 302
-#define mod_eq_ 303
-#define amp_eq_ 304
-#define vb_eq_ 305
-#define caret_eq_ 306
-#define ls_eq_ 307
-#define rs_eq_ 308
-#define unknown_eq_ 309
-#define and_ 310
-#define or_ 311
-#define arrow_ 312
-#define incre_ 313
-#define decre_ 314
-#define equality_ 315
-#define lt_ 316
-#define gt_ 317
-#define eq_ 318
-#define not_ 319
-#define not_eq_ 320
-#define lteq_ 321
-#define gteq_ 322
-#define decla_ 323
-#define etc_ 324
-#define lrbrac_ 325
-#define rrbrac_ 326
-#define lsbrac_ 327
-#define rsbrac_ 328
-#define lcbrac_ 329
-#define rcbrac_ 330
-#define comma_ 331
-#define dot_ 332
-#define colon_ 333
-#define vb_ 334
-#define int_lit_ 335
-#define float_lit_ 336
-#define string_lit_ 337
-#define rune_lit_ 338
-#define semi_colon_ 339
-#define id_ 340
-#define new_line_ 341
-#define error_ 342
-#define lteq 343
-#define unary 344
+#define int_ 283
+#define float_ 284
+#define bool_ 285
+#define rune_ 286
+#define string_ 287
+#define print_ 288
+#define println_ 289
+#define append_ 290
+#define add_ 291
+#define minus_ 292
+#define mult_ 293
+#define div_ 294
+#define mod_ 295
+#define amp_ 296
+#define caret_ 297
+#define ls_ 298
+#define rs_ 299
+#define unknown_ 300
+#define add_eq_ 301
+#define minus_eq_ 302
+#define mult_eq_ 303
+#define div_eq_ 304
+#define mod_eq_ 305
+#define amp_eq_ 306
+#define vb_eq_ 307
+#define caret_eq_ 308
+#define ls_eq_ 309
+#define rs_eq_ 310
+#define unknown_eq_ 311
+#define and_ 312
+#define or_ 313
+#define arrow_ 314
+#define incre_ 315
+#define decre_ 316
+#define equality_ 317
+#define lt_ 318
+#define gt_ 319
+#define eq_ 320
+#define not_ 321
+#define not_eq_ 322
+#define lteq_ 323
+#define gteq_ 324
+#define decla_ 325
+#define etc_ 326
+#define lrbrac_ 327
+#define rrbrac_ 328
+#define lsbrac_ 329
+#define rsbrac_ 330
+#define lcbrac_ 331
+#define rcbrac_ 332
+#define comma_ 333
+#define dot_ 334
+#define colon_ 335
+#define vb_ 336
+#define int_lit_ 337
+#define float_lit_ 338
+#define string_lit_ 339
+#define rune_lit_ 340
+#define semi_colon_ 341
+#define id_ 342
+#define new_line_ 343
+#define error_ 344
+#define lteq 345
+#define unary 346
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -234,7 +238,7 @@ union YYSTYPE
   float   float_val;
   char *  str_val;
 
-#line 238 "y.tab.h" /* yacc.c:1909  */
+#line 242 "y.tab.h" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1

@@ -50,6 +50,8 @@ union value{
 %token switch_
 %token type_
 %token var_
+%token int_
+%token float_
 %token bool_
 %token rune_
 %token string_
@@ -122,7 +124,7 @@ union value{
 %%
 
 go_prog             : pckg_decl
-                    | pckg_decl block
+                    | pckg_decl func_decl block
                     | block                 //Ok so we can have no packages if we want
 
 block               : lcbrac_ statement_list rcbrac_
@@ -144,6 +146,12 @@ literal             : float_lit_
                     | int_lit_
                     | rune_lit_
                     | string_lit_
+
+literal_type        : bool_
+                    | rune_
+                    | string_
+                    | float_
+                    | int_
 
 //Declarations in General
 
@@ -197,7 +205,7 @@ signature           : params
                     | params result
 
 //So there are only two forms in minilang, long form and short form
-//Long form
+//This makes both
 result              : type
 
 params              : lrbrac_ rrbrac_
@@ -277,7 +285,9 @@ package_name        : id_
 type_lit            : array_type
                     | struct_type
                     | pointer_type
+                    | func_type
                     | slice_type
+                    | literal_type
 
 array_type          : lsbrac_ array_length rsbrac_ elem_type
 
@@ -285,6 +295,7 @@ array_length        : expr
 
 elem_type           : type
 
+//Struct type
 struct_type         : struct_ lcbrac_ field_decl_list rcbrac_
 
 field_decl_list     : field_decl semi
@@ -300,9 +311,11 @@ tag                 : string_lit_
 anon_field          : mult_ type_name
                     | type_name
 
+//Pointer Type
 pointer_type        : mult_ base_type
 
 base_type           : type
+
 
 slice_type          : lsbrac_ rsbrac_ elem_type
 
