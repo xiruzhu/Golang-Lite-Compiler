@@ -248,7 +248,7 @@ colon 			":"
 					printf("%s\n", yytext);
 					strcpy(val, yytext);
 					yylval.str_val = val;
-					return ID_;
+					return id_;
 				}
 
 {rune_lit}		{
@@ -265,5 +265,5 @@ colon 			":"
 
 " "|"\t"		char_num++;
 ""
-"\n"			{line_num++; return new_line_;}
+"\n"			{line_num++;}
 %%

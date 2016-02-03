@@ -107,7 +107,7 @@ union value{
 %token string_lit_
 %token rune_lit_
 %token semi_colon_
-%token ID_
+%token id_
 %token new_line_
 %token error_
 
@@ -121,139 +121,190 @@ union value{
 %left unary
 %%
 
-go_prog     : pckg_decl new_l
+go_prog             : pckg_decl
+                    | pckg_decl block
+                    | block                 //Ok so we can have no packages if we want
 
-pckg_decl   : package_ ID_ new_line_
-            | package_ ID_ new_line_ pckg_decl
+block               : lcbrac_ statement_list rcbrac_
 
-semi        : semi_colon_
-            | new_line_
-
-new_l       : new_line_
-            | new_line_ new_l
-
-literal     : float_lit_
-            | int_lit_
-            | rune_lit_
-            | string_lit_
-
-type        : type_name
-            | type_lit
-            | lrbrac_ type rrbrac_
-
-type_name   : ID_
-            | qualified_ID
-
-qualified_ID: package_name dot_ ID_
-
-package_name: ID_
+pckg_decl           : package_ id_
+                    | package_ id_ pckg_decl
 
 
-type_lit    : array_type
-            | struct_type
-            | pointer_type
-            | slice_type
+//Semicolon
+semi                : semi_colon_
+                    | new_line_
+id_list             : id_
+                    | id_ comma_ id_list
 
-array_type  : lsbrac_ array_length rsbrac_ elem_type
+statement_list      : statement
+                    | statement semi_colon_ statement_list
 
-array_length: expression
+literal             : float_lit_
+                    | int_lit_
+                    | rune_lit_
+                    | string_lit_
 
-elem_type   : type
+//Declarations in General
+
+decl                : type_decl 
+                    | var_decl
+
+top_level_decl      : decl 
+                    | func_decl
 
 
-struct_type : struct_ lcbrac_ field_decl_list rcbrac_
+statement           : decl
 
-field_decl_list : field_decl semi
-                | field_decl semi field_decl_list
-                | /*empty*/
+//Type Declaration
 
-field_decl  : id_list type
-            | anon_field
+type_decl           : type_ type_spec
+                    | type_ lrbrac_ type_spec_list rrbrac_ 
 
-tag         : string_lit_
-            | /*empty*/
+type_spec           : id_ type
 
-id_list     : ID_
-            | ID_ comma_ id_list
-            | /*empty*/
+type_spec_list      : type_spec
+                    | type_spec comma_ type_spec
 
-anon_field  : mult_ type_name
-            | type_name
+//Variable Declaration
 
-pointer_type: mult_ base_type
+var_decl            : "var" var_spec
+                    | lrbrac_  var_spec_list rrbrac_
 
-base_type   : type
+var_spec            : id_list eq_ expr_list
+                    | id_list eq_expr_list
 
-slice_type  : lsbrac_ rsbrac_ elem_type
+var_spec_list       : var_spec
+                    | var_spec comma_ var_spec_list
 
-expression  :
+short_var_decl      : id_list decla_ expr_list
+
+// Function Declarations now
+
+func_decl           : func_ func_name function
+                    | func_ func_name signature
+
+func_name           : id_
+
+func_body           : block
+
+function            : signature func_body
+
+//Function Types
+func_type           : func_ signature
+
+signature           : params
+                    | params result
+
+//So there are only two forms in minilang, long form and short form
+//Long form
+result              : type
+
+params              : lrbrac_ rrbrac_
+                    | lrbrac_ params_list rrbrac_
+                    | lrbrac_ params_list comma_ rrbrac_
+
+params_list         : params_decl
+                    | params_decl comma_ params_list
+
+params_decl         : id_list etc_ type
+                    | etc_ type
+                    | id_list type
+                    | type
+
+//Expression Declarations
+
+eq_expr_list        : type eq_ expr_list
+                    | type
+ 
+expr_list           : expr
+                    | expr comma_ expr_list
+
+expr                : unary_expr
+                    | expr binary_op expr
+
+unary_expr          : primary_expr | unary_op unary_expr
+
+binary_op           : or_
+                    | and_
+                    | rel_op
+                    | add_op
+                    | mul_op
+
+rel_op              : eq_ 
+                    | not_eq_
+                    | lt_
+                    | lteq_
+                    | gt_
+                    | gteq_
+
+add_op              : add_ 
+                    | minus_
+                    | vb_
+                    | caret_
+
+mul_op              : mult_
+                    | div_
+                    | mod_
+                    | ls_
+                    | rs_
+                    | amp_
+                    | unknown_
+
+unary_op            : add_ 
+                    | minus_
+                    | vb_
+                    | caret_
+                    | mult_
+                    | amp_
+                    | arrow_
+
+primary_expr        : semi
+
+//Type Declaration
+
+type                : type_name
+                    | type_lit
+                    | lrbrac_ type rrbrac_
+
+type_name           : id_
+                    | qualified_id
+
+qualified_id        : package_name dot_ id_
+
+package_name        : id_
+
+type_lit            : array_type
+                    | struct_type
+                    | pointer_type
+                    | slice_type
+
+array_type          : lsbrac_ array_length rsbrac_ elem_type
+
+array_length        : expr
+
+elem_type           : type
+
+struct_type         : struct_ lcbrac_ field_decl_list rcbrac_
+
+field_decl_list     : field_decl semi
+                    | field_decl semi field_decl_list
+
+field_decl          : id_list type tag
+                    | id_list type
+                    | anon_field tag
+                    | anon_field
+
+tag                 : string_lit_
+
+anon_field          : mult_ type_name
+                    | type_name
+
+pointer_type        : mult_ base_type
+
+base_type           : type
+
+slice_type          : lsbrac_ rsbrac_ elem_type
 
 %%
 
-/*
-go_prog     : pckg_decl new_l
-
-pckg_decl   : package_ ID_ new_line_
-            | package_ ID_ new_line_ pckg_decl
-
-
-
-func_start  : func_ ID_ func_args block_stmt
-
-type        : bool_
-            | int_lit_
-            | float_lit_
-            | string_lit_
-            | rune_lit_
-
-new_l       : new_line_
-            | new_line_ new_l
-
-
-func_args   : lrbrac_ func_args_1 rrbrac_ type
-            | lrbrac_ func_args_2 rrbrac_ type
-            | lrbrac_ func_args_2 rrbrac_
-            | lrbrac_ func_args_1 rrbrac_
-            | lrbrac_ rrbrac_
-            | lrbrac_ rrbrac_ type
-
-func_args_1 : ID_ type
-            | ID_ type comma_ func_args_1
-
-func_args_2 : id_comma type
-
-id_comma    : ID_
-            | ID_ comma_ id_comma
-
-block_stmt  : lcbrac_ new_l reg_stmt new_l rcbrac_ new_l
-            | new_l lcbrac_ reg_stmt new_l rcbrac_ new_l
-
-reg_stmt    : minus_
-
-
-
-
-decl_list   : decl
-            | decl decl_list
-
-decl        : reg_decl
-            | fun_decl
-
-reg_decl    : type_decl
-            | var_decl
-
-var_decl    : var_ var_spec
-            | var_ lrbrac_ var_spec_list semi rrbrac_
-
-semi        : semi_colon_
-            | new_line_
-
-var_spec_list     : var_spec
-                  | var_spec var_spec_list
-ID_list     : ID_
-            | ID_ ID_list
-
-
-
-var_spec    : ID_list
-*/
