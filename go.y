@@ -125,50 +125,58 @@ union value{
 %left mult_ div_ mod_ ls_ rs_ amp_ unknown_
 %left unary
 %%
+
 line_end            : semi_colon_ new_line_
+                    : semi_colon
                     | new_line_
 
-line_end_list       : /* empty */
-                    | line_end_list line_end
-line_end_list_1     : line_end
-                    | line_end_list line_end
+nl                  : new_line_
+                    | /*empty*/
 
-//A go program is composed of a package declaration and multiple top_level declarations
-go_prog             : pckg_decl top_decl_list line_end_list
-                    | top_decl_list line_end_list
-                    | /* empty */
-
-pckg_decl           : line_end_list package_ id_ line_end
-
-top_decl_list       : line_end_list top_decl 
-                    | line_end_list top_decl_list top_decl
+id_list             : id_
+                    | id_list id_
 
 empty_rbrac         : lrbrac_ rrbrac_
 empty_sbrac         : lsbrac_ lsbrac_
-empty_cbrac         : lcbrac_ lcbrac_ 
+empty_cbrac         : lcbrac_ lcbrac_
+
+//A go program is composed of a package declaration and multiple top_level declarations
+go_prog             : pckg_decl top_decl_list line_end
+                    | top_decl_list line_end
+                    | /* empty */
+
+pckg_decl           : nl package_ id_ line_end
+
+
+// function test()
+
+// function test1()
+top_decl_list       : nl top_decl line_end
+                    | top_decl_list top_decl line_end
 
 top_decl            : decl | func_decl
 
 decl                : type_decl | var_decl
-                         
+
+//temp
 func_decl           : if_
 
-type_decl           : type_ type_spec line_end
-                    | type_ lrbrac_ type_spec_list rrbrac_ line_end 
-
-type_spec_list      : line_end_list type_spec
-                    | type_spec_list line_end_list_1 type_spec
-
-type_spec           : id_ type 
-
-
+//temp
 var_decl            : switch_
+
+type_decl           : type_ type_spec
+                    | type_ lrbrac_ type_spec_list rrbrac_ line_end
+
+type_spec_list      : type_spec line_end
+                    | type_spec_list type_spec line_end
+
+type_spec           : id_ type
 
 type                : type_name
                     | type_lit
                     | lrbrac_ type rrbrac_
 
-type_name           : literal_type
+type_name           : id_
                     | id_ dot_ id_
 
 type_lit            : array_type
@@ -179,12 +187,11 @@ type_lit            : array_type
 
 array_type          : lsbrac_ expr rsbrac_ type
 
-
 //Struct type
 struct_type         : struct_ lcbrac_ field_decl_list rcbrac_
 
-field_decl_list     : field_decl semi
-                    | field_decl_list field_decl semi
+field_decl_list     : field_decl line_end
+                    | field_decl_list field_decl line_end
 
 field_decl          : id_list type tag
                     | id_list type
@@ -197,12 +204,13 @@ anon_field          : mult_ type_name
                     | type_name
 
 //Pointer Type
-pointer_type        : mult_ base_type
-
-base_type           : type
+pointer_type        : mult_ type
 
 
 slice_type          : lsbrac_ rsbrac_ type
+
+func_type           : or_
+expr                : float_lit_
 
 %%
 

@@ -266,5 +266,5 @@ colon 			":"
 				}
 
 " "|"\t"		char_num++;
-"\n"			{line_num++; return new_line_;}
+'\n'+			{line_num += strlen(yytext); return new_line_;}
 %%
