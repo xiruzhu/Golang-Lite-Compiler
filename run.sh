@@ -8,7 +8,7 @@ else
 	read L Y S
 fi
 
-bison --yacc --defines $Y
+bison --yacc --defines --verbose $Y
 flex $L
 gcc -std=c99 lex.yy.c y.tab.c y.tab.h main.c -lfl -o run
 cat $S | ./run

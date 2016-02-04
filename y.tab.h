@@ -1,8 +1,8 @@
 /* A Bison parser, made by GNU Bison 3.0.2.  */
 
-/* Bison interface for Yacc-like parsers in C
+/* Skeleton interface for Bison GLR parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+   Copyright (C) 2002-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -136,109 +136,19 @@ extern int yydebug;
     unary = 346
   };
 #endif
-/* Tokens.  */
-#define break_ 258
-#define case_ 259
-#define chan_ 260
-#define const_ 261
-#define continue_ 262
-#define default_ 263
-#define defer_ 264
-#define else_ 265
-#define fallthrough_ 266
-#define for_ 267
-#define func_ 268
-#define go_ 269
-#define goto_ 270
-#define if_ 271
-#define import_ 272
-#define interface_ 273
-#define map_ 274
-#define package_ 275
-#define range_ 276
-#define return_ 277
-#define select_ 278
-#define struct_ 279
-#define switch_ 280
-#define type_ 281
-#define var_ 282
-#define int_ 283
-#define float_ 284
-#define bool_ 285
-#define rune_ 286
-#define string_ 287
-#define print_ 288
-#define println_ 289
-#define append_ 290
-#define add_ 291
-#define minus_ 292
-#define mult_ 293
-#define div_ 294
-#define mod_ 295
-#define amp_ 296
-#define caret_ 297
-#define ls_ 298
-#define rs_ 299
-#define unknown_ 300
-#define add_eq_ 301
-#define minus_eq_ 302
-#define mult_eq_ 303
-#define div_eq_ 304
-#define mod_eq_ 305
-#define amp_eq_ 306
-#define vb_eq_ 307
-#define caret_eq_ 308
-#define ls_eq_ 309
-#define rs_eq_ 310
-#define unknown_eq_ 311
-#define and_ 312
-#define or_ 313
-#define arrow_ 314
-#define incre_ 315
-#define decre_ 316
-#define equality_ 317
-#define lt_ 318
-#define gt_ 319
-#define eq_ 320
-#define not_ 321
-#define not_eq_ 322
-#define lteq_ 323
-#define gteq_ 324
-#define decla_ 325
-#define etc_ 326
-#define lrbrac_ 327
-#define rrbrac_ 328
-#define lsbrac_ 329
-#define rsbrac_ 330
-#define lcbrac_ 331
-#define rcbrac_ 332
-#define comma_ 333
-#define dot_ 334
-#define colon_ 335
-#define vb_ 336
-#define int_lit_ 337
-#define float_lit_ 338
-#define string_lit_ 339
-#define rune_lit_ 340
-#define semi_colon_ 341
-#define id_ 342
-#define new_line_ 343
-#define error_ 344
-#define lteq 345
-#define unary 346
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE YYSTYPE;
 union YYSTYPE
 {
-#line 22 "go.y" /* yacc.c:1909  */
+#line 22 "go.y" /* glr.c:2555  */
  //The types of values we may store
   int     int_val;
   float   float_val;
   char *  str_val;
 
-#line 242 "y.tab.h" /* yacc.c:1909  */
+#line 152 "y.tab.h" /* glr.c:2555  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
