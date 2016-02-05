@@ -5,10 +5,11 @@
 
 package stringutil;
 
+/* testing
 
+*/
 
 // Reverse returns its argument string reversed rune-wise left to right.
-
 
 func Reverse(s string) string {
 	r := []rune(s)

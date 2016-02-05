@@ -266,5 +266,9 @@ colon 			":"
 				}
 
 " "|"\t"		char_num++;
-'\n'+			{line_num += strlen(yytext); return new_line_;}
+"\n"			{
+					line_num += 1;
+					printf("NEW LINE\n");
+					//return new_line_;
+				}
 %%

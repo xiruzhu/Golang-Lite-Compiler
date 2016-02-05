@@ -126,12 +126,14 @@ union value{
 %left unary
 %%
 
-line_end            : semi_colon_ new_line_
-                    : semi_colon
-                    | new_line_
+//Here is the deal it cannot parse semi colon terminated stuff without newline
+line_end            : semi_colon_
+                    | /* empty */
 
-nl                  : new_line_
-                    | /*empty*/
+/*
+new_line_list       : /* empty *//*
+                    | new_line_list new_line_
+*/
 
 id_list             : id_
                     | id_list id_
@@ -140,44 +142,65 @@ empty_rbrac         : lrbrac_ rrbrac_
 empty_sbrac         : lsbrac_ lsbrac_
 empty_cbrac         : lcbrac_ lcbrac_
 
+block               : empty_cbrac
+
 //A go program is composed of a package declaration and multiple top_level declarations
-go_prog             : pckg_decl top_decl_list line_end
-                    | top_decl_list line_end
+go_prog             : pckg_decl top_decl_list
+                    | top_decl_list
                     | /* empty */
 
-pckg_decl           : nl package_ id_ line_end
+pckg_decl           : package_ id_ line_end
 
 
 // function test()
 
 // function test1()
-top_decl_list       : nl top_decl line_end
-                    | top_decl_list top_decl line_end
+top_decl_list       : top_decl line_end /* line */
+                    | top_decl_list top_decl line_end/* line */
 
-top_decl            : decl | func_decl
+top_decl            : decl
+                    | func_decl
 
 decl                : type_decl | var_decl
 
-//temp
-func_decl           : if_
+//Function declaration, Broader than necessary
+func_decl           : func_ id_ lrbrac_ func_decl_list  rrbrac_ type block  //With return
+                    | func_ id_ lrbrac_ func_decl_list  rrbrac_ block //Without return
 
-//temp
-var_decl            : switch_
+func_decl_list      : type_spec
+                    | func_decl_list comma_ type_spec
 
-type_decl           : type_ type_spec
-                    | type_ lrbrac_ type_spec_list rrbrac_ line_end
 
-type_spec_list      : type_spec line_end
-                    | type_spec_list type_spec line_end
+//Variable Declaration!!
+var_decl            : var_ var_decl_one_line /* line */
+                    | var_ lrbrac_ var_decl_mult_line rrbrac_ /* line */
+
+var_decl_mult_line  : var_decl_one_line
+                    | var_decl_mult_line /* line */ var_decl_one_line
+
+var_decl_one_line   : id_list type
+                    | id_list expr
+                    | id_list type expr
+
+//Type stuff, follows more go specs
+type_decl           : type_ type_spec /* line */
+                    | type_ lrbrac_ type_spec_list rrbrac_ /* line */
+
+type_spec_list      : type_spec /* line */
+                    | type_spec_list type_spec /* line */
 
 type_spec           : id_ type
 
-type                : type_name
+type                : type_primitive
                     | type_lit
+                    | id_ dot_ id_
                     | lrbrac_ type rrbrac_
 
-type_name           : id_
-                    | id_ dot_ id_
+type_primitive      : bool_
+                    | rune_
+                    | string_
+                    | float_
+                    | int_
 
 type_lit            : array_type
                     | struct_type
@@ -190,18 +213,21 @@ array_type          : lsbrac_ expr rsbrac_ type
 //Struct type
 struct_type         : struct_ lcbrac_ field_decl_list rcbrac_
 
-field_decl_list     : field_decl line_end
-                    | field_decl_list field_decl line_end
+field_decl_list     : field_decl /* line */
+                    | field_decl_list field_decl /* line */
 
-field_decl          : id_list type tag
+field_decl          : id_list type /*tag
                     | id_list type
                     | anon_field tag
                     | anon_field
 
 tag                 : string_lit_
-
-anon_field          : mult_ type_name
-                    | type_name
+also not needed
+*/
+/* apparently not needed
+anon_field          : mult_ id_
+                    | id_
+*/
 
 //Pointer Type
 pointer_type        : mult_ type
@@ -210,6 +236,7 @@ pointer_type        : mult_ type
 slice_type          : lsbrac_ rsbrac_ type
 
 func_type           : or_
+
 expr                : float_lit_
 
 %%
@@ -274,7 +301,7 @@ type                : type_name
                     | type_lit
                     | lrbrac_ type rrbrac_
 
-type_name           : literal_type
+type_name           : type_primitive
                     | id_ dot_ id_
 
 type_lit            : array_type
