@@ -131,18 +131,18 @@ line_end            : semi_colon_
                     | /* empty */
 
 /*
-new_line_list       : /* empty *//*
-                    | new_line_list new_line_
+new_line_list       : new_line_list new_line_
+                    |
 */
 
-id_list             : id_
-                    | id_list id_
+id_list             : id_list comma_ id_
+                    | id_
 /*
 empty_rbrac         : lrbrac_ rrbrac_
 empty_sbrac         : lsbrac_ lsbrac_
 empty_cbrac         : lcbrac_ lcbrac_
 */
-block               : lcbrac_ statement rcbrac_
+block               : lcbrac_ statement_list rcbrac_
 
 //A go program is composed of a package declaration and multiple top_level declarations
 go_prog             : pckg_decl top_decl_list
@@ -155,8 +155,8 @@ pckg_decl           : package_ id_ line_end
 // function test()
 
 // function test1()
-top_decl_list       : top_decl /* line */
-                    | top_decl_list top_decl/* line */
+top_decl_list       : top_decl_list top_decl/* line */
+                    | top_decl
 
 top_decl            : decl
                     | func_decl
@@ -167,8 +167,8 @@ decl                : type_decl | var_decl
 func_decl           : func_type type block  //With return
                     | func_type block //Without return
 
-func_decl_list      : type_spec
-                    | func_decl_list comma_ type_spec
+func_decl_list      : func_decl_list comma_ type_spec
+                    | type_spec
 
 
 //Variable Declaration!!
@@ -179,8 +179,8 @@ var_decl_mult_line  : var_decl_one_line
                     | var_decl_mult_line /* line */ var_decl_one_line
 
 var_decl_one_line   : id_list type
-                    | id_list expr
-                    | id_list type expr
+                    | id_list eq_ expr
+                    | id_list type eq_ expr
 
 short_var_decl      : id_list decla_ expr_list
 
@@ -188,8 +188,8 @@ short_var_decl      : id_list decla_ expr_list
 type_decl           : type_ type_spec /* line */
                     | type_ lrbrac_ type_spec_list rrbrac_ /* line */
 
-type_spec_list      : type_spec /* line */
-                    | type_spec_list type_spec /* line */
+type_spec_list      : type_spec_list type_spec /* line */
+                    | type_spec /* line */
 
 type_spec           : id_ type
 
@@ -215,8 +215,8 @@ array_type          : lsbrac_ expr rsbrac_ type
 //Struct type
 struct_type         : struct_ lcbrac_ field_decl_list rcbrac_
 
-field_decl_list     : field_decl /* line */
-                    | field_decl_list field_decl /* line */
+field_decl_list     : field_decl_list field_decl /* line */
+                    | field_decl /* line */
 
 field_decl          : id_list type /*tag
                     | id_list type
@@ -242,8 +242,8 @@ func_type           : func_ id_ lrbrac_ func_decl_list  rrbrac_ type
 // Statements now!
 
 /* Shift reduce problems right now */
-statement_list      : /* empty */
-                    | statement_list statement
+statement_list      : statement_list statement
+                    | /* empty */
 
 statement           : decl
                     | simple_stmt
@@ -263,22 +263,22 @@ labeled_stmt        : id_ colon_ statement
 
 break_stmt          : break_ id_
 
-simple_stmt         : short_var_decl
-                    | expr
-                    | inc_dec_stmt
-                    | assignment
+simple_stmt         : short_var_decl semi_colon_
+                    | expr semi_colon_
+                    | inc_dec_stmt semi_colon_
+                    | assignment semi_colon_
 
-goto_stmt           : goto_ id_
+goto_stmt           : goto_ id_ semi_colon_
 
-continue_stmt       : continue_ id_
+continue_stmt       : continue_ id_ semi_colon_
 
-return_stmt         : return_ expr
+return_stmt         : return_ expr semi_colon_
 
-assignment          : expr_list add_ eq_
-                    | expr_list mult_ eq_
+assignment          : expr_list add_ eq_ expr_list semi_colon_
+                    | expr_list mult_ eq_ expr_list semi_colon_
 
-inc_dec_stmt        : expr incre_
-                    | expr decre_
+inc_dec_stmt        : expr incre_ semi_colon_
+                    | expr decre_ semi_colon_
 
 if_stmt             : if_ simple_stmt line_end expr block else_stmt
                     | if_ expr block else_stmt
@@ -307,19 +307,44 @@ opt_simple_stmt    : /* empty */
 switch_stmt         : expr_switch_stmt
                     | type_switch_stmt
 
-expr_switch_stmt    : switch_ opt_simple_stmt line_end opt_expr lcbrac_ expr_case_clause_l rcbrac_
 
-expr_case_clause_l  : expr_case_clause
-                    | expr_case_clause_l expr_case_clause
+expr_switch_stmt    : switch_ simple_stmt opt_expr lcbrac_ expr_case_clause rcbrac_
+                    | switch_ opt_expr lcbrac_ expr_case_clause rcbrac_
 
-expr_case_clause    : case_ expr_list colon_ statement
-                    | default_ colon_ statement
+expr_case_clause_l  : expr_case_clause_l expr_case_clause
+                    | expr_case_clause
 
-type_switch_stmt    : float_lit_
+expr_case_clause    : case_ expr_list colon_ statement_list
+                    | default_ colon_ statement_list
 
-expr_list           : float_lit_
+
+type_switch_stmt    : switch_ opt_simple_stmt type_switch_guard lcbrac_ type_case_clause_l rrbrac_
+
+type_switch_guard   : id_ decla_ primary_expr dot_ lrbrac_ type_ rrbrac_
+                    | primary_expr dot_ lrbrac_ type_ rrbrac_
+
+type_case_clause_l  : type_case_clause type_case_clause_l
+                    |  //empty
+
+type_case_clause    : type_switch_case colon_ statement_list
+
+type_switch_case    : case_ type_list
+                    | default_
+
+type_list           : type_list comma_ type
+                    | type
+
+ //So I give up the stuff
+
+expr_list           : rune_lit_
 
 expr                : float_lit_
+
+primary_expr        : string_lit_
+
+operand             : literal
+                    | type   //Well it's
+
 %%
 
 
