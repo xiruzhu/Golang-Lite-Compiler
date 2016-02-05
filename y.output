@@ -1,35 +1,20 @@
 Nonterminals useless in grammar
 
-   empty_rbrac
-   empty_sbrac
+   statement_list
 
 
 Terminals unused in grammar
 
-   break_
-   case_
    chan_
    const_
-   continue_
-   default_
-   defer_
-   else_
-   fallthrough_
-   for_
    go_
-   goto_
-   if_
    import_
    interface_
    map_
-   range_
-   return_
    select_
-   switch_
    print_
    println_
    append_
-   add_
    minus_
    div_
    mod_
@@ -50,20 +35,16 @@ Terminals unused in grammar
    rs_eq_
    unknown_eq_
    and_
+   or_
    arrow_
-   incre_
-   decre_
    equality_
    lt_
    gt_
-   eq_
    not_
    not_eq_
    lteq_
    gteq_
-   decla_
    etc_
-   colon_
    vb_
    int_lit_
    string_lit_
@@ -76,9 +57,12 @@ Terminals unused in grammar
 
 Rules useless in grammar
 
-   56 empty_rbrac: lrbrac_ rrbrac_
+  108 statement_list: %empty
+  109               | statement_list statement
 
-   57 empty_sbrac: lsbrac_ lsbrac_
+
+State 71 conflicts: 1 shift/reduce
+State 72 conflicts: 3 reduce/reduce
 
 
 Grammar
@@ -91,40 +75,40 @@ Grammar
     3 id_list: id_
     4        | id_list id_
 
-    5 empty_cbrac: lcbrac_ lcbrac_
+    5 block: lcbrac_ statement rcbrac_
 
-    6 block: empty_cbrac
+    6 go_prog: pckg_decl top_decl_list
+    7        | top_decl_list
+    8        | %empty
 
-    7 go_prog: pckg_decl top_decl_list
-    8        | top_decl_list
-    9        | %empty
+    9 pckg_decl: package_ id_ line_end
 
-   10 pckg_decl: package_ id_ line_end
+   10 top_decl_list: top_decl
+   11              | top_decl_list top_decl
 
-   11 top_decl_list: top_decl line_end
-   12              | top_decl_list top_decl line_end
+   12 top_decl: decl
+   13         | func_decl
 
-   13 top_decl: decl
-   14         | func_decl
+   14 decl: type_decl
+   15     | var_decl
 
-   15 decl: type_decl
-   16     | var_decl
+   16 func_decl: func_type type block
+   17          | func_type block
 
-   17 func_decl: func_ id_ lrbrac_ func_decl_list rrbrac_ type block
-   18          | func_ id_ lrbrac_ func_decl_list rrbrac_ block
+   18 func_decl_list: type_spec
+   19               | func_decl_list comma_ type_spec
 
-   19 func_decl_list: type_spec
-   20               | func_decl_list comma_ type_spec
+   20 var_decl: var_ var_decl_one_line
+   21         | var_ lrbrac_ var_decl_mult_line rrbrac_
 
-   21 var_decl: var_ var_decl_one_line
-   22         | var_ lrbrac_ var_decl_mult_line rrbrac_
+   22 var_decl_mult_line: var_decl_one_line
+   23                   | var_decl_mult_line var_decl_one_line
 
-   23 var_decl_mult_line: var_decl_one_line
-   24                   | var_decl_mult_line var_decl_one_line
+   24 var_decl_one_line: id_list type
+   25                  | id_list expr
+   26                  | id_list type expr
 
-   25 var_decl_one_line: id_list type
-   26                  | id_list expr
-   27                  | id_list type expr
+   27 short_var_decl: id_list decla_ expr_list
 
    28 type_decl: type_ type_spec
    29          | type_ lrbrac_ type_spec_list rrbrac_
@@ -164,40 +148,114 @@ Grammar
 
    53 slice_type: lsbrac_ rsbrac_ type
 
-   54 func_type: or_
+   54 func_type: func_ id_ lrbrac_ func_decl_list rrbrac_ type
 
-   55 expr: float_lit_
+   55 statement: decl
+   56          | simple_stmt
+   57          | labeled_stmt
+   58          | return_stmt
+   59          | break_stmt
+   60          | goto_stmt
+   61          | continue_stmt
+   62          | fallthrough_
+   63          | defer_ expr
+   64          | block
+   65          | if_stmt
+   66          | for_stmt
+   67          | switch_stmt
+
+   68 labeled_stmt: id_ colon_ statement
+
+   69 break_stmt: break_ id_
+
+   70 simple_stmt: short_var_decl
+   71            | expr
+   72            | inc_dec_stmt
+   73            | assignment
+
+   74 goto_stmt: goto_ id_
+
+   75 continue_stmt: continue_ id_
+
+   76 return_stmt: return_ expr
+
+   77 assignment: expr_list add_ eq_
+   78           | expr_list mult_ eq_
+
+   79 inc_dec_stmt: expr incre_
+   80             | expr decre_
+
+   81 if_stmt: if_ simple_stmt line_end expr block else_stmt
+   82        | if_ expr block else_stmt
+
+   83 else_stmt: %empty
+   84          | else_ if_stmt
+   85          | else_ block
+
+   86 for_stmt: for_ for_clause block
+   87         | for_ expr block
+   88         | for_ range_clause block
+   89         | for_ block
+
+   90 for_clause: opt_simple_stmt semi_colon_ opt_expr semi_colon_ opt_simple_stmt
+
+   91 range_clause: range_ expr
+   92             | expr_list eq_ range_ expr
+   93             | id_list decla_ range_ expr
+
+   94 opt_expr: %empty
+   95         | expr
+
+   96 opt_simple_stmt: %empty
+   97                | simple_stmt
+
+   98 switch_stmt: expr_switch_stmt
+   99            | type_switch_stmt
+
+  100 expr_switch_stmt: switch_ opt_simple_stmt line_end opt_expr lcbrac_ expr_case_clause_l rcbrac_
+
+  101 expr_case_clause_l: expr_case_clause
+  102                   | expr_case_clause_l expr_case_clause
+
+  103 expr_case_clause: case_ expr_list colon_ statement
+  104                 | default_ colon_ statement
+
+  105 type_switch_stmt: float_lit_
+
+  106 expr_list: float_lit_
+
+  107 expr: float_lit_
 
 
 Terminals, with rules where they appear
 
 $end (0) 0
 error (256)
-break_ (258)
-case_ (259)
+break_ (258) 69
+case_ (259) 103
 chan_ (260)
 const_ (261)
-continue_ (262)
-default_ (263)
-defer_ (264)
-else_ (265)
-fallthrough_ (266)
-for_ (267)
-func_ (268) 17 18
+continue_ (262) 75
+default_ (263) 104
+defer_ (264) 63
+else_ (265) 84 85
+fallthrough_ (266) 62
+for_ (267) 86 87 88 89
+func_ (268) 54
 go_ (269)
-goto_ (270)
-if_ (271)
+goto_ (270) 74
+if_ (271) 81 82
 import_ (272)
 interface_ (273)
 map_ (274)
-package_ (275) 10
-range_ (276)
-return_ (277)
+package_ (275) 9
+range_ (276) 91 92 93
+return_ (277) 76
 select_ (278)
 struct_ (279) 48
-switch_ (280)
+switch_ (280) 100
 type_ (281) 28 29
-var_ (282) 21 22
+var_ (282) 20 21
 int_ (283) 41
 float_ (284) 40
 bool_ (285) 37
@@ -206,9 +264,9 @@ string_ (287) 39
 print_ (288)
 println_ (289)
 append_ (290)
-add_ (291)
+add_ (291) 77
 minus_ (292)
-mult_ (293) 52
+mult_ (293) 52 78
 div_ (294)
 mod_ (295)
 amp_ (296)
@@ -228,36 +286,36 @@ ls_eq_ (309)
 rs_eq_ (310)
 unknown_eq_ (311)
 and_ (312)
-or_ (313) 54
+or_ (313)
 arrow_ (314)
-incre_ (315)
-decre_ (316)
+incre_ (315) 79
+decre_ (316) 80
 equality_ (317)
 lt_ (318)
 gt_ (319)
-eq_ (320)
+eq_ (320) 77 78 92
 not_ (321)
 not_eq_ (322)
 lteq_ (323)
 gteq_ (324)
-decla_ (325)
+decla_ (325) 27 93
 etc_ (326)
-lrbrac_ (327) 17 18 22 29 36
-rrbrac_ (328) 17 18 22 29 36
+lrbrac_ (327) 21 29 36 54
+rrbrac_ (328) 21 29 36 54
 lsbrac_ (329) 47 53
 rsbrac_ (330) 47 53
-lcbrac_ (331) 5 48
-rcbrac_ (332) 48
-comma_ (333) 20
+lcbrac_ (331) 5 48 100
+rcbrac_ (332) 5 48 100
+comma_ (333) 19
 dot_ (334) 35
-colon_ (335)
+colon_ (335) 68 103 104
 vb_ (336)
 int_lit_ (337)
-float_lit_ (338) 55
+float_lit_ (338) 105 106 107
 string_lit_ (339)
 rune_lit_ (340)
-semi_colon_ (341) 1
-id_ (342) 3 4 10 17 18 32 35
+semi_colon_ (341) 1 90
+id_ (342) 3 4 9 32 35 54 68 69 74 75
 new_line_ (343)
 error_ (344)
 lteq (345)
@@ -269,41 +327,41 @@ Nonterminals, with rules where they appear
 $accept (92)
     on left: 0
 line_end (93)
-    on left: 1 2, on right: 10 11 12
+    on left: 1 2, on right: 9 81 100
 id_list (94)
-    on left: 3 4, on right: 4 25 26 27 51
-empty_cbrac (95)
-    on left: 5, on right: 6
-block (96)
-    on left: 6, on right: 17 18
-go_prog (97)
-    on left: 7 8 9, on right: 0
-pckg_decl (98)
-    on left: 10, on right: 7
-top_decl_list (99)
-    on left: 11 12, on right: 7 8 12
-top_decl (100)
-    on left: 13 14, on right: 11 12
-decl (101)
-    on left: 15 16, on right: 13
-func_decl (102)
-    on left: 17 18, on right: 14
-func_decl_list (103)
-    on left: 19 20, on right: 17 18 20
-var_decl (104)
-    on left: 21 22, on right: 16
-var_decl_mult_line (105)
-    on left: 23 24, on right: 22 24
-var_decl_one_line (106)
-    on left: 25 26 27, on right: 21 23 24
+    on left: 3 4, on right: 4 24 25 26 27 51 93
+block (95)
+    on left: 5, on right: 16 17 64 81 82 85 86 87 88 89
+go_prog (96)
+    on left: 6 7 8, on right: 0
+pckg_decl (97)
+    on left: 9, on right: 6
+top_decl_list (98)
+    on left: 10 11, on right: 6 7 11
+top_decl (99)
+    on left: 12 13, on right: 10 11
+decl (100)
+    on left: 14 15, on right: 12 55
+func_decl (101)
+    on left: 16 17, on right: 13
+func_decl_list (102)
+    on left: 18 19, on right: 19 54
+var_decl (103)
+    on left: 20 21, on right: 15
+var_decl_mult_line (104)
+    on left: 22 23, on right: 21 23
+var_decl_one_line (105)
+    on left: 24 25 26, on right: 20 22 23
+short_var_decl (106)
+    on left: 27, on right: 70
 type_decl (107)
-    on left: 28 29, on right: 15
+    on left: 28 29, on right: 14
 type_spec_list (108)
     on left: 30 31, on right: 29 31
 type_spec (109)
-    on left: 32, on right: 19 20 28 30 31
+    on left: 32, on right: 18 19 28 30 31
 type (110)
-    on left: 33 34 35 36, on right: 17 25 27 32 36 47 51 52 53
+    on left: 33 34 35 36, on right: 16 24 26 32 36 47 51 52 53 54
 type_primitive (111)
     on left: 37 38 39 40 41, on right: 33
 type_lit (112)
@@ -321,9 +379,55 @@ pointer_type (117)
 slice_type (118)
     on left: 53, on right: 46
 func_type (119)
-    on left: 54, on right: 45
-expr (120)
-    on left: 55, on right: 26 27 47
+    on left: 54, on right: 16 17 45
+statement (120)
+    on left: 55 56 57 58 59 60 61 62 63 64 65 66 67, on right: 5 68
+    103 104
+labeled_stmt (121)
+    on left: 68, on right: 57
+break_stmt (122)
+    on left: 69, on right: 59
+simple_stmt (123)
+    on left: 70 71 72 73, on right: 56 81 97
+goto_stmt (124)
+    on left: 74, on right: 60
+continue_stmt (125)
+    on left: 75, on right: 61
+return_stmt (126)
+    on left: 76, on right: 58
+assignment (127)
+    on left: 77 78, on right: 73
+inc_dec_stmt (128)
+    on left: 79 80, on right: 72
+if_stmt (129)
+    on left: 81 82, on right: 65 84
+else_stmt (130)
+    on left: 83 84 85, on right: 81 82
+for_stmt (131)
+    on left: 86 87 88 89, on right: 66
+for_clause (132)
+    on left: 90, on right: 86
+range_clause (133)
+    on left: 91 92 93, on right: 88
+opt_expr (134)
+    on left: 94 95, on right: 90 100
+opt_simple_stmt (135)
+    on left: 96 97, on right: 90 100
+switch_stmt (136)
+    on left: 98 99, on right: 67
+expr_switch_stmt (137)
+    on left: 100, on right: 98
+expr_case_clause_l (138)
+    on left: 101 102, on right: 100 102
+expr_case_clause (139)
+    on left: 103 104, on right: 101 102
+type_switch_stmt (140)
+    on left: 105, on right: 99
+expr_list (141)
+    on left: 106, on right: 27 77 78 92 103
+expr (142)
+    on left: 107, on right: 25 26 47 63 71 76 79 80 81 82 87 91 92
+    93 95
 
 
 State 0
@@ -335,7 +439,7 @@ State 0
     type_     shift, and go to state 3
     var_      shift, and go to state 4
 
-    $default  reduce using rule 9 (go_prog)
+    $default  reduce using rule 8 (go_prog)
 
     go_prog        go to state 5
     pckg_decl      go to state 6
@@ -345,21 +449,21 @@ State 0
     func_decl      go to state 10
     var_decl       go to state 11
     type_decl      go to state 12
+    func_type      go to state 13
 
 
 State 1
 
-   17 func_decl: func_ . id_ lrbrac_ func_decl_list rrbrac_ type block
-   18          | func_ . id_ lrbrac_ func_decl_list rrbrac_ block
+   54 func_type: func_ . id_ lrbrac_ func_decl_list rrbrac_ type
 
-    id_  shift, and go to state 13
+    id_  shift, and go to state 14
 
 
 State 2
 
-   10 pckg_decl: package_ . id_ line_end
+    9 pckg_decl: package_ . id_ line_end
 
-    id_  shift, and go to state 14
+    id_  shift, and go to state 15
 
 
 State 3
@@ -367,233 +471,52 @@ State 3
    28 type_decl: type_ . type_spec
    29          | type_ . lrbrac_ type_spec_list rrbrac_
 
-    lrbrac_  shift, and go to state 15
-    id_      shift, and go to state 16
+    lrbrac_  shift, and go to state 16
+    id_      shift, and go to state 17
 
-    type_spec  go to state 17
+    type_spec  go to state 18
 
 
 State 4
 
-   21 var_decl: var_ . var_decl_one_line
-   22         | var_ . lrbrac_ var_decl_mult_line rrbrac_
+   20 var_decl: var_ . var_decl_one_line
+   21         | var_ . lrbrac_ var_decl_mult_line rrbrac_
 
-    lrbrac_  shift, and go to state 18
-    id_      shift, and go to state 19
+    lrbrac_  shift, and go to state 19
+    id_      shift, and go to state 20
 
-    id_list            go to state 20
-    var_decl_one_line  go to state 21
+    id_list            go to state 21
+    var_decl_one_line  go to state 22
 
 
 State 5
 
     0 $accept: go_prog . $end
 
-    $end  shift, and go to state 22
+    $end  shift, and go to state 23
 
 
 State 6
 
-    7 go_prog: pckg_decl . top_decl_list
+    6 go_prog: pckg_decl . top_decl_list
 
     func_  shift, and go to state 1
     type_  shift, and go to state 3
     var_   shift, and go to state 4
 
-    top_decl_list  go to state 23
+    top_decl_list  go to state 24
     top_decl       go to state 8
     decl           go to state 9
     func_decl      go to state 10
     var_decl       go to state 11
     type_decl      go to state 12
+    func_type      go to state 13
 
 
 State 7
 
-    8 go_prog: top_decl_list .
-   12 top_decl_list: top_decl_list . top_decl line_end
-
-    func_  shift, and go to state 1
-    type_  shift, and go to state 3
-    var_   shift, and go to state 4
-
-    $default  reduce using rule 8 (go_prog)
-
-    top_decl   go to state 24
-    decl       go to state 9
-    func_decl  go to state 10
-    var_decl   go to state 11
-    type_decl  go to state 12
-
-
-State 8
-
-   11 top_decl_list: top_decl . line_end
-
-    semi_colon_  shift, and go to state 25
-
-    $default  reduce using rule 2 (line_end)
-
-    line_end  go to state 26
-
-
-State 9
-
-   13 top_decl: decl .
-
-    $default  reduce using rule 13 (top_decl)
-
-
-State 10
-
-   14 top_decl: func_decl .
-
-    $default  reduce using rule 14 (top_decl)
-
-
-State 11
-
-   16 decl: var_decl .
-
-    $default  reduce using rule 16 (decl)
-
-
-State 12
-
-   15 decl: type_decl .
-
-    $default  reduce using rule 15 (decl)
-
-
-State 13
-
-   17 func_decl: func_ id_ . lrbrac_ func_decl_list rrbrac_ type block
-   18          | func_ id_ . lrbrac_ func_decl_list rrbrac_ block
-
-    lrbrac_  shift, and go to state 27
-
-
-State 14
-
-   10 pckg_decl: package_ id_ . line_end
-
-    semi_colon_  shift, and go to state 25
-
-    $default  reduce using rule 2 (line_end)
-
-    line_end  go to state 28
-
-
-State 15
-
-   29 type_decl: type_ lrbrac_ . type_spec_list rrbrac_
-
-    id_  shift, and go to state 16
-
-    type_spec_list  go to state 29
-    type_spec       go to state 30
-
-
-State 16
-
-   32 type_spec: id_ . type
-
-    struct_  shift, and go to state 31
-    int_     shift, and go to state 32
-    float_   shift, and go to state 33
-    bool_    shift, and go to state 34
-    rune_    shift, and go to state 35
-    string_  shift, and go to state 36
-    mult_    shift, and go to state 37
-    or_      shift, and go to state 38
-    lrbrac_  shift, and go to state 39
-    lsbrac_  shift, and go to state 40
-    id_      shift, and go to state 41
-
-    type            go to state 42
-    type_primitive  go to state 43
-    type_lit        go to state 44
-    array_type      go to state 45
-    struct_type     go to state 46
-    pointer_type    go to state 47
-    slice_type      go to state 48
-    func_type       go to state 49
-
-
-State 17
-
-   28 type_decl: type_ type_spec .
-
-    $default  reduce using rule 28 (type_decl)
-
-
-State 18
-
-   22 var_decl: var_ lrbrac_ . var_decl_mult_line rrbrac_
-
-    id_  shift, and go to state 19
-
-    id_list             go to state 20
-    var_decl_mult_line  go to state 50
-    var_decl_one_line   go to state 51
-
-
-State 19
-
-    3 id_list: id_ .
-
-    $default  reduce using rule 3 (id_list)
-
-
-State 20
-
-    4 id_list: id_list . id_
-   25 var_decl_one_line: id_list . type
-   26                  | id_list . expr
-   27                  | id_list . type expr
-
-    struct_     shift, and go to state 31
-    int_        shift, and go to state 32
-    float_      shift, and go to state 33
-    bool_       shift, and go to state 34
-    rune_       shift, and go to state 35
-    string_     shift, and go to state 36
-    mult_       shift, and go to state 37
-    or_         shift, and go to state 38
-    lrbrac_     shift, and go to state 39
-    lsbrac_     shift, and go to state 40
-    float_lit_  shift, and go to state 52
-    id_         shift, and go to state 53
-
-    type            go to state 54
-    type_primitive  go to state 43
-    type_lit        go to state 44
-    array_type      go to state 45
-    struct_type     go to state 46
-    pointer_type    go to state 47
-    slice_type      go to state 48
-    func_type       go to state 49
-    expr            go to state 55
-
-
-State 21
-
-   21 var_decl: var_ var_decl_one_line .
-
-    $default  reduce using rule 21 (var_decl)
-
-
-State 22
-
-    0 $accept: go_prog $end .
-
-    $default  accept
-
-
-State 23
-
-    7 go_prog: pckg_decl top_decl_list .
-   12 top_decl_list: top_decl_list . top_decl line_end
+    7 go_prog: top_decl_list .
+   11 top_decl_list: top_decl_list . top_decl
 
     func_  shift, and go to state 1
     type_  shift, and go to state 3
@@ -601,635 +524,1822 @@ State 23
 
     $default  reduce using rule 7 (go_prog)
 
-    top_decl   go to state 24
+    top_decl   go to state 25
     decl       go to state 9
     func_decl  go to state 10
     var_decl   go to state 11
     type_decl  go to state 12
+    func_type  go to state 13
+
+
+State 8
+
+   10 top_decl_list: top_decl .
+
+    $default  reduce using rule 10 (top_decl_list)
+
+
+State 9
+
+   12 top_decl: decl .
+
+    $default  reduce using rule 12 (top_decl)
+
+
+State 10
+
+   13 top_decl: func_decl .
+
+    $default  reduce using rule 13 (top_decl)
+
+
+State 11
+
+   15 decl: var_decl .
+
+    $default  reduce using rule 15 (decl)
+
+
+State 12
+
+   14 decl: type_decl .
+
+    $default  reduce using rule 14 (decl)
+
+
+State 13
+
+   16 func_decl: func_type . type block
+   17          | func_type . block
+
+    func_    shift, and go to state 1
+    struct_  shift, and go to state 26
+    int_     shift, and go to state 27
+    float_   shift, and go to state 28
+    bool_    shift, and go to state 29
+    rune_    shift, and go to state 30
+    string_  shift, and go to state 31
+    mult_    shift, and go to state 32
+    lrbrac_  shift, and go to state 33
+    lsbrac_  shift, and go to state 34
+    lcbrac_  shift, and go to state 35
+    id_      shift, and go to state 36
+
+    block           go to state 37
+    type            go to state 38
+    type_primitive  go to state 39
+    type_lit        go to state 40
+    array_type      go to state 41
+    struct_type     go to state 42
+    pointer_type    go to state 43
+    slice_type      go to state 44
+    func_type       go to state 45
+
+
+State 14
+
+   54 func_type: func_ id_ . lrbrac_ func_decl_list rrbrac_ type
+
+    lrbrac_  shift, and go to state 46
+
+
+State 15
+
+    9 pckg_decl: package_ id_ . line_end
+
+    semi_colon_  shift, and go to state 47
+
+    $default  reduce using rule 2 (line_end)
+
+    line_end  go to state 48
+
+
+State 16
+
+   29 type_decl: type_ lrbrac_ . type_spec_list rrbrac_
+
+    id_  shift, and go to state 17
+
+    type_spec_list  go to state 49
+    type_spec       go to state 50
+
+
+State 17
+
+   32 type_spec: id_ . type
+
+    func_    shift, and go to state 1
+    struct_  shift, and go to state 26
+    int_     shift, and go to state 27
+    float_   shift, and go to state 28
+    bool_    shift, and go to state 29
+    rune_    shift, and go to state 30
+    string_  shift, and go to state 31
+    mult_    shift, and go to state 32
+    lrbrac_  shift, and go to state 33
+    lsbrac_  shift, and go to state 34
+    id_      shift, and go to state 36
+
+    type            go to state 51
+    type_primitive  go to state 39
+    type_lit        go to state 40
+    array_type      go to state 41
+    struct_type     go to state 42
+    pointer_type    go to state 43
+    slice_type      go to state 44
+    func_type       go to state 45
+
+
+State 18
+
+   28 type_decl: type_ type_spec .
+
+    $default  reduce using rule 28 (type_decl)
+
+
+State 19
+
+   21 var_decl: var_ lrbrac_ . var_decl_mult_line rrbrac_
+
+    id_  shift, and go to state 20
+
+    id_list             go to state 21
+    var_decl_mult_line  go to state 52
+    var_decl_one_line   go to state 53
+
+
+State 20
+
+    3 id_list: id_ .
+
+    $default  reduce using rule 3 (id_list)
+
+
+State 21
+
+    4 id_list: id_list . id_
+   24 var_decl_one_line: id_list . type
+   25                  | id_list . expr
+   26                  | id_list . type expr
+
+    func_       shift, and go to state 1
+    struct_     shift, and go to state 26
+    int_        shift, and go to state 27
+    float_      shift, and go to state 28
+    bool_       shift, and go to state 29
+    rune_       shift, and go to state 30
+    string_     shift, and go to state 31
+    mult_       shift, and go to state 32
+    lrbrac_     shift, and go to state 33
+    lsbrac_     shift, and go to state 34
+    float_lit_  shift, and go to state 54
+    id_         shift, and go to state 55
+
+    type            go to state 56
+    type_primitive  go to state 39
+    type_lit        go to state 40
+    array_type      go to state 41
+    struct_type     go to state 42
+    pointer_type    go to state 43
+    slice_type      go to state 44
+    func_type       go to state 45
+    expr            go to state 57
+
+
+State 22
+
+   20 var_decl: var_ var_decl_one_line .
+
+    $default  reduce using rule 20 (var_decl)
+
+
+State 23
+
+    0 $accept: go_prog $end .
+
+    $default  accept
 
 
 State 24
 
-   12 top_decl_list: top_decl_list top_decl . line_end
+    6 go_prog: pckg_decl top_decl_list .
+   11 top_decl_list: top_decl_list . top_decl
 
-    semi_colon_  shift, and go to state 25
+    func_  shift, and go to state 1
+    type_  shift, and go to state 3
+    var_   shift, and go to state 4
 
-    $default  reduce using rule 2 (line_end)
+    $default  reduce using rule 6 (go_prog)
 
-    line_end  go to state 56
+    top_decl   go to state 25
+    decl       go to state 9
+    func_decl  go to state 10
+    var_decl   go to state 11
+    type_decl  go to state 12
+    func_type  go to state 13
 
 
 State 25
 
-    1 line_end: semi_colon_ .
-
-    $default  reduce using rule 1 (line_end)
-
-
-State 26
-
-   11 top_decl_list: top_decl line_end .
+   11 top_decl_list: top_decl_list top_decl .
 
     $default  reduce using rule 11 (top_decl_list)
 
 
-State 27
-
-   17 func_decl: func_ id_ lrbrac_ . func_decl_list rrbrac_ type block
-   18          | func_ id_ lrbrac_ . func_decl_list rrbrac_ block
-
-    id_  shift, and go to state 16
-
-    func_decl_list  go to state 57
-    type_spec       go to state 58
-
-
-State 28
-
-   10 pckg_decl: package_ id_ line_end .
-
-    $default  reduce using rule 10 (pckg_decl)
-
-
-State 29
-
-   29 type_decl: type_ lrbrac_ type_spec_list . rrbrac_
-   31 type_spec_list: type_spec_list . type_spec
-
-    rrbrac_  shift, and go to state 59
-    id_      shift, and go to state 16
-
-    type_spec  go to state 60
-
-
-State 30
-
-   30 type_spec_list: type_spec .
-
-    $default  reduce using rule 30 (type_spec_list)
-
-
-State 31
+State 26
 
    48 struct_type: struct_ . lcbrac_ field_decl_list rcbrac_
 
-    lcbrac_  shift, and go to state 61
+    lcbrac_  shift, and go to state 58
 
 
-State 32
+State 27
 
    41 type_primitive: int_ .
 
     $default  reduce using rule 41 (type_primitive)
 
 
-State 33
+State 28
 
    40 type_primitive: float_ .
 
     $default  reduce using rule 40 (type_primitive)
 
 
-State 34
+State 29
 
    37 type_primitive: bool_ .
 
     $default  reduce using rule 37 (type_primitive)
 
 
-State 35
+State 30
 
    38 type_primitive: rune_ .
 
     $default  reduce using rule 38 (type_primitive)
 
 
-State 36
+State 31
 
    39 type_primitive: string_ .
 
     $default  reduce using rule 39 (type_primitive)
 
 
-State 37
+State 32
 
    52 pointer_type: mult_ . type
 
-    struct_  shift, and go to state 31
-    int_     shift, and go to state 32
-    float_   shift, and go to state 33
-    bool_    shift, and go to state 34
-    rune_    shift, and go to state 35
-    string_  shift, and go to state 36
-    mult_    shift, and go to state 37
-    or_      shift, and go to state 38
-    lrbrac_  shift, and go to state 39
-    lsbrac_  shift, and go to state 40
-    id_      shift, and go to state 41
+    func_    shift, and go to state 1
+    struct_  shift, and go to state 26
+    int_     shift, and go to state 27
+    float_   shift, and go to state 28
+    bool_    shift, and go to state 29
+    rune_    shift, and go to state 30
+    string_  shift, and go to state 31
+    mult_    shift, and go to state 32
+    lrbrac_  shift, and go to state 33
+    lsbrac_  shift, and go to state 34
+    id_      shift, and go to state 36
 
-    type            go to state 62
-    type_primitive  go to state 43
-    type_lit        go to state 44
-    array_type      go to state 45
-    struct_type     go to state 46
-    pointer_type    go to state 47
-    slice_type      go to state 48
-    func_type       go to state 49
-
-
-State 38
-
-   54 func_type: or_ .
-
-    $default  reduce using rule 54 (func_type)
+    type            go to state 59
+    type_primitive  go to state 39
+    type_lit        go to state 40
+    array_type      go to state 41
+    struct_type     go to state 42
+    pointer_type    go to state 43
+    slice_type      go to state 44
+    func_type       go to state 45
 
 
-State 39
+State 33
 
    36 type: lrbrac_ . type rrbrac_
 
-    struct_  shift, and go to state 31
-    int_     shift, and go to state 32
-    float_   shift, and go to state 33
-    bool_    shift, and go to state 34
-    rune_    shift, and go to state 35
-    string_  shift, and go to state 36
-    mult_    shift, and go to state 37
-    or_      shift, and go to state 38
-    lrbrac_  shift, and go to state 39
-    lsbrac_  shift, and go to state 40
-    id_      shift, and go to state 41
+    func_    shift, and go to state 1
+    struct_  shift, and go to state 26
+    int_     shift, and go to state 27
+    float_   shift, and go to state 28
+    bool_    shift, and go to state 29
+    rune_    shift, and go to state 30
+    string_  shift, and go to state 31
+    mult_    shift, and go to state 32
+    lrbrac_  shift, and go to state 33
+    lsbrac_  shift, and go to state 34
+    id_      shift, and go to state 36
 
-    type            go to state 63
-    type_primitive  go to state 43
-    type_lit        go to state 44
-    array_type      go to state 45
-    struct_type     go to state 46
-    pointer_type    go to state 47
-    slice_type      go to state 48
-    func_type       go to state 49
+    type            go to state 60
+    type_primitive  go to state 39
+    type_lit        go to state 40
+    array_type      go to state 41
+    struct_type     go to state 42
+    pointer_type    go to state 43
+    slice_type      go to state 44
+    func_type       go to state 45
 
 
-State 40
+State 34
 
    47 array_type: lsbrac_ . expr rsbrac_ type
    53 slice_type: lsbrac_ . rsbrac_ type
 
-    rsbrac_     shift, and go to state 64
-    float_lit_  shift, and go to state 52
+    rsbrac_     shift, and go to state 61
+    float_lit_  shift, and go to state 54
 
-    expr  go to state 65
+    expr  go to state 62
 
 
-State 41
+State 35
+
+    5 block: lcbrac_ . statement rcbrac_
+
+    break_        shift, and go to state 63
+    continue_     shift, and go to state 64
+    defer_        shift, and go to state 65
+    fallthrough_  shift, and go to state 66
+    for_          shift, and go to state 67
+    goto_         shift, and go to state 68
+    if_           shift, and go to state 69
+    return_       shift, and go to state 70
+    switch_       shift, and go to state 71
+    type_         shift, and go to state 3
+    var_          shift, and go to state 4
+    lcbrac_       shift, and go to state 35
+    float_lit_    shift, and go to state 72
+    id_           shift, and go to state 73
+
+    id_list           go to state 74
+    block             go to state 75
+    decl              go to state 76
+    var_decl          go to state 11
+    short_var_decl    go to state 77
+    type_decl         go to state 12
+    statement         go to state 78
+    labeled_stmt      go to state 79
+    break_stmt        go to state 80
+    simple_stmt       go to state 81
+    goto_stmt         go to state 82
+    continue_stmt     go to state 83
+    return_stmt       go to state 84
+    assignment        go to state 85
+    inc_dec_stmt      go to state 86
+    if_stmt           go to state 87
+    for_stmt          go to state 88
+    switch_stmt       go to state 89
+    expr_switch_stmt  go to state 90
+    type_switch_stmt  go to state 91
+    expr_list         go to state 92
+    expr              go to state 93
+
+
+State 36
 
    35 type: id_ . dot_ id_
 
-    dot_  shift, and go to state 66
+    dot_  shift, and go to state 94
 
 
-State 42
+State 37
 
-   32 type_spec: id_ type .
+   17 func_decl: func_type block .
 
-    $default  reduce using rule 32 (type_spec)
+    $default  reduce using rule 17 (func_decl)
 
 
-State 43
+State 38
+
+   16 func_decl: func_type type . block
+
+    lcbrac_  shift, and go to state 35
+
+    block  go to state 95
+
+
+State 39
 
    33 type: type_primitive .
 
     $default  reduce using rule 33 (type)
 
 
-State 44
+State 40
 
    34 type: type_lit .
 
     $default  reduce using rule 34 (type)
 
 
-State 45
+State 41
 
    42 type_lit: array_type .
 
     $default  reduce using rule 42 (type_lit)
 
 
-State 46
+State 42
 
    43 type_lit: struct_type .
 
     $default  reduce using rule 43 (type_lit)
 
 
-State 47
+State 43
 
    44 type_lit: pointer_type .
 
     $default  reduce using rule 44 (type_lit)
 
 
-State 48
+State 44
 
    46 type_lit: slice_type .
 
     $default  reduce using rule 46 (type_lit)
 
 
-State 49
+State 45
 
    45 type_lit: func_type .
 
     $default  reduce using rule 45 (type_lit)
 
 
+State 46
+
+   54 func_type: func_ id_ lrbrac_ . func_decl_list rrbrac_ type
+
+    id_  shift, and go to state 17
+
+    func_decl_list  go to state 96
+    type_spec       go to state 97
+
+
+State 47
+
+    1 line_end: semi_colon_ .
+
+    $default  reduce using rule 1 (line_end)
+
+
+State 48
+
+    9 pckg_decl: package_ id_ line_end .
+
+    $default  reduce using rule 9 (pckg_decl)
+
+
+State 49
+
+   29 type_decl: type_ lrbrac_ type_spec_list . rrbrac_
+   31 type_spec_list: type_spec_list . type_spec
+
+    rrbrac_  shift, and go to state 98
+    id_      shift, and go to state 17
+
+    type_spec  go to state 99
+
+
 State 50
 
-   22 var_decl: var_ lrbrac_ var_decl_mult_line . rrbrac_
-   24 var_decl_mult_line: var_decl_mult_line . var_decl_one_line
+   30 type_spec_list: type_spec .
 
-    rrbrac_  shift, and go to state 67
-    id_      shift, and go to state 19
-
-    id_list            go to state 20
-    var_decl_one_line  go to state 68
+    $default  reduce using rule 30 (type_spec_list)
 
 
 State 51
 
-   23 var_decl_mult_line: var_decl_one_line .
+   32 type_spec: id_ type .
 
-    $default  reduce using rule 23 (var_decl_mult_line)
+    $default  reduce using rule 32 (type_spec)
 
 
 State 52
 
-   55 expr: float_lit_ .
+   21 var_decl: var_ lrbrac_ var_decl_mult_line . rrbrac_
+   23 var_decl_mult_line: var_decl_mult_line . var_decl_one_line
 
-    $default  reduce using rule 55 (expr)
+    rrbrac_  shift, and go to state 100
+    id_      shift, and go to state 20
+
+    id_list            go to state 21
+    var_decl_one_line  go to state 101
 
 
 State 53
 
-    4 id_list: id_list id_ .
-   35 type: id_ . dot_ id_
+   22 var_decl_mult_line: var_decl_one_line .
 
-    dot_  shift, and go to state 66
-
-    $default  reduce using rule 4 (id_list)
+    $default  reduce using rule 22 (var_decl_mult_line)
 
 
 State 54
 
-   25 var_decl_one_line: id_list type .
-   27                  | id_list type . expr
+  107 expr: float_lit_ .
 
-    float_lit_  shift, and go to state 52
-
-    $default  reduce using rule 25 (var_decl_one_line)
-
-    expr  go to state 69
+    $default  reduce using rule 107 (expr)
 
 
 State 55
 
-   26 var_decl_one_line: id_list expr .
+    4 id_list: id_list id_ .
+   35 type: id_ . dot_ id_
 
-    $default  reduce using rule 26 (var_decl_one_line)
+    dot_  shift, and go to state 94
+
+    $default  reduce using rule 4 (id_list)
 
 
 State 56
 
-   12 top_decl_list: top_decl_list top_decl line_end .
+   24 var_decl_one_line: id_list type .
+   26                  | id_list type . expr
 
-    $default  reduce using rule 12 (top_decl_list)
+    float_lit_  shift, and go to state 54
+
+    $default  reduce using rule 24 (var_decl_one_line)
+
+    expr  go to state 102
 
 
 State 57
 
-   17 func_decl: func_ id_ lrbrac_ func_decl_list . rrbrac_ type block
-   18          | func_ id_ lrbrac_ func_decl_list . rrbrac_ block
-   20 func_decl_list: func_decl_list . comma_ type_spec
+   25 var_decl_one_line: id_list expr .
 
-    rrbrac_  shift, and go to state 70
-    comma_   shift, and go to state 71
+    $default  reduce using rule 25 (var_decl_one_line)
 
 
 State 58
 
-   19 func_decl_list: type_spec .
+   48 struct_type: struct_ lcbrac_ . field_decl_list rcbrac_
 
-    $default  reduce using rule 19 (func_decl_list)
+    id_  shift, and go to state 20
+
+    id_list          go to state 103
+    field_decl_list  go to state 104
+    field_decl       go to state 105
 
 
 State 59
-
-   29 type_decl: type_ lrbrac_ type_spec_list rrbrac_ .
-
-    $default  reduce using rule 29 (type_decl)
-
-
-State 60
-
-   31 type_spec_list: type_spec_list type_spec .
-
-    $default  reduce using rule 31 (type_spec_list)
-
-
-State 61
-
-   48 struct_type: struct_ lcbrac_ . field_decl_list rcbrac_
-
-    id_  shift, and go to state 19
-
-    id_list          go to state 72
-    field_decl_list  go to state 73
-    field_decl       go to state 74
-
-
-State 62
 
    52 pointer_type: mult_ type .
 
     $default  reduce using rule 52 (pointer_type)
 
 
-State 63
+State 60
 
    36 type: lrbrac_ type . rrbrac_
 
-    rrbrac_  shift, and go to state 75
+    rrbrac_  shift, and go to state 106
+
+
+State 61
+
+   53 slice_type: lsbrac_ rsbrac_ . type
+
+    func_    shift, and go to state 1
+    struct_  shift, and go to state 26
+    int_     shift, and go to state 27
+    float_   shift, and go to state 28
+    bool_    shift, and go to state 29
+    rune_    shift, and go to state 30
+    string_  shift, and go to state 31
+    mult_    shift, and go to state 32
+    lrbrac_  shift, and go to state 33
+    lsbrac_  shift, and go to state 34
+    id_      shift, and go to state 36
+
+    type            go to state 107
+    type_primitive  go to state 39
+    type_lit        go to state 40
+    array_type      go to state 41
+    struct_type     go to state 42
+    pointer_type    go to state 43
+    slice_type      go to state 44
+    func_type       go to state 45
+
+
+State 62
+
+   47 array_type: lsbrac_ expr . rsbrac_ type
+
+    rsbrac_  shift, and go to state 108
+
+
+State 63
+
+   69 break_stmt: break_ . id_
+
+    id_  shift, and go to state 109
 
 
 State 64
 
-   53 slice_type: lsbrac_ rsbrac_ . type
+   75 continue_stmt: continue_ . id_
 
-    struct_  shift, and go to state 31
-    int_     shift, and go to state 32
-    float_   shift, and go to state 33
-    bool_    shift, and go to state 34
-    rune_    shift, and go to state 35
-    string_  shift, and go to state 36
-    mult_    shift, and go to state 37
-    or_      shift, and go to state 38
-    lrbrac_  shift, and go to state 39
-    lsbrac_  shift, and go to state 40
-    id_      shift, and go to state 41
-
-    type            go to state 76
-    type_primitive  go to state 43
-    type_lit        go to state 44
-    array_type      go to state 45
-    struct_type     go to state 46
-    pointer_type    go to state 47
-    slice_type      go to state 48
-    func_type       go to state 49
+    id_  shift, and go to state 110
 
 
 State 65
 
-   47 array_type: lsbrac_ expr . rsbrac_ type
+   63 statement: defer_ . expr
 
-    rsbrac_  shift, and go to state 77
+    float_lit_  shift, and go to state 54
+
+    expr  go to state 111
 
 
 State 66
 
-   35 type: id_ dot_ . id_
+   62 statement: fallthrough_ .
 
-    id_  shift, and go to state 78
+    $default  reduce using rule 62 (statement)
 
 
 State 67
 
-   22 var_decl: var_ lrbrac_ var_decl_mult_line rrbrac_ .
+   86 for_stmt: for_ . for_clause block
+   87         | for_ . expr block
+   88         | for_ . range_clause block
+   89         | for_ . block
 
-    $default  reduce using rule 22 (var_decl)
+    range_      shift, and go to state 112
+    lcbrac_     shift, and go to state 35
+    float_lit_  shift, and go to state 113
+    id_         shift, and go to state 20
+
+    $default  reduce using rule 96 (opt_simple_stmt)
+
+    id_list          go to state 114
+    block            go to state 115
+    short_var_decl   go to state 77
+    simple_stmt      go to state 116
+    assignment       go to state 85
+    inc_dec_stmt     go to state 86
+    for_clause       go to state 117
+    range_clause     go to state 118
+    opt_simple_stmt  go to state 119
+    expr_list        go to state 120
+    expr             go to state 121
 
 
 State 68
 
-   24 var_decl_mult_line: var_decl_mult_line var_decl_one_line .
+   74 goto_stmt: goto_ . id_
 
-    $default  reduce using rule 24 (var_decl_mult_line)
+    id_  shift, and go to state 122
 
 
 State 69
 
-   27 var_decl_one_line: id_list type expr .
+   81 if_stmt: if_ . simple_stmt line_end expr block else_stmt
+   82        | if_ . expr block else_stmt
 
-    $default  reduce using rule 27 (var_decl_one_line)
+    float_lit_  shift, and go to state 113
+    id_         shift, and go to state 20
+
+    id_list         go to state 74
+    short_var_decl  go to state 77
+    simple_stmt     go to state 123
+    assignment      go to state 85
+    inc_dec_stmt    go to state 86
+    expr_list       go to state 92
+    expr            go to state 124
 
 
 State 70
 
-   17 func_decl: func_ id_ lrbrac_ func_decl_list rrbrac_ . type block
-   18          | func_ id_ lrbrac_ func_decl_list rrbrac_ . block
+   76 return_stmt: return_ . expr
 
-    struct_  shift, and go to state 31
-    int_     shift, and go to state 32
-    float_   shift, and go to state 33
-    bool_    shift, and go to state 34
-    rune_    shift, and go to state 35
-    string_  shift, and go to state 36
-    mult_    shift, and go to state 37
-    or_      shift, and go to state 38
-    lrbrac_  shift, and go to state 39
-    lsbrac_  shift, and go to state 40
-    lcbrac_  shift, and go to state 79
-    id_      shift, and go to state 41
+    float_lit_  shift, and go to state 54
 
-    empty_cbrac     go to state 80
-    block           go to state 81
-    type            go to state 82
-    type_primitive  go to state 43
-    type_lit        go to state 44
-    array_type      go to state 45
-    struct_type     go to state 46
-    pointer_type    go to state 47
-    slice_type      go to state 48
-    func_type       go to state 49
+    expr  go to state 125
 
 
 State 71
 
-   20 func_decl_list: func_decl_list comma_ . type_spec
+  100 expr_switch_stmt: switch_ . opt_simple_stmt line_end opt_expr lcbrac_ expr_case_clause_l rcbrac_
 
-    id_  shift, and go to state 16
+    float_lit_  shift, and go to state 113
+    id_         shift, and go to state 20
 
-    type_spec  go to state 83
+    float_lit_  [reduce using rule 96 (opt_simple_stmt)]
+    $default    reduce using rule 96 (opt_simple_stmt)
+
+    id_list          go to state 74
+    short_var_decl   go to state 77
+    simple_stmt      go to state 116
+    assignment       go to state 85
+    inc_dec_stmt     go to state 86
+    opt_simple_stmt  go to state 126
+    expr_list        go to state 92
+    expr             go to state 93
 
 
 State 72
 
-    4 id_list: id_list . id_
-   51 field_decl: id_list . type
+  105 type_switch_stmt: float_lit_ .
+  106 expr_list: float_lit_ .
+  107 expr: float_lit_ .
 
-    struct_  shift, and go to state 31
-    int_     shift, and go to state 32
-    float_   shift, and go to state 33
-    bool_    shift, and go to state 34
-    rune_    shift, and go to state 35
-    string_  shift, and go to state 36
-    mult_    shift, and go to state 37
-    or_      shift, and go to state 38
-    lrbrac_  shift, and go to state 39
-    lsbrac_  shift, and go to state 40
-    id_      shift, and go to state 53
-
-    type            go to state 84
-    type_primitive  go to state 43
-    type_lit        go to state 44
-    array_type      go to state 45
-    struct_type     go to state 46
-    pointer_type    go to state 47
-    slice_type      go to state 48
-    func_type       go to state 49
+    case_     reduce using rule 105 (type_switch_stmt)
+    case_     [reduce using rule 107 (expr)]
+    default_  reduce using rule 105 (type_switch_stmt)
+    default_  [reduce using rule 107 (expr)]
+    add_      reduce using rule 106 (expr_list)
+    mult_     reduce using rule 106 (expr_list)
+    incre_    reduce using rule 107 (expr)
+    decre_    reduce using rule 107 (expr)
+    rcbrac_   reduce using rule 105 (type_switch_stmt)
+    rcbrac_   [reduce using rule 107 (expr)]
+    $default  reduce using rule 105 (type_switch_stmt)
 
 
 State 73
 
-   48 struct_type: struct_ lcbrac_ field_decl_list . rcbrac_
-   50 field_decl_list: field_decl_list . field_decl
+    3 id_list: id_ .
+   68 labeled_stmt: id_ . colon_ statement
 
-    rcbrac_  shift, and go to state 85
-    id_      shift, and go to state 19
+    colon_  shift, and go to state 127
 
-    id_list     go to state 72
-    field_decl  go to state 86
+    $default  reduce using rule 3 (id_list)
 
 
 State 74
+
+    4 id_list: id_list . id_
+   27 short_var_decl: id_list . decla_ expr_list
+
+    decla_  shift, and go to state 128
+    id_     shift, and go to state 129
+
+
+State 75
+
+   64 statement: block .
+
+    $default  reduce using rule 64 (statement)
+
+
+State 76
+
+   55 statement: decl .
+
+    $default  reduce using rule 55 (statement)
+
+
+State 77
+
+   70 simple_stmt: short_var_decl .
+
+    $default  reduce using rule 70 (simple_stmt)
+
+
+State 78
+
+    5 block: lcbrac_ statement . rcbrac_
+
+    rcbrac_  shift, and go to state 130
+
+
+State 79
+
+   57 statement: labeled_stmt .
+
+    $default  reduce using rule 57 (statement)
+
+
+State 80
+
+   59 statement: break_stmt .
+
+    $default  reduce using rule 59 (statement)
+
+
+State 81
+
+   56 statement: simple_stmt .
+
+    $default  reduce using rule 56 (statement)
+
+
+State 82
+
+   60 statement: goto_stmt .
+
+    $default  reduce using rule 60 (statement)
+
+
+State 83
+
+   61 statement: continue_stmt .
+
+    $default  reduce using rule 61 (statement)
+
+
+State 84
+
+   58 statement: return_stmt .
+
+    $default  reduce using rule 58 (statement)
+
+
+State 85
+
+   73 simple_stmt: assignment .
+
+    $default  reduce using rule 73 (simple_stmt)
+
+
+State 86
+
+   72 simple_stmt: inc_dec_stmt .
+
+    $default  reduce using rule 72 (simple_stmt)
+
+
+State 87
+
+   65 statement: if_stmt .
+
+    $default  reduce using rule 65 (statement)
+
+
+State 88
+
+   66 statement: for_stmt .
+
+    $default  reduce using rule 66 (statement)
+
+
+State 89
+
+   67 statement: switch_stmt .
+
+    $default  reduce using rule 67 (statement)
+
+
+State 90
+
+   98 switch_stmt: expr_switch_stmt .
+
+    $default  reduce using rule 98 (switch_stmt)
+
+
+State 91
+
+   99 switch_stmt: type_switch_stmt .
+
+    $default  reduce using rule 99 (switch_stmt)
+
+
+State 92
+
+   77 assignment: expr_list . add_ eq_
+   78           | expr_list . mult_ eq_
+
+    add_   shift, and go to state 131
+    mult_  shift, and go to state 132
+
+
+State 93
+
+   71 simple_stmt: expr .
+   79 inc_dec_stmt: expr . incre_
+   80             | expr . decre_
+
+    incre_  shift, and go to state 133
+    decre_  shift, and go to state 134
+
+    $default  reduce using rule 71 (simple_stmt)
+
+
+State 94
+
+   35 type: id_ dot_ . id_
+
+    id_  shift, and go to state 135
+
+
+State 95
+
+   16 func_decl: func_type type block .
+
+    $default  reduce using rule 16 (func_decl)
+
+
+State 96
+
+   19 func_decl_list: func_decl_list . comma_ type_spec
+   54 func_type: func_ id_ lrbrac_ func_decl_list . rrbrac_ type
+
+    rrbrac_  shift, and go to state 136
+    comma_   shift, and go to state 137
+
+
+State 97
+
+   18 func_decl_list: type_spec .
+
+    $default  reduce using rule 18 (func_decl_list)
+
+
+State 98
+
+   29 type_decl: type_ lrbrac_ type_spec_list rrbrac_ .
+
+    $default  reduce using rule 29 (type_decl)
+
+
+State 99
+
+   31 type_spec_list: type_spec_list type_spec .
+
+    $default  reduce using rule 31 (type_spec_list)
+
+
+State 100
+
+   21 var_decl: var_ lrbrac_ var_decl_mult_line rrbrac_ .
+
+    $default  reduce using rule 21 (var_decl)
+
+
+State 101
+
+   23 var_decl_mult_line: var_decl_mult_line var_decl_one_line .
+
+    $default  reduce using rule 23 (var_decl_mult_line)
+
+
+State 102
+
+   26 var_decl_one_line: id_list type expr .
+
+    $default  reduce using rule 26 (var_decl_one_line)
+
+
+State 103
+
+    4 id_list: id_list . id_
+   51 field_decl: id_list . type
+
+    func_    shift, and go to state 1
+    struct_  shift, and go to state 26
+    int_     shift, and go to state 27
+    float_   shift, and go to state 28
+    bool_    shift, and go to state 29
+    rune_    shift, and go to state 30
+    string_  shift, and go to state 31
+    mult_    shift, and go to state 32
+    lrbrac_  shift, and go to state 33
+    lsbrac_  shift, and go to state 34
+    id_      shift, and go to state 55
+
+    type            go to state 138
+    type_primitive  go to state 39
+    type_lit        go to state 40
+    array_type      go to state 41
+    struct_type     go to state 42
+    pointer_type    go to state 43
+    slice_type      go to state 44
+    func_type       go to state 45
+
+
+State 104
+
+   48 struct_type: struct_ lcbrac_ field_decl_list . rcbrac_
+   50 field_decl_list: field_decl_list . field_decl
+
+    rcbrac_  shift, and go to state 139
+    id_      shift, and go to state 20
+
+    id_list     go to state 103
+    field_decl  go to state 140
+
+
+State 105
 
    49 field_decl_list: field_decl .
 
     $default  reduce using rule 49 (field_decl_list)
 
 
-State 75
+State 106
 
    36 type: lrbrac_ type rrbrac_ .
 
     $default  reduce using rule 36 (type)
 
 
-State 76
+State 107
 
    53 slice_type: lsbrac_ rsbrac_ type .
 
     $default  reduce using rule 53 (slice_type)
 
 
-State 77
+State 108
 
    47 array_type: lsbrac_ expr rsbrac_ . type
 
-    struct_  shift, and go to state 31
-    int_     shift, and go to state 32
-    float_   shift, and go to state 33
-    bool_    shift, and go to state 34
-    rune_    shift, and go to state 35
-    string_  shift, and go to state 36
-    mult_    shift, and go to state 37
-    or_      shift, and go to state 38
-    lrbrac_  shift, and go to state 39
-    lsbrac_  shift, and go to state 40
-    id_      shift, and go to state 41
+    func_    shift, and go to state 1
+    struct_  shift, and go to state 26
+    int_     shift, and go to state 27
+    float_   shift, and go to state 28
+    bool_    shift, and go to state 29
+    rune_    shift, and go to state 30
+    string_  shift, and go to state 31
+    mult_    shift, and go to state 32
+    lrbrac_  shift, and go to state 33
+    lsbrac_  shift, and go to state 34
+    id_      shift, and go to state 36
 
-    type            go to state 87
-    type_primitive  go to state 43
-    type_lit        go to state 44
-    array_type      go to state 45
-    struct_type     go to state 46
-    pointer_type    go to state 47
-    slice_type      go to state 48
-    func_type       go to state 49
+    type            go to state 141
+    type_primitive  go to state 39
+    type_lit        go to state 40
+    array_type      go to state 41
+    struct_type     go to state 42
+    pointer_type    go to state 43
+    slice_type      go to state 44
+    func_type       go to state 45
 
 
-State 78
+State 109
+
+   69 break_stmt: break_ id_ .
+
+    $default  reduce using rule 69 (break_stmt)
+
+
+State 110
+
+   75 continue_stmt: continue_ id_ .
+
+    $default  reduce using rule 75 (continue_stmt)
+
+
+State 111
+
+   63 statement: defer_ expr .
+
+    $default  reduce using rule 63 (statement)
+
+
+State 112
+
+   91 range_clause: range_ . expr
+
+    float_lit_  shift, and go to state 54
+
+    expr  go to state 142
+
+
+State 113
+
+  106 expr_list: float_lit_ .
+  107 expr: float_lit_ .
+
+    add_      reduce using rule 106 (expr_list)
+    mult_     reduce using rule 106 (expr_list)
+    eq_       reduce using rule 106 (expr_list)
+    $default  reduce using rule 107 (expr)
+
+
+State 114
+
+    4 id_list: id_list . id_
+   27 short_var_decl: id_list . decla_ expr_list
+   93 range_clause: id_list . decla_ range_ expr
+
+    decla_  shift, and go to state 143
+    id_     shift, and go to state 129
+
+
+State 115
+
+   89 for_stmt: for_ block .
+
+    $default  reduce using rule 89 (for_stmt)
+
+
+State 116
+
+   97 opt_simple_stmt: simple_stmt .
+
+    $default  reduce using rule 97 (opt_simple_stmt)
+
+
+State 117
+
+   86 for_stmt: for_ for_clause . block
+
+    lcbrac_  shift, and go to state 35
+
+    block  go to state 144
+
+
+State 118
+
+   88 for_stmt: for_ range_clause . block
+
+    lcbrac_  shift, and go to state 35
+
+    block  go to state 145
+
+
+State 119
+
+   90 for_clause: opt_simple_stmt . semi_colon_ opt_expr semi_colon_ opt_simple_stmt
+
+    semi_colon_  shift, and go to state 146
+
+
+State 120
+
+   77 assignment: expr_list . add_ eq_
+   78           | expr_list . mult_ eq_
+   92 range_clause: expr_list . eq_ range_ expr
+
+    add_   shift, and go to state 131
+    mult_  shift, and go to state 132
+    eq_    shift, and go to state 147
+
+
+State 121
+
+   71 simple_stmt: expr .
+   79 inc_dec_stmt: expr . incre_
+   80             | expr . decre_
+   87 for_stmt: for_ expr . block
+
+    incre_   shift, and go to state 133
+    decre_   shift, and go to state 134
+    lcbrac_  shift, and go to state 35
+
+    $default  reduce using rule 71 (simple_stmt)
+
+    block  go to state 148
+
+
+State 122
+
+   74 goto_stmt: goto_ id_ .
+
+    $default  reduce using rule 74 (goto_stmt)
+
+
+State 123
+
+   81 if_stmt: if_ simple_stmt . line_end expr block else_stmt
+
+    semi_colon_  shift, and go to state 47
+
+    $default  reduce using rule 2 (line_end)
+
+    line_end  go to state 149
+
+
+State 124
+
+   71 simple_stmt: expr .
+   79 inc_dec_stmt: expr . incre_
+   80             | expr . decre_
+   82 if_stmt: if_ expr . block else_stmt
+
+    incre_   shift, and go to state 133
+    decre_   shift, and go to state 134
+    lcbrac_  shift, and go to state 35
+
+    $default  reduce using rule 71 (simple_stmt)
+
+    block  go to state 150
+
+
+State 125
+
+   76 return_stmt: return_ expr .
+
+    $default  reduce using rule 76 (return_stmt)
+
+
+State 126
+
+  100 expr_switch_stmt: switch_ opt_simple_stmt . line_end opt_expr lcbrac_ expr_case_clause_l rcbrac_
+
+    semi_colon_  shift, and go to state 47
+
+    $default  reduce using rule 2 (line_end)
+
+    line_end  go to state 151
+
+
+State 127
+
+   68 labeled_stmt: id_ colon_ . statement
+
+    break_        shift, and go to state 63
+    continue_     shift, and go to state 64
+    defer_        shift, and go to state 65
+    fallthrough_  shift, and go to state 66
+    for_          shift, and go to state 67
+    goto_         shift, and go to state 68
+    if_           shift, and go to state 69
+    return_       shift, and go to state 70
+    switch_       shift, and go to state 71
+    type_         shift, and go to state 3
+    var_          shift, and go to state 4
+    lcbrac_       shift, and go to state 35
+    float_lit_    shift, and go to state 72
+    id_           shift, and go to state 73
+
+    id_list           go to state 74
+    block             go to state 75
+    decl              go to state 76
+    var_decl          go to state 11
+    short_var_decl    go to state 77
+    type_decl         go to state 12
+    statement         go to state 152
+    labeled_stmt      go to state 79
+    break_stmt        go to state 80
+    simple_stmt       go to state 81
+    goto_stmt         go to state 82
+    continue_stmt     go to state 83
+    return_stmt       go to state 84
+    assignment        go to state 85
+    inc_dec_stmt      go to state 86
+    if_stmt           go to state 87
+    for_stmt          go to state 88
+    switch_stmt       go to state 89
+    expr_switch_stmt  go to state 90
+    type_switch_stmt  go to state 91
+    expr_list         go to state 92
+    expr              go to state 93
+
+
+State 128
+
+   27 short_var_decl: id_list decla_ . expr_list
+
+    float_lit_  shift, and go to state 153
+
+    expr_list  go to state 154
+
+
+State 129
+
+    4 id_list: id_list id_ .
+
+    $default  reduce using rule 4 (id_list)
+
+
+State 130
+
+    5 block: lcbrac_ statement rcbrac_ .
+
+    $default  reduce using rule 5 (block)
+
+
+State 131
+
+   77 assignment: expr_list add_ . eq_
+
+    eq_  shift, and go to state 155
+
+
+State 132
+
+   78 assignment: expr_list mult_ . eq_
+
+    eq_  shift, and go to state 156
+
+
+State 133
+
+   79 inc_dec_stmt: expr incre_ .
+
+    $default  reduce using rule 79 (inc_dec_stmt)
+
+
+State 134
+
+   80 inc_dec_stmt: expr decre_ .
+
+    $default  reduce using rule 80 (inc_dec_stmt)
+
+
+State 135
 
    35 type: id_ dot_ id_ .
 
     $default  reduce using rule 35 (type)
 
 
-State 79
+State 136
 
-    5 empty_cbrac: lcbrac_ . lcbrac_
+   54 func_type: func_ id_ lrbrac_ func_decl_list rrbrac_ . type
 
-    lcbrac_  shift, and go to state 88
+    func_    shift, and go to state 1
+    struct_  shift, and go to state 26
+    int_     shift, and go to state 27
+    float_   shift, and go to state 28
+    bool_    shift, and go to state 29
+    rune_    shift, and go to state 30
+    string_  shift, and go to state 31
+    mult_    shift, and go to state 32
+    lrbrac_  shift, and go to state 33
+    lsbrac_  shift, and go to state 34
+    id_      shift, and go to state 36
 
-
-State 80
-
-    6 block: empty_cbrac .
-
-    $default  reduce using rule 6 (block)
-
-
-State 81
-
-   18 func_decl: func_ id_ lrbrac_ func_decl_list rrbrac_ block .
-
-    $default  reduce using rule 18 (func_decl)
-
-
-State 82
-
-   17 func_decl: func_ id_ lrbrac_ func_decl_list rrbrac_ type . block
-
-    lcbrac_  shift, and go to state 79
-
-    empty_cbrac  go to state 80
-    block        go to state 89
+    type            go to state 157
+    type_primitive  go to state 39
+    type_lit        go to state 40
+    array_type      go to state 41
+    struct_type     go to state 42
+    pointer_type    go to state 43
+    slice_type      go to state 44
+    func_type       go to state 45
 
 
-State 83
+State 137
 
-   20 func_decl_list: func_decl_list comma_ type_spec .
+   19 func_decl_list: func_decl_list comma_ . type_spec
 
-    $default  reduce using rule 20 (func_decl_list)
+    id_  shift, and go to state 17
+
+    type_spec  go to state 158
 
 
-State 84
+State 138
 
    51 field_decl: id_list type .
 
     $default  reduce using rule 51 (field_decl)
 
 
-State 85
+State 139
 
    48 struct_type: struct_ lcbrac_ field_decl_list rcbrac_ .
 
     $default  reduce using rule 48 (struct_type)
 
 
-State 86
+State 140
 
    50 field_decl_list: field_decl_list field_decl .
 
     $default  reduce using rule 50 (field_decl_list)
 
 
-State 87
+State 141
 
    47 array_type: lsbrac_ expr rsbrac_ type .
 
     $default  reduce using rule 47 (array_type)
 
 
-State 88
+State 142
 
-    5 empty_cbrac: lcbrac_ lcbrac_ .
+   91 range_clause: range_ expr .
 
-    $default  reduce using rule 5 (empty_cbrac)
+    $default  reduce using rule 91 (range_clause)
 
 
-State 89
+State 143
 
-   17 func_decl: func_ id_ lrbrac_ func_decl_list rrbrac_ type block .
+   27 short_var_decl: id_list decla_ . expr_list
+   93 range_clause: id_list decla_ . range_ expr
 
-    $default  reduce using rule 17 (func_decl)
+    range_      shift, and go to state 159
+    float_lit_  shift, and go to state 153
+
+    expr_list  go to state 154
+
+
+State 144
+
+   86 for_stmt: for_ for_clause block .
+
+    $default  reduce using rule 86 (for_stmt)
+
+
+State 145
+
+   88 for_stmt: for_ range_clause block .
+
+    $default  reduce using rule 88 (for_stmt)
+
+
+State 146
+
+   90 for_clause: opt_simple_stmt semi_colon_ . opt_expr semi_colon_ opt_simple_stmt
+
+    float_lit_  shift, and go to state 54
+
+    $default  reduce using rule 94 (opt_expr)
+
+    opt_expr  go to state 160
+    expr      go to state 161
+
+
+State 147
+
+   92 range_clause: expr_list eq_ . range_ expr
+
+    range_  shift, and go to state 162
+
+
+State 148
+
+   87 for_stmt: for_ expr block .
+
+    $default  reduce using rule 87 (for_stmt)
+
+
+State 149
+
+   81 if_stmt: if_ simple_stmt line_end . expr block else_stmt
+
+    float_lit_  shift, and go to state 54
+
+    expr  go to state 163
+
+
+State 150
+
+   82 if_stmt: if_ expr block . else_stmt
+
+    else_  shift, and go to state 164
+
+    $default  reduce using rule 83 (else_stmt)
+
+    else_stmt  go to state 165
+
+
+State 151
+
+  100 expr_switch_stmt: switch_ opt_simple_stmt line_end . opt_expr lcbrac_ expr_case_clause_l rcbrac_
+
+    float_lit_  shift, and go to state 54
+
+    $default  reduce using rule 94 (opt_expr)
+
+    opt_expr  go to state 166
+    expr      go to state 161
+
+
+State 152
+
+   68 labeled_stmt: id_ colon_ statement .
+
+    $default  reduce using rule 68 (labeled_stmt)
+
+
+State 153
+
+  106 expr_list: float_lit_ .
+
+    $default  reduce using rule 106 (expr_list)
+
+
+State 154
+
+   27 short_var_decl: id_list decla_ expr_list .
+
+    $default  reduce using rule 27 (short_var_decl)
+
+
+State 155
+
+   77 assignment: expr_list add_ eq_ .
+
+    $default  reduce using rule 77 (assignment)
+
+
+State 156
+
+   78 assignment: expr_list mult_ eq_ .
+
+    $default  reduce using rule 78 (assignment)
+
+
+State 157
+
+   54 func_type: func_ id_ lrbrac_ func_decl_list rrbrac_ type .
+
+    $default  reduce using rule 54 (func_type)
+
+
+State 158
+
+   19 func_decl_list: func_decl_list comma_ type_spec .
+
+    $default  reduce using rule 19 (func_decl_list)
+
+
+State 159
+
+   93 range_clause: id_list decla_ range_ . expr
+
+    float_lit_  shift, and go to state 54
+
+    expr  go to state 167
+
+
+State 160
+
+   90 for_clause: opt_simple_stmt semi_colon_ opt_expr . semi_colon_ opt_simple_stmt
+
+    semi_colon_  shift, and go to state 168
+
+
+State 161
+
+   95 opt_expr: expr .
+
+    $default  reduce using rule 95 (opt_expr)
+
+
+State 162
+
+   92 range_clause: expr_list eq_ range_ . expr
+
+    float_lit_  shift, and go to state 54
+
+    expr  go to state 169
+
+
+State 163
+
+   81 if_stmt: if_ simple_stmt line_end expr . block else_stmt
+
+    lcbrac_  shift, and go to state 35
+
+    block  go to state 170
+
+
+State 164
+
+   84 else_stmt: else_ . if_stmt
+   85          | else_ . block
+
+    if_      shift, and go to state 69
+    lcbrac_  shift, and go to state 35
+
+    block    go to state 171
+    if_stmt  go to state 172
+
+
+State 165
+
+   82 if_stmt: if_ expr block else_stmt .
+
+    $default  reduce using rule 82 (if_stmt)
+
+
+State 166
+
+  100 expr_switch_stmt: switch_ opt_simple_stmt line_end opt_expr . lcbrac_ expr_case_clause_l rcbrac_
+
+    lcbrac_  shift, and go to state 173
+
+
+State 167
+
+   93 range_clause: id_list decla_ range_ expr .
+
+    $default  reduce using rule 93 (range_clause)
+
+
+State 168
+
+   90 for_clause: opt_simple_stmt semi_colon_ opt_expr semi_colon_ . opt_simple_stmt
+
+    float_lit_  shift, and go to state 113
+    id_         shift, and go to state 20
+
+    $default  reduce using rule 96 (opt_simple_stmt)
+
+    id_list          go to state 74
+    short_var_decl   go to state 77
+    simple_stmt      go to state 116
+    assignment       go to state 85
+    inc_dec_stmt     go to state 86
+    opt_simple_stmt  go to state 174
+    expr_list        go to state 92
+    expr             go to state 93
+
+
+State 169
+
+   92 range_clause: expr_list eq_ range_ expr .
+
+    $default  reduce using rule 92 (range_clause)
+
+
+State 170
+
+   81 if_stmt: if_ simple_stmt line_end expr block . else_stmt
+
+    else_  shift, and go to state 164
+
+    $default  reduce using rule 83 (else_stmt)
+
+    else_stmt  go to state 175
+
+
+State 171
+
+   85 else_stmt: else_ block .
+
+    $default  reduce using rule 85 (else_stmt)
+
+
+State 172
+
+   84 else_stmt: else_ if_stmt .
+
+    $default  reduce using rule 84 (else_stmt)
+
+
+State 173
+
+  100 expr_switch_stmt: switch_ opt_simple_stmt line_end opt_expr lcbrac_ . expr_case_clause_l rcbrac_
+
+    case_     shift, and go to state 176
+    default_  shift, and go to state 177
+
+    expr_case_clause_l  go to state 178
+    expr_case_clause    go to state 179
+
+
+State 174
+
+   90 for_clause: opt_simple_stmt semi_colon_ opt_expr semi_colon_ opt_simple_stmt .
+
+    $default  reduce using rule 90 (for_clause)
+
+
+State 175
+
+   81 if_stmt: if_ simple_stmt line_end expr block else_stmt .
+
+    $default  reduce using rule 81 (if_stmt)
+
+
+State 176
+
+  103 expr_case_clause: case_ . expr_list colon_ statement
+
+    float_lit_  shift, and go to state 153
+
+    expr_list  go to state 180
+
+
+State 177
+
+  104 expr_case_clause: default_ . colon_ statement
+
+    colon_  shift, and go to state 181
+
+
+State 178
+
+  100 expr_switch_stmt: switch_ opt_simple_stmt line_end opt_expr lcbrac_ expr_case_clause_l . rcbrac_
+  102 expr_case_clause_l: expr_case_clause_l . expr_case_clause
+
+    case_     shift, and go to state 176
+    default_  shift, and go to state 177
+    rcbrac_   shift, and go to state 182
+
+    expr_case_clause  go to state 183
+
+
+State 179
+
+  101 expr_case_clause_l: expr_case_clause .
+
+    $default  reduce using rule 101 (expr_case_clause_l)
+
+
+State 180
+
+  103 expr_case_clause: case_ expr_list . colon_ statement
+
+    colon_  shift, and go to state 184
+
+
+State 181
+
+  104 expr_case_clause: default_ colon_ . statement
+
+    break_        shift, and go to state 63
+    continue_     shift, and go to state 64
+    defer_        shift, and go to state 65
+    fallthrough_  shift, and go to state 66
+    for_          shift, and go to state 67
+    goto_         shift, and go to state 68
+    if_           shift, and go to state 69
+    return_       shift, and go to state 70
+    switch_       shift, and go to state 71
+    type_         shift, and go to state 3
+    var_          shift, and go to state 4
+    lcbrac_       shift, and go to state 35
+    float_lit_    shift, and go to state 72
+    id_           shift, and go to state 73
+
+    id_list           go to state 74
+    block             go to state 75
+    decl              go to state 76
+    var_decl          go to state 11
+    short_var_decl    go to state 77
+    type_decl         go to state 12
+    statement         go to state 185
+    labeled_stmt      go to state 79
+    break_stmt        go to state 80
+    simple_stmt       go to state 81
+    goto_stmt         go to state 82
+    continue_stmt     go to state 83
+    return_stmt       go to state 84
+    assignment        go to state 85
+    inc_dec_stmt      go to state 86
+    if_stmt           go to state 87
+    for_stmt          go to state 88
+    switch_stmt       go to state 89
+    expr_switch_stmt  go to state 90
+    type_switch_stmt  go to state 91
+    expr_list         go to state 92
+    expr              go to state 93
+
+
+State 182
+
+  100 expr_switch_stmt: switch_ opt_simple_stmt line_end opt_expr lcbrac_ expr_case_clause_l rcbrac_ .
+
+    $default  reduce using rule 100 (expr_switch_stmt)
+
+
+State 183
+
+  102 expr_case_clause_l: expr_case_clause_l expr_case_clause .
+
+    $default  reduce using rule 102 (expr_case_clause_l)
+
+
+State 184
+
+  103 expr_case_clause: case_ expr_list colon_ . statement
+
+    break_        shift, and go to state 63
+    continue_     shift, and go to state 64
+    defer_        shift, and go to state 65
+    fallthrough_  shift, and go to state 66
+    for_          shift, and go to state 67
+    goto_         shift, and go to state 68
+    if_           shift, and go to state 69
+    return_       shift, and go to state 70
+    switch_       shift, and go to state 71
+    type_         shift, and go to state 3
+    var_          shift, and go to state 4
+    lcbrac_       shift, and go to state 35
+    float_lit_    shift, and go to state 72
+    id_           shift, and go to state 73
+
+    id_list           go to state 74
+    block             go to state 75
+    decl              go to state 76
+    var_decl          go to state 11
+    short_var_decl    go to state 77
+    type_decl         go to state 12
+    statement         go to state 186
+    labeled_stmt      go to state 79
+    break_stmt        go to state 80
+    simple_stmt       go to state 81
+    goto_stmt         go to state 82
+    continue_stmt     go to state 83
+    return_stmt       go to state 84
+    assignment        go to state 85
+    inc_dec_stmt      go to state 86
+    if_stmt           go to state 87
+    for_stmt          go to state 88
+    switch_stmt       go to state 89
+    expr_switch_stmt  go to state 90
+    type_switch_stmt  go to state 91
+    expr_list         go to state 92
+    expr              go to state 93
+
+
+State 185
+
+  104 expr_case_clause: default_ colon_ statement .
+
+    $default  reduce using rule 104 (expr_case_clause)
+
+
+State 186
+
+  103 expr_case_clause: case_ expr_list colon_ statement .
+
+    $default  reduce using rule 103 (expr_case_clause)

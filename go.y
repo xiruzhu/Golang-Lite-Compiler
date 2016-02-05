@@ -137,12 +137,12 @@ new_line_list       : /* empty *//*
 
 id_list             : id_
                     | id_list id_
-
+/*
 empty_rbrac         : lrbrac_ rrbrac_
 empty_sbrac         : lsbrac_ lsbrac_
 empty_cbrac         : lcbrac_ lcbrac_
-
-block               : empty_cbrac
+*/
+block               : lcbrac_ statement rcbrac_
 
 //A go program is composed of a package declaration and multiple top_level declarations
 go_prog             : pckg_decl top_decl_list
@@ -155,8 +155,8 @@ pckg_decl           : package_ id_ line_end
 // function test()
 
 // function test1()
-top_decl_list       : top_decl line_end /* line */
-                    | top_decl_list top_decl line_end/* line */
+top_decl_list       : top_decl /* line */
+                    | top_decl_list top_decl/* line */
 
 top_decl            : decl
                     | func_decl
@@ -164,8 +164,8 @@ top_decl            : decl
 decl                : type_decl | var_decl
 
 //Function declaration, Broader than necessary
-func_decl           : func_ id_ lrbrac_ func_decl_list  rrbrac_ type block  //With return
-                    | func_ id_ lrbrac_ func_decl_list  rrbrac_ block //Without return
+func_decl           : func_type type block  //With return
+                    | func_type block //Without return
 
 func_decl_list      : type_spec
                     | func_decl_list comma_ type_spec
@@ -181,6 +181,8 @@ var_decl_mult_line  : var_decl_one_line
 var_decl_one_line   : id_list type
                     | id_list expr
                     | id_list type expr
+
+short_var_decl      : id_list decla_ expr_list
 
 //Type stuff, follows more go specs
 type_decl           : type_ type_spec /* line */
@@ -235,10 +237,89 @@ pointer_type        : mult_ type
 
 slice_type          : lsbrac_ rsbrac_ type
 
-func_type           : or_
+func_type           : func_ id_ lrbrac_ func_decl_list  rrbrac_ type
+
+// Statements now!
+
+/* Shift reduce problems right now */
+statement_list      : /* empty */
+                    | statement_list statement
+
+statement           : decl
+                    | simple_stmt
+                    | labeled_stmt
+                    | return_stmt
+                    | break_stmt
+                    | goto_stmt
+                    | continue_stmt
+                    | fallthrough_
+                    | defer_ expr
+                    | block
+                    | if_stmt
+                    | for_stmt
+                    | switch_stmt
+
+labeled_stmt        : id_ colon_ statement
+
+break_stmt          : break_ id_
+
+simple_stmt         : short_var_decl
+                    | expr
+                    | inc_dec_stmt
+                    | assignment
+
+goto_stmt           : goto_ id_
+
+continue_stmt       : continue_ id_
+
+return_stmt         : return_ expr
+
+assignment          : expr_list add_ eq_
+                    | expr_list mult_ eq_
+
+inc_dec_stmt        : expr incre_
+                    | expr decre_
+
+if_stmt             : if_ simple_stmt line_end expr block else_stmt
+                    | if_ expr block else_stmt
+
+else_stmt           : /* empty */
+                    | else_ if_stmt
+                    | else_ block
+
+for_stmt            : for_ for_clause block
+                    | for_ expr block
+                    | for_ range_clause block
+                    | for_ block
+
+for_clause          : opt_simple_stmt semi_colon_ opt_expr semi_colon_ opt_simple_stmt
+
+range_clause        : range_ expr
+                    | expr_list eq_ range_ expr
+                    | id_list decla_ range_ expr
+
+opt_expr            : /* empty */
+                    | expr
+
+opt_simple_stmt    : /* empty */
+                    | simple_stmt
+
+switch_stmt         : expr_switch_stmt
+                    | type_switch_stmt
+
+expr_switch_stmt    : switch_ opt_simple_stmt line_end opt_expr lcbrac_ expr_case_clause_l rcbrac_
+
+expr_case_clause_l  : expr_case_clause
+                    | expr_case_clause_l expr_case_clause
+
+expr_case_clause    : case_ expr_list colon_ statement
+                    | default_ colon_ statement
+
+type_switch_stmt    : float_lit_
+
+expr_list           : float_lit_
 
 expr                : float_lit_
-
 %%
 
 
