@@ -1,8 +1,8 @@
 /* A Bison parser, made by GNU Bison 3.0.2.  */
 
-/* Skeleton interface for Bison GLR parsers in C
+/* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 2002-2013 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -45,118 +45,175 @@ extern int yydebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    break_ = 258,
-    case_ = 259,
-    chan_ = 260,
-    const_ = 261,
-    continue_ = 262,
-    default_ = 263,
-    defer_ = 264,
-    else_ = 265,
-    fallthrough_ = 266,
-    for_ = 267,
-    func_ = 268,
-    go_ = 269,
-    goto_ = 270,
-    if_ = 271,
-    import_ = 272,
-    interface_ = 273,
-    map_ = 274,
-    package_ = 275,
-    range_ = 276,
-    return_ = 277,
-    select_ = 278,
-    struct_ = 279,
-    switch_ = 280,
-    type_ = 281,
-    var_ = 282,
-    int_ = 283,
-    float_ = 284,
-    bool_ = 285,
-    rune_ = 286,
-    string_ = 287,
-    print_ = 288,
-    println_ = 289,
-    append_ = 290,
-    add_ = 291,
-    minus_ = 292,
-    mult_ = 293,
-    div_ = 294,
-    mod_ = 295,
-    amp_ = 296,
-    caret_ = 297,
-    ls_ = 298,
-    rs_ = 299,
-    unknown_ = 300,
-    add_eq_ = 301,
-    minus_eq_ = 302,
-    mult_eq_ = 303,
-    div_eq_ = 304,
-    mod_eq_ = 305,
-    amp_eq_ = 306,
-    vb_eq_ = 307,
-    caret_eq_ = 308,
-    ls_eq_ = 309,
-    rs_eq_ = 310,
-    unknown_eq_ = 311,
-    and_ = 312,
-    or_ = 313,
-    arrow_ = 314,
-    incre_ = 315,
-    decre_ = 316,
-    equality_ = 317,
-    lt_ = 318,
-    gt_ = 319,
-    eq_ = 320,
-    not_ = 321,
-    not_eq_ = 322,
-    lteq_ = 323,
-    gteq_ = 324,
-    decla_ = 325,
-    etc_ = 326,
-    lrbrac_ = 327,
-    rrbrac_ = 328,
-    lsbrac_ = 329,
-    rsbrac_ = 330,
-    lcbrac_ = 331,
-    rcbrac_ = 332,
-    comma_ = 333,
-    dot_ = 334,
-    colon_ = 335,
-    vb_ = 336,
-    int_lit_ = 337,
-    float_lit_ = 338,
-    string_lit_ = 339,
-    rune_lit_ = 340,
-    semi_colon_ = 341,
-    id_ = 342,
-    new_line_ = 343,
-    error_ = 344,
-    lteq = 345,
-    unary = 346
+    error_ = 258,
+    break_ = 259,
+    case_ = 260,
+    chan_ = 261,
+    const_ = 262,
+    continue_ = 263,
+    default_ = 264,
+    defer_ = 265,
+    else_ = 266,
+    fallthrough_ = 267,
+    for_ = 268,
+    func_ = 269,
+    go_ = 270,
+    goto_ = 271,
+    if_ = 272,
+    import_ = 273,
+    interface_ = 274,
+    map_ = 275,
+    package_ = 276,
+    range_ = 277,
+    return_ = 278,
+    select_ = 279,
+    struct_ = 280,
+    switch_ = 281,
+    type_ = 282,
+    var_ = 283,
+    int_ = 284,
+    float_ = 285,
+    bool_ = 286,
+    rune_ = 287,
+    string_ = 288,
+    print_ = 289,
+    println_ = 290,
+    append_ = 291,
+    ls_ = 292,
+    rs_ = 293,
+    unknown_ = 294,
+    add_eq_ = 295,
+    minus_eq_ = 296,
+    mult_eq_ = 297,
+    div_eq_ = 298,
+    mod_eq_ = 299,
+    amp_eq_ = 300,
+    vb_eq_ = 301,
+    caret_eq_ = 302,
+    ls_eq_ = 303,
+    rs_eq_ = 304,
+    unknown_eq_ = 305,
+    and_ = 306,
+    or_ = 307,
+    arrow_ = 308,
+    incre_ = 309,
+    decre_ = 310,
+    equality_ = 311,
+    not_eq_ = 312,
+    lteq_ = 313,
+    gteq_ = 314,
+    decla_ = 315,
+    etc_ = 316,
+    int_lit_ = 317,
+    float_lit_ = 318,
+    string_lit_ = 319,
+    rune_lit_ = 320,
+    id_ = 321,
+    unary = 322
   };
 #endif
+/* Tokens.  */
+#define error_ 258
+#define break_ 259
+#define case_ 260
+#define chan_ 261
+#define const_ 262
+#define continue_ 263
+#define default_ 264
+#define defer_ 265
+#define else_ 266
+#define fallthrough_ 267
+#define for_ 268
+#define func_ 269
+#define go_ 270
+#define goto_ 271
+#define if_ 272
+#define import_ 273
+#define interface_ 274
+#define map_ 275
+#define package_ 276
+#define range_ 277
+#define return_ 278
+#define select_ 279
+#define struct_ 280
+#define switch_ 281
+#define type_ 282
+#define var_ 283
+#define int_ 284
+#define float_ 285
+#define bool_ 286
+#define rune_ 287
+#define string_ 288
+#define print_ 289
+#define println_ 290
+#define append_ 291
+#define ls_ 292
+#define rs_ 293
+#define unknown_ 294
+#define add_eq_ 295
+#define minus_eq_ 296
+#define mult_eq_ 297
+#define div_eq_ 298
+#define mod_eq_ 299
+#define amp_eq_ 300
+#define vb_eq_ 301
+#define caret_eq_ 302
+#define ls_eq_ 303
+#define rs_eq_ 304
+#define unknown_eq_ 305
+#define and_ 306
+#define or_ 307
+#define arrow_ 308
+#define incre_ 309
+#define decre_ 310
+#define equality_ 311
+#define not_eq_ 312
+#define lteq_ 313
+#define gteq_ 314
+#define decla_ 315
+#define etc_ 316
+#define int_lit_ 317
+#define float_lit_ 318
+#define string_lit_ 319
+#define rune_lit_ 320
+#define id_ 321
+#define unary 322
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE YYSTYPE;
 union YYSTYPE
 {
-#line 22 "go.y" /* glr.c:2555  */
- //The types of values we may store
-  int     int_val;
+#line 23 "go.y" /* yacc.c:1909  */
+ //This is for clarity
+  int   int_val;
   float   float_val;
   char *  str_val;
+  struct node * node_val;
 
-#line 152 "y.tab.h" /* glr.c:2555  */
+#line 195 "y.tab.h" /* yacc.c:1909  */
 };
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
+/* Location type.  */
+#if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
+typedef struct YYLTYPE YYLTYPE;
+struct YYLTYPE
+{
+  int first_line;
+  int first_column;
+  int last_line;
+  int last_column;
+};
+# define YYLTYPE_IS_DECLARED 1
+# define YYLTYPE_IS_TRIVIAL 1
+#endif
+
 
 extern YYSTYPE yylval;
-
+extern YYLTYPE yylloc;
 int yyparse (void);
 
 #endif /* !YY_YY_Y_TAB_H_INCLUDED  */
