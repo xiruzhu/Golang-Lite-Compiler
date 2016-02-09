@@ -323,7 +323,7 @@ expr                : primary_expr
                     | expr not_eq_ expr
                     | expr and_ expr
                     | expr or_ expr
-                | append
+                    | append
                     | unary_op expr %prec unary
 
 unary_op            : '+' | '-' | '^' | '!'
