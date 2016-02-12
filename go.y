@@ -301,7 +301,7 @@ operand_name        : id_
 literal             : int_lit_
                     | float_lit_
                     | string_lit_
-                    | rune_lit_   ;
+                    | rune_lit_;
 
 expr                : primary_expr
                     | expr '*' expr
