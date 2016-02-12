@@ -27,12 +27,10 @@ decimal  		[0-9]+
 exponent		["e"|"E"]["+"|"-"]{decimal}|["e"|"E"]{decimal}
 float_lit		{decimal}"."{decimal}|{decimal}"."{exponent}|{decimal}"."{decimal}{exponent}|{decimal}{exponent}|"."{decimal}{exponent}|"."{decimal}
 
-escaped_char    \\("a"|"b"|"f"|"n"|"r"|"t"|"v"|\\|\'|\")
-string_lit		{raw_string_lit}|{interpreted_string_lit}
-raw_string_lit	\'(" "|"!"|[#-_]|[a-~]|escaped_char)*\'
-interpreted_string_lit	\"(escaped_char|" "|"!"|[#-_]|[a-~])*\"
-
-rune_lit		\'" "|'!'|[#-_]|[a-~]|escaped_char\'
+string_lit		{interpreted_string_lit}|{raw_string_lit}
+raw_string_lit	\'(.)*\'
+interpreted_string_lit	\"(\\.|[^(\\")])*\"
+rune_lit		\'.|\\.\'
 
 ID				[a-z|A-Z][a-z|A-Z|0-9|"_"]*
 semi_colon		";"
@@ -209,6 +207,19 @@ colon 			":"
 {colon} 		{printf("%s\n", yytext); prev_token = ':'; return ':';}
 {vb}			{printf("%s\n", yytext); prev_token = '|'; return '|';}
 
+{rune_lit}		{
+					char * val = (char *)malloc(strlen(yytext) + 1);
+					if(val == NULL){
+						printf("Mem Alloc Failed\n");
+						exit(1);
+					}
+					printf("%s\n", yytext);
+					strcpy(val, yytext);
+					yylval.str_val = val;
+					prev_token = rune_lit_;
+					return rune_lit_;
+				}
+
 {int_lit}		{
 					char ** temp;
 					printf("%s\n", yytext);
@@ -260,19 +271,6 @@ colon 			":"
 					return id_;
 				}
 
-{rune_lit}		{
-					char * val = (char *)malloc(strlen(yytext) + 1);
-					if(val == NULL){
-						printf("Mem Alloc Failed\n");
-						exit(1);
-					}
-					printf("%s\n", yytext);
-					strcpy(val, yytext);
-					yylval.str_val = val;
-					prev_token = rune_lit_;
-					return rune_lit_;
-				}
-
 " "|"\t"		char_num++;
 "\n"			{
 					line_num += 1;
@@ -317,6 +315,4 @@ colon 			":"
 						}
 
 <REALLYEND><<EOF>>      { return 0; }
-
-
 %%

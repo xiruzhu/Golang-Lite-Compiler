@@ -1,102 +1,71 @@
 package main
 
-
-type point struct {
-    x, y int
-}
-
 func main() {
 
-    // Go offers several printing "verbs" designed to
-    // format general Go values. For example, this prints
-    // an instance of our `point` struct.
-    //p := point{1, 2}
-    fmt.Printf("%v\n", p)
+    // Unlike arrays, slices are typed only by the
+    // elements they contain (not the number of elements).
+    // To create an empty slice with non-zero length, use
+    // the builtin `make`. Here we make a slice of
+    // `string`s of length `3` (initially zero-valued).
+    //s := make([]string, 3)
+    fmt.Println("emp:'dtess\", \"", s)
 
-    // If the value is a struct, the `%+v` variant will
-    // include the struct's field names.
-    fmt.Printf("%+v\n", p)
+    // We can set and get just like with arrays.
+    s[0] = "a"
+    s[1] = "b"
+    s[2] = "c"
+    fmt.Println("set:", s)
+    fmt.Println("get:", s[2])
 
-    // The `%#v` variant prints a Go syntax representation
-    // of the value, i.e. the source code snippet that
-    // would produce that value.
-    fmt.Printf("%#v\n", p)
+    // `len` returns the length of the slice as expected.
+    fmt.Println("len:", len(s))
 
-    // To print the type of a value, use `%T`.
-    fmt.Printf("%T\n", p)
+    // In addition to these basic operations, slices
+    // support several more that make them richer than
+    // arrays. One is the builtin `append`, which
+    // returns a slice containing one or more new values.
+    // Note that we need to accept a return value from
+    // append as we may get a new slice value.
+    s = append(s, "d")
+    s = append(s, "e", "f")
+    fmt.Println("apd:", s)
 
-    // Formatting booleans is straight-forward.
-    fmt.Printf("%t\n", true)
+    // Slices can also be `copy`'d. Here we create an
+    // empty slice `c` of the same length as `s` and copy
+    // into `c` from `s`.
+    //c := make([]string, len(s))
+    copy(c, s)
+    fmt.Println("cpy:", c)
 
-    // There are many options for formatting integers.
-    // Use `%d` for standard, base-10 formatting.
-    fmt.Printf("%d\n", 123)
+    // Slices support a "slice" operator with the syntax
+    // `slice[low:high]`. For example, this gets a slice
+    // of the elements `s[2]`, `s[3]`, and `s[4]`.
+    l := s[2:5]
+    fmt.Println("sl1:", l)
 
-    // This prints a binary representation.
-    fmt.Printf("%b\n", 14)
+    // This slices up to (but excluding) `s[5]`.
+    l = s[:5]
+    fmt.Println("sl2:", l)
 
-    // This prints the character corresponding to the
-    // given integer.
-    fmt.Printf("%c\n", 33)
+    // And this slices up from (and including) `s[2]`.
+    l = s[2:]
+    fmt.Println("sl3:", l)
 
-    // `%x` provides hex encoding.
-    fmt.Printf("%x\n", 456)
+    // We can declare and initialize a variable for slice
+    // in a single line as well.
+    //t := []string{"g", "h", "i"}
+    fmt.Println("dcl:", t)
 
-    // There are also several formatting options for
-    // floats. For basic decimal formatting use `%f`.
-    fmt.Printf("%f\n", 78.9)
-
-    // `%e` and `%E` format the float in (slightly
-    // different versions of) scientific notation.
-    fmt.Printf("%e\n", 123400000.0)
-    fmt.Printf("%E\n", 123400000.0)
-
-    // For basic string printing use `%s`.
-    fmt.Printf("%s\n", "\"string\"")
-
-    // To double-quote strings as in Go source, use `%q`.
-    fmt.Printf("%q\n", "\"string\"")
-
-    // As with integers seen earlier, `%x` renders
-    // the string in base-16, with two output characters
-    // per byte of input.
-    fmt.Printf("%x\n", "hex this")
-
-    // To print a representation of a pointer, use `%p`.
-    fmt.Printf("%p\n", &p)
-
-    // When formatting numbers you will often want to
-    // control the width and precision of the resulting
-    // figure. To specify the width of an integer, use a
-    // number after the `%` in the verb. By default the
-    // result will be right-justified and padded with
-    // spaces.
-    fmt.Printf("|%6d|%6d|\n", 12, 345)
-
-    // You can also specify the width of printed floats,
-    // though usually you'll also want to restrict the
-    // decimal precision at the same time with the
-    // width.precision syntax.
-    fmt.Printf("|%6.2f|%6.2f|\n", 1.2, 3.45)
-
-    // To left-justify, use the `-` flag.
-    fmt.Printf("|%-6.2f|%-6.2f|\n", 1.2, 3.45)
-
-    // You may also want to control width when formatting
-    // strings, especially to ensure that they align in
-    // table-like output. For basic right-justified width.
-    fmt.Printf("|%6s|%6s|\n", "foo", "b")
-
-    // To left-justify use the `-` flag as with numbers.
-    fmt.Printf("|%-6s|%-6s|\n", "foo", "b")
-
-    // So far we've seen `Printf`, which prints the
-    // formatted string to `os.Stdout`. `Sprintf` formats
-    // and returns a string without printing it anywhere.
-    s := fmt.Sprintf("a %s", "string")
-    fmt.Println(s)
-
-    // You can format+print to `io.Writers` other than
-    // `os.Stdout` using `Fprintf`.
-    fmt.Fprintf(os.Stderr, "an %s\n", "error")
+    // Slices can be composed into multi-dimensional data
+    // structures. The length of the inner slices can
+    // vary, unlike with multi-dimensional arrays.
+    //twoD := make([][]int, 3)
+    for i := 0; i < 3; i++ {
+        innerLen := i + 1
+        //twoD[i] = make([]int, innerLen)
+        for j := 0; j < innerLen; j++ {
+            twoD[i][j] = i + j
+        }
+    }
+    fmt.Println("2d: ", twoD)
 }

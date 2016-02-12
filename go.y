@@ -130,7 +130,7 @@ union value{
 //A go program is composed of a package declaration and multiple top_level declarations
 
 
-go_prog             : pckg_decl ';' top_decl_list;
+go_prog             : pckg_decl ';' top_decl_list; {}
 
 pckg_decl           : package_ id_
 

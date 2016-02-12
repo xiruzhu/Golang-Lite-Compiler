@@ -116,8 +116,6 @@ typedef enum {
     primary_expr,
       operand,
       func_call,
-      type_cast,
-      primary_expr,
         selector,
         type_cast,
         slice,
@@ -142,17 +140,116 @@ typedef struct vector{
 
 typedef struct node{
 	int exact_type;
-  int general_type;
+  int gen_type;
+  int line_num;
+  int char_num;
+	union value val;
 
   struct symbol_tbl * table;
-
-	union value val;
-	struct vector * list;
+  struct node * parent;
+	struct vector * child_list;
 }node;
 
-node * create_node(int type, union value val);
-int add_node(node * parent, node * child);
-int free_node(node * tree);
-int delete_node(node * tree, node * deleted);
-int adopt_children(node * new_parent, node * old_parent);
+node * create_node(int exact_type, int line_num, int char_num);
+node * create_node_int(node * parent, int exact_type, int val, int line_num, int char_num);
+node * create_node_float(node * parent, int exact_type, float val, int line_num, int char_num);
+node * create_node_str(node * parent, int exact_type, char * val, int line_num, int char_num);
+vector * create_vector();
 
+
+void set_gen_type(node * ret, int gen_type);
+
+int add_node(node * parent, node * child);
+int add_element(vector * list, node * element);
+int remove_element(vector * list, node * element);
+int free_vector(vector * list);
+int free_node(node * tree);
+
+//pretty printing functions
+int print_node(node * current);
+int print_primitive(node * current);
+int print_go_prog(node * current);
+int print_block(node * current);
+int print_list(node * current);
+int print_pckg(node * current);
+int print_top_decl(node * current);
+int print_func_decl(node * current);
+int print_var_decl(node * current);
+int print_var_spec(node * current);
+int print_type_decl(node * current);
+int print_field_decl(node * current);
+int print_type_spec(node * current);
+int print_stmt(node * current);
+int print_simple_stmt(node * current);
+int print_assign_stmt(node * current);
+int print_short_decl(node * current);
+int print_stmt(node * current);
+int println_stmt(node * current);
+int print_if_stmt(node * current);
+int print_for_stmt(node * current);
+int print_condition(node * current);
+int print_for_clause(node * current);
+int print_switch(node * current);
+int print_case_clause(node * current);
+int print_switch_cond(node * current);
+int print_expr(node * current);
+int print_operand(node * current);
+int print_func_call(node * current);
+int print_selector(node * current);
+int print_type_cast(node * current);
+int print_slice(node * current);
+/*
+go_prog, //Root Node, has a symbol table
+ pckg_decl,
+ top_decl,
+   func_decl,
+     params,
+   decl,
+     var_decl,
+       var_spec,
+     type_decl,
+       type_spec,
+       type,
+         field_decl,
+ //Statement Nodes Types
+   stmt,
+     simple_stmt,
+     assign_stmt,
+     short_decl,
+     inc_stmt,
+     print_stmt,
+     println_stmt,
+     return_stmt,
+     if_stmt,
+       if_only_stmt, //Two case of if stmt
+       if_else_stmt,
+     for_stmt,
+       condition,
+       for_stmt_clause,
+     switch_stmt,
+       switch_cond,
+       case_clause,
+         reg_case, //To differential between the two
+         default_,
+     break_stmt,
+     cont_stmt,
+     expr_stmt,
+ //Expression Nodes Types
+ expr,
+   append,
+   primary_expr,
+     operand,
+     func_call,
+       selector,
+       type_cast,
+       slice,
+
+*/
+
+//Not sure if needed
+//int delete_node(node * tree, node * deleted);
+//int adopt_children(node * new_parent, node * old_parent);
+
+table * create_symbol_table();
+int add_symbol(node * symb, table * sym_tbl);
+int find_symbol(node * symb, table * sym_tbl);
