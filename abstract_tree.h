@@ -14,27 +14,30 @@ typedef enum {
  // stmt_list
  // case_clause_list
  // expr_list
-
  block, //This has a Symbol Table
 
 //------------------------------------
 //Base values
- id_,
+ type_id, //this prints out int, float, string... not ID though
  int_,
  float_,
  string_,
  rune_,
  bool_,
 //literal
+ primitive, //This value encompasses all values
+ id_,
  int_lit_,
  float_lit_,
  rune_lit_,
  string_lit_,
+ bool_lit_,
 //Operations
  incre_,
  decre_,
  decla_,
 //Assign_op
+ operator,
  eq_,
  add_eq_,
  minus_eq_,
@@ -79,10 +82,16 @@ typedef enum {
   pckg_decl,
   top_decl,
     func_decl,
+      signature,
+      function,
       params,
+      params_decl,
     decl,
       var_decl,
         var_spec,
+          var_spec_1,
+          var_spec_2,
+          var_spec_3,
       type_decl,
         type_spec,
         type,
@@ -93,32 +102,44 @@ typedef enum {
       assign_stmt,
       short_decl,
       inc_stmt,
+      dec_stmt,
       print_stmt,
       println_stmt,
       return_stmt,
       if_stmt,
-        if_only_stmt, //Two case of if stmt
-        if_else_stmt,
+        if_cond,
+        else_block,
       for_stmt,
         condition,
         for_stmt_clause,
       switch_stmt,
         switch_cond,
+          switch_cond_1,
+          switch_cond_2,
+          switch_cond_3,
+          switch_cond_4,
         case_clause,
-          reg_case, //To differential between the two
-          default_,
+          switch_case,
       break_stmt,
       cont_stmt,
       expr_stmt,
   //Expression Nodes Types
   expr,
     append,
+    unary_op,
     primary_expr,
       operand,
       func_call,
         selector,
         type_cast,
+        index,
         slice,
+        slice_1,
+        slice_2,
+        slice_3,
+        slice_4,
+        slice_5,
+        slice_6
 
 }var;
 
@@ -139,8 +160,8 @@ typedef struct vector{
 }vector;
 
 typedef struct node{
-	int exact_type;
-  int gen_type;
+	int type;
+  int exact_type;
   int line_num;
   int char_num;
 	union value val;
@@ -150,14 +171,14 @@ typedef struct node{
 	struct vector * child_list;
 }node;
 
-node * create_node(int exact_type, int line_num, int char_num);
-node * create_node_int(node * parent, int exact_type, int val, int line_num, int char_num);
-node * create_node_float(node * parent, int exact_type, float val, int line_num, int char_num);
-node * create_node_str(node * parent, int exact_type, char * val, int line_num, int char_num);
+node * create_node(int type, int exact_type, int line_num, int char_num);
+node * create_node_int(node * parent, int type, int val, int line_num, int char_num);
+node * create_node_float(node * parent, int type, float val, int line_num, int char_num);
+node * create_node_str(node * parent, int type, char * val, int line_num, int char_num);
 vector * create_vector();
 
 
-void set_gen_type(node * ret, int gen_type);
+void set_exact_type(node * ret, int exact_type);
 
 int add_node(node * parent, node * child);
 int add_element(vector * list, node * element);
@@ -173,78 +194,38 @@ int print_block(node * current);
 int print_list(node * current);
 int print_pckg(node * current);
 int print_top_decl(node * current);
+int print_decl(node * current);
 int print_func_decl(node * current);
+int print_params_decl(node * current);
+int print_params(node * current);
 int print_var_decl(node * current);
 int print_var_spec(node * current);
 int print_type_decl(node * current);
 int print_field_decl(node * current);
+int print_type(node * current);
 int print_type_spec(node * current);
-int print_stmt(node * current);
+int print_a_stmt(node * current);
 int print_simple_stmt(node * current);
 int print_assign_stmt(node * current);
 int print_short_decl(node * current);
-int print_stmt(node * current);
-int println_stmt(node * current);
 int print_if_stmt(node * current);
+int print_if_cont(node * current);
 int print_for_stmt(node * current);
-int print_condition(node * current);
-int print_for_clause(node * current);
-int print_switch(node * current);
+int print_for_stmt_clause(node * current);
+int print_switch_stmt(node * current);
+int print_switch_case(node * current);
 int print_case_clause(node * current);
 int print_switch_cond(node * current);
 int print_expr(node * current);
+int print_primary_expr(node * current);
 int print_operand(node * current);
 int print_func_call(node * current);
-int print_selector(node * current);
 int print_type_cast(node * current);
 int print_slice(node * current);
-/*
-go_prog, //Root Node, has a symbol table
- pckg_decl,
- top_decl,
-   func_decl,
-     params,
-   decl,
-     var_decl,
-       var_spec,
-     type_decl,
-       type_spec,
-       type,
-         field_decl,
- //Statement Nodes Types
-   stmt,
-     simple_stmt,
-     assign_stmt,
-     short_decl,
-     inc_stmt,
-     print_stmt,
-     println_stmt,
-     return_stmt,
-     if_stmt,
-       if_only_stmt, //Two case of if stmt
-       if_else_stmt,
-     for_stmt,
-       condition,
-       for_stmt_clause,
-     switch_stmt,
-       switch_cond,
-       case_clause,
-         reg_case, //To differential between the two
-         default_,
-     break_stmt,
-     cont_stmt,
-     expr_stmt,
- //Expression Nodes Types
- expr,
-   append,
-   primary_expr,
-     operand,
-     func_call,
-       selector,
-       type_cast,
-       slice,
-
-*/
+int print_operator(node * current);
+int print_type_id(node * current);
+int print_signature(node * current);
+int print_function(node * current);
 
 //Not sure if needed
 //int delete_node(node * tree, node * deleted);

@@ -11,6 +11,7 @@ func main() {
     fmt.Println("emp:'dtess\", \"", s)
 
     // We can set and get just like with arrays.
+    var test bool = true;
     s[0] = "a"
     s[1] = "b"
     s[2] = "c"
