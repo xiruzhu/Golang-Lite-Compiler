@@ -7,6 +7,7 @@
 #include <string.h>
 
 extern void _func_throwError(const char*);
+extern size_t _AST_LineNumber;
 
 #define TREENODE_ERROR_MALLOC   "Malloc Error"
 
@@ -54,6 +55,7 @@ typedef struct nodeAST {
 		LITERAL_RUNE,
 		LITERAL_STRING,
 		IDENTIFIER,
+        BASIC_TYPE,
 	
 		EXPR_BINARY_OP_EQUAL,				// expr == expr
 		EXPR_BINARY_OP_NEQUAL,				// expr != expr
@@ -104,6 +106,13 @@ typedef struct nodeAST {
 		GO_IMPLEMENT_RUNE		runeValue;
 		GO_IMPLEMENT_STRING     stringValue;
         char*                   identifier;
+        enum basicType{
+            BASIC_INT,
+            BASIC_FLOAT,
+            BASIC_RUNE,
+            BASIC_STRING,
+            BASIC_BOOL
+        } basicType;
         
         struct {struct nodeAST* left; struct nodeAST* right;} equal;
         struct {struct nodeAST* left; struct nodeAST* right;} nequal;
@@ -153,6 +162,7 @@ nodeAST* allocateNode(memoryList _allocator){
     nodeAST* returnNode = (nodeAST*)mallocList(sizeof(nodeAST), _allocator);
     if (returnNode == NULL) _func_throwError(TREENODE_ERROR_MALLOC);
     returnNode->nodeType = NODE_INIT;
+    returnNode->lineNumber = _AST_LineNumber;
     return returnNode;
 }
 
@@ -187,6 +197,36 @@ nodeAST* newIdentifier      (const char* _identifier, memoryList _allocator){
     if (returnNode->nodeValue.identifier == NULL) _func_throwError(TREENODE_ERROR_MALLOC);
     memset(returnNode->nodeValue.identifier, '\0', sizeof(char)*(strlen(_identifier)+1));
     strcpy(returnNode->nodeValue.identifier, _identifier);
+    return returnNode;
+}
+nodeAST* newBasicTypeINT    (memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = BASIC_TYPE;
+    returnNode->nodeValue.basicType = BASIC_INT;
+    return returnNode;
+}
+nodeAST* newBasicTypeFloat  (memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = BASIC_TYPE;
+    returnNode->nodeValue.basicType = BASIC_FLOAT;
+    return returnNode;
+}
+nodeAST* newBasicTypeRune   (memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = BASIC_TYPE;
+    returnNode->nodeValue.basicType = BASIC_RUNE;
+    return returnNode;
+}
+nodeAST* newBasicTypeString (memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = BASIC_TYPE;
+    returnNode->nodeValue.basicType = BASIC_STRING;
+    return returnNode;
+}
+nodeAST* newBasicTypeBool   (memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = BASIC_TYPE;
+    returnNode->nodeValue.basicType = BASIC_BOOL;
     return returnNode;
 }
 

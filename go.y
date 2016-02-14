@@ -2,6 +2,7 @@
 #include <stdio.h> /* for printf */
 #include <stdlib.h>
 #include <string.h>
+#include "treeNode.h"
 
 extern char *yytext; /* string from scanner */
 extern int line_num;
@@ -22,7 +23,8 @@ union value{
   int   int_val;
   float   float_val;
   char *  str_val;
-  struct node * node_val;
+  char rune_val;
+  struct nodeAST* node_val;
 }
 
 
@@ -123,6 +125,12 @@ union value{
 
 %error-verbose
 %locations
+
+%type <node_val> expr_list operand operand_name literal expr func_call primary_expr type_cast slice basic_type
+%type <rune_val>  rune_lit_
+%type <string_val> string_lit_ id_
+%type <int_val> int_lit_
+%type <float_val> float_lit_
 %%
 
 //A go program is composed of a package declaration and multiple top_level declarations
@@ -161,7 +169,8 @@ result              : type
 params              : '(' ')'
                     | '(' params_list ')'
 
-params_list         : params_list ',' params_decl | params_decl
+params_list         : params_list ',' params_decl 
+                    | params_decl
 
 params_decl         : id_list type
 
@@ -186,9 +195,17 @@ var_spec            : id_list '=' expr_list
 id_list             : id_
                     | id_list ',' id_
 
-type                : basic_type | '[' ']' type | struct_ '{' field_decl_list '}' | '[' int_lit_ ']' type | id_
+type                : basic_type 
+                    | '[' ']' type 
+                    | struct_ '{' field_decl_list '}' 
+                    | '[' int_lit_ ']' type 
+                    | id_
 
-basic_type          : int_ | float_ | string_ | rune_ | bool_
+basic_type          : int_                                        {$$ = newBasicTypeInt();}
+                    | float_                                      {$$ = newBasicTypeFloat();}
+                    | string_                                     {$$ = newBasicTypeString();}
+                    | rune_                                       {$$ = newBasicTypeRune();}
+                    | bool_                                       {$$ = newBasicTypeBool();}
 
 field_decl_list     : field_decl_list field_decl
                     |
@@ -225,7 +242,18 @@ simple_stmt_v       : expr_stmt
                     |
 
 assign_stmt         : expr_list '=' expr_list
-                    | expr assign_op expr
+                    | expr add_eq_ expr
+                    | expr minus_eq_ expr
+                    | expr mult_eq_ expr
+                    | expr div_eq_ expr
+                    | expr mod_eq_ expr
+                    | expr amp_eq_ expr
+                    | expr vb_eq_ expr
+                    | expr caret_eq_ expr
+                    | expr ls_eq_ expr
+                    | expr rs_eq_ expr
+                    | expr unknown_eq_ expr
+
 
 short_decl          : expr_list decla_ expr_list
 
@@ -280,75 +308,68 @@ break_stmt          : break_ ';'
 
 cont_stmt           : continue_ ';'
 
-assign_op           : add_eq_ | minus_eq_ | mult_eq_ | div_eq_ | mod_eq_ | amp_eq_ | vb_eq_ | caret_eq_ | ls_eq_ | rs_eq_ | unknown_eq_
-
 expr_stmt           : expr
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 //expressions done
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-expr_list           : expr
-                    | expr_list ',' expr
+expr_list           : expr                                        {$$ = newExprList($1, NULL);}
+                    | expr ',' expr_list                          {$$ = newExprList()}
 
-operand             : '(' expr ')'
-                    | operand_name
-                    | literal;
+operand             : '(' expr ')'                                {$$ = $2;}
+                    | operand_name                                {$$ = $1;}
+                    | literal                                     {$$ = $1;}
 
-operand_name        : id_
+operand_name        : id_                                         {$$ = newIdentifier($1);}
 
-literal             : int_lit_
-                    | float_lit_
-                    | string_lit_
-                    | rune_lit_
+literal             : int_lit_                                    {$$ = newLiteralInt($1);}
+                    | float_lit_                                  {$$ = newLiteralFloat($1);}
+                    | string_lit_                                 {$$ = newLiteralString($1);}
+                    | rune_lit_                                   {$$ = newLiteralRune($1);}
 
-expr                : primary_expr
-                    | expr '*' expr
-                    | expr '/' expr
-                    | expr '%' expr
-                    | expr '&' expr
-                    | expr unknown_ expr
-                    | expr ls_ expr
-                    | expr rs_ expr
-                    | expr '|' expr
-                    | expr '^' expr
-                    | expr '-' expr
-                    | expr '+' expr
-                    | expr equality_ expr
-                    | expr '<' expr
-                    | expr '>' expr
-                    | expr lteq_ expr
-                    | expr gteq_ expr
-                    | expr not_eq_ expr
-                    | expr and_ expr
-                    | expr or_ expr
-                    | append
-                    | unary_op expr %prec unary
+expr                : primary_expr                                {$$ = $1;}
+                    | expr '*' expr                               {$$ = newMul($1, $3);}
+                    | expr '/' expr                               {$$ = newDiv($1, $3);}
+                    | expr '%' expr                               {$$ = newMod($1, $3);}
+                    | expr '&' expr                               {$$ = newBitAnd($1, $3);}
+                    | expr unknown_ expr                          {$$ = newBitAndNot($1, $3);}
+                    | expr ls_ expr                               {$$ = newShiftLeft($1, $3);}
+                    | expr rs_ expr                               {$$ = newShiftRight($1, $3);}
+                    | expr '|' expr                               {$$ = newBitOr($1, $3);}
+                    | expr '^' expr                               {$$ = newBitNot($1, $3);}
+                    | expr '-' expr                               {$$ = newSub($1, $3);}
+                    | expr '+' expr                               {$$ = newAdd($1, $3);}
+                    | expr equality_ expr                         {$$ = newEqual($1, $3);}
+                    | expr '<' expr                               {$$ = newLess($1, $3);}
+                    | expr '>' expr                               {$$ = newGreat($1, $3);}
+                    | expr lteq_ expr                             {$$ = newLessEqual($1, $3);}
+                    | expr gteq_ expr                             {$$ = newGreatEqual($1, $3);}
+                    | expr not_eq_ expr                           {$$ = newNotEqual($1, $3);}
+                    | expr and_ expr                              {$$ = newLogicAnd($1, $3);}
+                    | expr or_ expr                               {$$ = newLogicOr($1, $3);}
+                    | append_ '(' id_ ',' expr_list ')'           {$$ = newAppend($3, $5);}
+                    | '+' expr         %prec unary                {$$ = newPos($2);}
+                    | '-' expr         %prec unary                {$$ = newNeg($2);}
+                    | '^' expr         %prec unary                {$$ = newBitNot($2);}
+                    | '!' expr         %prec unary                {$$ = newNot($2);}
 
-unary_op            : '+' | '-' | '^' | '!'
+func_call           : primary_expr '(' expr_list ')'              {$$ = newFuncCall($1, $3);}
+                    | primary_expr '(' ')'                        {$$ = newFuncCall($1, NULL);}
 
-func_call           : primary_expr '(' expr_list ')'
-                    | primary_expr '(' ')'
+primary_expr        : operand                                     {$$ = $1;}
+                    | func_call                                   {$$ = $1;}
+                    | type_cast                                   {$$ = $1;}
+                    | primary_expr '[' expr ']'                   {$$ = newSelector($1, $3);}
+                    | primary_expr '.' id_                        {$$ = newIndex($1, $3);}
+                    | primary_expr slice                          {$$ = newSlice($1, $2);}
 
-append              : append_ '(' id_ ',' expr_list ')'
+type_cast           : basic_type '(' expr ')'                     {$$ = newCast($1, $3);}
 
-primary_expr        : operand
-                    | func_call
-                    | type_cast
-                    | primary_expr selector
-                    | primary_expr index
-                    | primary_expr slice
-
-selector            : '.' id_
-
-type_cast           : basic_type '(' expr ')'
-
-index               : '[' expr ']'
-
-slice               : '[' expr ':' expr ']'
-                    | '[' expr ':'  ']'
-                    | '['  ':' expr ']'
-                    | '['  ':'  ']'
-                    | '[' expr ':' expr ':' expr ']'
-                    | '['  ':' expr ':' expr ']'
+slice               : '[' expr ':' expr ']'                       {$$ = newAddressSlice($2, $4);}
+                    | '[' expr ':'  ']'                           {$$ = newAddressSlice($2, NULL);}
+                    | '['  ':' expr ']'                           {$$ = newAddressSlice(NULL, $3);}
+                    | '['  ':'  ']'                               {$$ = newAddressSlice(NULL, NULL);}
+                    | '[' expr ':' expr ':' expr ']'              {$$ = newAddressSliceFull($2, $4, $6);}
+                    | '['  ':' expr ':' expr ']'                  {$$ = newAddressSliceFull(NULL, $3, $5);}
 %%
