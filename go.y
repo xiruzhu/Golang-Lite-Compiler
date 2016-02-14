@@ -127,6 +127,7 @@ union value{
 %locations
 
 %type <node_val> expr_list operand operand_name literal expr func_call primary_expr type_cast slice basic_type
+%type <node_val> inc_stmt dec_stmt print_stmt println_stmt return_stmt stmt_list simple_stmt_v simple_stmt stmt assign_stmt
 %type <rune_val>  rune_lit_
 %type <string_val> string_lit_ id_
 %type <int_val> int_lit_
@@ -144,9 +145,11 @@ pckg_decl           : package_ id_
 top_decl_list       : top_decl_list top_decl
                     |
 
-top_decl            : decl | func_decl
+top_decl            : decl 
+                    | func_decl
 
-decl                : var_decl | type_decl
+decl                : var_decl 
+                    | type_decl
 
 func_decl           : func_ func_name function
                     | func_ func_name signature
@@ -217,58 +220,57 @@ field_decl          : id_list type
 // statements
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-stmt_list           : stmt_list  stmt
-                    |
+stmt_list           : stmt  stmt_list                             {$$ = newStateList($1, $2);}
+                    |                                             {$$ = NULL;}
 
-stmt                : decl
-                    | block
-                    | print_stmt
-                    | println_stmt
-                    | return_stmt
-                    | if_stmt
-                    | simple_stmt
-                    | switch_stmt
-                    | for_stmt
-                    | break_stmt
-                    | cont_stmt
+stmt                : decl                                        {$$ = NULL;}
+                    | block                                       {$$ = NULL;}
+                    | print_stmt                                  {$$ = $1;}
+                    | println_stmt                                {$$ = $1;}
+                    | return_stmt                                 {$$ = $1;}
+                    | if_stmt                                     {$$ = NULL;}
+                    | simple_stmt                                 {$$ = $1;}
+                    | switch_stmt                                 {$$ = NULL;}
+                    | for_stmt                                    {$$ = NULL;}
+                    | break_stmt                                  {$$ = NULL;}
+                    | cont_stmt                                   {$$ = NULL;}
 
-simple_stmt         : simple_stmt_v ';'
+simple_stmt         : simple_stmt_v ';'                           {$$ = $1;}
 
-simple_stmt_v       : expr_stmt
-                    | inc_stmt
-                    | dec_stmt
-                    | assign_stmt
-                    | short_decl
-                    |
+simple_stmt_v       : expr                                        {$$ = $1;}
+                    | inc_stmt                                    {$$ = $1;}
+                    | dec_stmt                                    {$$ = $1;}
+                    | assign_stmt                                 {$$ = $1;}
+                    | short_decl                                  {$$ = NULL;}
+                    |                                             {$$ = NULL;}
 
-assign_stmt         : expr_list '=' expr_list
-                    | expr add_eq_ expr
-                    | expr minus_eq_ expr
-                    | expr mult_eq_ expr
-                    | expr div_eq_ expr
-                    | expr mod_eq_ expr
-                    | expr amp_eq_ expr
-                    | expr vb_eq_ expr
-                    | expr caret_eq_ expr
-                    | expr ls_eq_ expr
-                    | expr rs_eq_ expr
-                    | expr unknown_eq_ expr
-
+assign_stmt         : expr_list '=' expr_list                     {$$ = newAssign($1, $3);}
+                    | expr add_eq_ expr                           {$$ = newAssignAdd($1, $3);}
+                    | expr minus_eq_ expr                         {$$ = newAssignSub($1, $3);}
+                    | expr mult_eq_ expr                          {$$ = newAssignMul($1, $3);}
+                    | expr div_eq_ expr                           {$$ = newAssignDiv($1, $3);}
+                    | expr mod_eq_ expr                           {$$ = newAssignMod($1, $3);}
+                    | expr amp_eq_ expr                           {$$ = newAssignAnd($1, $3);}
+                    | expr vb_eq_ expr                            {$$ = newAssignOr($1, $3);}
+                    | expr caret_eq_ expr                         {$$ = newAssignXor($1, $3);} 
+                    | expr ls_eq_ expr                            {$$ = newAssignShiftLeft($1, $3);}
+                    | expr rs_eq_ expr                            {$$ = newAssignShiftRight($1, $3);}
+                    | expr unknown_eq_ expr                       {$$ = newAssignAndNot($1, $3);}
 
 short_decl          : expr_list decla_ expr_list
 
-inc_stmt            : expr incre_
+inc_stmt            : expr incre_                                 {$$ = newInc($1);}
 
-dec_stmt            : expr decre_
+dec_stmt            : expr decre_                                 {$$ = newDec($1);}
 
-print_stmt          : print_ '(' expr_list ')' ';'
-                    | print_ '(' ')' ';'
+print_stmt          : print_ '(' expr_list ')' ';'                {$$ = newPrint($3);}
+                    | print_ '(' ')' ';'                          {$$ = newPrint(NULL);}
 
-println_stmt        : println_ '(' expr_list ')' ';'
-                    | println_ '(' ')' ';'
+println_stmt        : println_ '(' expr_list ')' ';'              {$$ = newPrintln($3);}
+                    | println_ '(' ')' ';'                        {$$ = newPrintln(NULL);}
 
-return_stmt         : return_ expr ';'
-                    | return_ ';'
+return_stmt         : return_ expr ';'                            {$$ = newRetrun($2);}
+                    | return_ ';'                                 {$$ = newReturn(NULL);}
 
 
 if_stmt             : if_ if_cond block
@@ -307,8 +309,6 @@ else_block          : block
 break_stmt          : break_ ';'
 
 cont_stmt           : continue_ ';'
-
-expr_stmt           : expr
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 //expressions done
@@ -359,7 +359,7 @@ func_call           : primary_expr '(' expr_list ')'              {$$ = newFuncC
 
 primary_expr        : operand                                     {$$ = $1;}
                     | func_call                                   {$$ = $1;}
-                    | type_cast                                   {$$ = $1;}
+                    | type_cast                                   {$$ = $1;}    //TODO weeding
                     | primary_expr '[' expr ']'                   {$$ = newSelector($1, $3);}
                     | primary_expr '.' id_                        {$$ = newIndex($1, $3);}
                     | primary_expr slice                          {$$ = newSlice($1, $2);}

@@ -11,9 +11,9 @@ extern size_t _AST_LineNumber;
 
 #define TREENODE_ERROR_MALLOC   "Malloc Error"
 
-#define GO_IMPLEMENT_INT		int
-#define GO_IMPLEMENT_FLOAT64	double
-#define GO_IMPLEMENT_RUNE		char
+#define GO_IMPLEMENT_INT        int
+#define GO_IMPLEMENT_FLOAT64    double
+#define GO_IMPLEMENT_RUNE       char
 #define GO_IMPLEMENT_STRING     GO_IMPLEMENT_RUNE*
 #define GO_IMPLEMENT_BOOL       bool
 
@@ -35,76 +35,97 @@ typedef struct {
 } GO_IMPLEMENT_STRUCT;
 
 typedef enum {
-	VAR_INT,                                // GO_IMPLEMENT_INT
-	VAR_FLOAT64,                            // GO_IMPLEMENT_FLOAT64
-	VAR_BOOL,                               // GO_IMPLEMENT_BOOL
-	VAR_RUNE,                               // GO_IMPLEMENT_RUNE
-	VAR_STRING,                             // GO_IMPLEMENT_STRING
-	VAR_SLICE,                              // GO_IMPLEMENT_SLICE
-	VAR_ARRAY,                              // GO_IMPLEMENT_ARRAY
-	VAR_STRUCT,                             // GO_IMPLEMENT_STRUCT
+    VAR_INT,                                // GO_IMPLEMENT_INT
+    VAR_FLOAT64,                            // GO_IMPLEMENT_FLOAT64
+    VAR_BOOL,                               // GO_IMPLEMENT_BOOL
+    VAR_RUNE,                               // GO_IMPLEMENT_RUNE
+    VAR_STRING,                             // GO_IMPLEMENT_STRING
+    VAR_SLICE,                              // GO_IMPLEMENT_SLICE
+    VAR_ARRAY,                              // GO_IMPLEMENT_ARRAY
+    VAR_STRUCT,                             // GO_IMPLEMENT_STRUCT
 } varTypes;
 
 typedef struct nodeAST {
-	size_t lineNumber;
-	enum {
-		NODE_INIT,							// Exception upon future encounter
-	
-		LITERAL_INT,
-		LITERAL_FLOAT,						
-		LITERAL_RUNE,
-		LITERAL_STRING,
-		IDENTIFIER,
+    size_t lineNumber;
+    enum {
+        NODE_INIT,                          // Exception upon future encounter
+    
+        LITERAL_INT,
+        LITERAL_FLOAT,                        
+        LITERAL_RUNE,
+        LITERAL_STRING,
+        IDENTIFIER,
         BASIC_TYPE,
-	
-		EXPR_BINARY_OP_EQUAL,				// expr == expr
-		EXPR_BINARY_OP_NEQUAL,				// expr != expr
-		EXPR_BINARY_OP_LESS,				// expr < expr
-		EXPR_BINARY_OP_LESSEQUAL,			// expr <= expr
-		EXPR_BINARY_OP_GREAT,				// expr > expr
-		EXPR_BINARY_OP_GREATEQUAL,			// expr >= expr
-	
-		EXPR_BINARY_OP_ADD,					// expr + expr
-		EXPR_BINARY_OP_SUB,					// expr - expr
-		EXPR_BINARY_OP_MUL,					// expr * expr
-		EXPR_BINARY_OP_DIV,					// expr / expr
-		EXPR_BINARY_OP_MOD,					// expr % expr
+    
+        EXPR_BINARY_OP_EQUAL,               // expr == expr
+        EXPR_BINARY_OP_NEQUAL,              // expr != expr
+        EXPR_BINARY_OP_LESS,                // expr < expr
+        EXPR_BINARY_OP_LESSEQUAL,           // expr <= expr
+        EXPR_BINARY_OP_GREAT,               // expr > expr
+        EXPR_BINARY_OP_GREATEQUAL,          // expr >= expr
+    
+        EXPR_BINARY_OP_ADD,                 // expr + expr
+        EXPR_BINARY_OP_SUB,                 // expr - expr
+        EXPR_BINARY_OP_MUL,                 // expr * expr
+        EXPR_BINARY_OP_DIV,                 // expr / expr
+        EXPR_BINARY_OP_MOD,                 // expr % expr
 
-		EXPR_BINARY_OP_AND,					// expr & expr		(bitwise)
-		EXPR_BINARY_OP_OR,					// expr | expr 		(bitwise)
-		EXPR_BINARY_OP_XOR,					// expr ^ expr		(bitwise)
-		EXPR_BINARY_OP_ANDNOT,				// expr &^ expr		(bitwise)
-	
-		EXPR_BINARY_OP_LSHIFT,				// expr << expr
-		EXPR_BINARY_OP_RSHIFT,				// expr >> expr
-	
-		EXPR_BINARY_OP_LOGIC_AND,			// expr && expr		(logical)
-		EXPR_BINARY_OP_LOGIC_OR,			// expr || expr		(logical)
+        EXPR_BINARY_OP_AND,                 // expr & expr        (bitwise)
+        EXPR_BINARY_OP_OR,                  // expr | expr        (bitwise)
+        EXPR_BINARY_OP_XOR,                 // expr ^ expr        (bitwise)
+        EXPR_BINARY_OP_ANDNOT,              // expr &^ expr       (bitwise)
+    
+        EXPR_BINARY_OP_LSHIFT,              // expr << expr
+        EXPR_BINARY_OP_RSHIFT,              // expr >> expr
+    
+        EXPR_BINARY_OP_LOGIC_AND,           // expr && expr       (logical)
+        EXPR_BINARY_OP_LOGIC_OR,            // expr || expr       (logical)
 
-        EXPR_UNIARY_OP_LOGIC_NOT,			// ! expr			(logical)
-		EXPR_UNIARY_OP_POS,					// + expr
-		EXPR_UNIARY_OP_NEG,					// - expr	
-		EXPR_UNIARY_OP_NOT,					// ^ expr 			(bitwise)
-	
-		EXPR_APPEND,						// append ( indentifier, expr )
-		EXPR_FUNC_CALL,						// expr ( [expr_list] )
-		EXPR_CAST,							// type ( expr ) 	TODO: weeding
-	
-		EXPR_SELECTOR,						// expr EXPR_ADDRESS_SELECTOR
-		EXPR_INDEX,							// expr EXPR_ADDERSS_INDEX 
-		EXPR_SLICE,							// expr EXPR_ADDRESS_SLICE
+        EXPR_UNIARY_OP_LOGIC_NOT,           // ! expr             (logical)
+        EXPR_UNIARY_OP_POS,                 // + expr
+        EXPR_UNIARY_OP_NEG,                 // - expr
+        EXPR_UNIARY_OP_NOT,                 // ^ expr             (bitwise)
+    
+        EXPR_APPEND,                        // append ( indentifier, expr )
+        EXPR_FUNC_CALL,                     // expr ( [expr_list] )
+        EXPR_CAST,                          // type ( expr )      TODO: weeding
+    
+        EXPR_SELECTOR,                      // expr EXPR_ADDRESS_SELECTOR
+        EXPR_INDEX,                         // expr EXPR_ADDERSS_INDEX
+        EXPR_SLICE,                         // expr EXPR_ADDRESS_SLICE
                                             // expr EXPR_ADDRESS_SLICE_FULL
-	
-		EXPR_ADDRESS_SLICE,					// [ expr : expr ]
-		EXPR_ADDRESS_SLICE_FULL,			// [ expr : expr : expr ]
+    
+        EXPR_ADDRESS_SLICE,                 // [ expr : expr ]
+        EXPR_ADDRESS_SLICE_FULL,            // [ expr : expr : expr ]
         
-        EXPR_UTILITY_EXPRLIST               // expr, ... , expr
-	} nodeType;
-	union {
-		GO_IMPLEMENT_INT		intValue;
-		GO_IMPLEMENT_FLOAT64	floatValue;
-		GO_IMPLEMENT_RUNE		runeValue;
-		GO_IMPLEMENT_STRING     stringValue;
+        EXPR_UTILITY_EXPRLIST,              // expr, ... , expr
+        STATE_UTILITY_STATELIST,            // state .... state
+        
+        STATE_INC,                          // expr ++
+        STATE_DEC,                          // expr --
+        STATE_PRINT,                        // print ( [expr, ... , expr] )
+        STATE_PRINTLN,                      // println ( [expr, ... , expr] )
+        STATE_RETURN,                       // return [expr]
+        
+        STATE_ASSIGN,                       // expr, ... , expr = expr, ... , expr
+        STATE_ASSIGN_ADD,                   // expr += expr
+        STATE_ASSIGN_SUB,                   // expr -= expr
+        STATE_ASSIGN_MUL,                   // expr *= expr
+        STATE_ASSIGN_DIV,                   // expr /= expr
+        STATE_ASSIGN_MOD,                   // expr %= expr
+        STATE_ASSIGN_AND,                   // expr &= expr
+        STATE_ASSIGN_OR,                    // expr |= expr
+        STATE_ASSIGN_XOR,                   // expr ^= expr
+        STATE_ASSIGN_SHIFTLEFT,             // expr <<= expr
+        STATE_ASSIGN_SHIFTRIGHT,            // expr >>= expr
+        STATE_ASSIGN_ANDNOT,                // expr &^= expr
+        
+    } nodeType;
+    union {
+        GO_IMPLEMENT_INT        intValue;
+        GO_IMPLEMENT_FLOAT64    floatValue;
+        GO_IMPLEMENT_RUNE       runeValue;
+        GO_IMPLEMENT_STRING     stringValue;
         char*                   identifier;
         enum basicType{
             BASIC_INT,
@@ -155,6 +176,26 @@ typedef struct nodeAST {
         struct {struct nodeAST* start; struct nodeAST* end; struct nodeAST* max;} addressSliceFull;
         
         struct {struct nodeAST* expr; struct nodeAST* next;} exprList;
+        struct {struct nodeAST* state; struct nodeAST* next;} stateList;
+        
+        struct {struct nodeAST* expr;} inc;
+        struct {struct nodeAST* expr;} dec;
+        struct {struct nodeAST* expr;} print;
+        struct {struct nodeAST* expr;} println;
+        struct {struct nodeAST* expr;} ret;
+        
+        struct {struct nodeAST* left; struct nodeAST* right;} assign;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignAdd;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignSub;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignMul;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignDiv;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignMod;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignAnd;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignOr;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignXor;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignShiftLeft;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignShiftRight;
+        struct {struct nodeAST* left; struct nodeAST* right;} assignAndNot;
     } nodeValue;
 } nodeAST;
 
@@ -458,6 +499,129 @@ nodeAST* newExprList        (nodeAST* _expr, nodeAST* _next, memoryList _allocat
     returnNode->nodeType = EXPR_UTILITY_EXPRLIST;
     returnNode->nodeValue.exprList.expr = _expr;
     returnNode->nodeValue.exprList.next = _next;
+    return returnNode;
+}
+nodeAST* newStateList       (nodeAST* _state, nodeAST* _next, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_UTILITY_STATELIST;
+    returnNode->nodeValue.stateList.state = _state;
+    returnNode->nodeValue.stateList.next = _next;
+    return returnNode;
+}
+
+nodeAST* newInc             (nodeAST* _expr, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_INC;
+    returnNode->nodeValue.inc.expr = _expr;
+    return returnNode;
+}
+nodeAST* newDec             (nodeAST* _expr, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_DEC;
+    returnNode->nodeValue.dec.expr = _expr;
+    return returnNode;
+}
+nodeAST* newPrint           (nodeAST* _expr, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_PRINT;
+    returnNode->nodeValue.print.expr = _expr;
+    return returnNode;
+}
+nodeAST* newPrintln         (nodeAST* _expr, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_PRINTLN;
+    returnNode->nodeValue.println.expr = _expr;
+    return returnNode;
+}
+nodeAST* newReturn          (nodeAST* _expr, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_RETURN;
+    returnNode->nodeValue.ret.expr = _expr;
+    return returnNode;
+}
+
+nodeAST* newAssign          (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN;
+    returnNode->nodeValue.assign.left = _left;
+    returnNode->nodeValue.assign.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignAdd       (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_ADD;
+    returnNode->nodeValue.assignAdd.left = _left;
+    returnNode->nodeValue.assignAdd.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignSub       (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_SUB;
+    returnNode->nodeValue.assignSub.left = _left;
+    returnNode->nodeValue.assignSub.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignMul       (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_MUL;
+    returnNode->nodeValue.assignMul.left = _left;
+    returnNode->nodeValue.assignMul.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignDiv       (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_DIV;
+    returnNode->nodeValue.assignDiv.left = _left;
+    returnNode->nodeValue.assignDiv.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignMod       (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_MOD;
+    returnNode->nodeValue.assignMod.left = _left;
+    returnNode->nodeValue.assignMod.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignAnd       (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_AND;
+    returnNode->nodeValue.assignAnd.left = _left;
+    returnNode->nodeValue.assignAnd.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignOr        (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_OR;
+    returnNode->nodeValue.assignOr.left = _left;
+    returnNode->nodeValue.assignOr.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignXor       (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_XOR;
+    returnNode->nodeValue.assignXor.left = _left;
+    returnNode->nodeValue.assignXor.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignShiftLeft (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_SHIFTLEFT;
+    returnNode->nodeValue.assignShiftLeft.left = _left;
+    returnNode->nodeValue.assignShiftLeft.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignShiftRight(nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_SHIFTRIGHT;
+    returnNode->nodeValue.assignShiftRight.left = _left;
+    returnNode->nodeValue.assignShiftRight.right = _right;
+    return returnNode;
+}
+nodeAST* newAssignAndNot    (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_ASSIGN_ANDNOT;
+    returnNode->nodeValue.assignAndNot.left = _left;
+    returnNode->nodeValue.assignAndNot.right = _right;
     return returnNode;
 }
 #endif
