@@ -100,6 +100,9 @@ typedef struct nodeAST {
         
         EXPR_UTILITY_EXPRLIST,              // expr, ... , expr
         STATE_UTILITY_STATELIST,            // state .... state
+        STATE_UTILITY_FOR_CLAUSE,           // expr; expr; expr
+        STATE_UTILITY_CASE_LIST,            // case_clause ... case_clause
+        STATE_UTILITY_CASE_CLAUSE,          // case [expr] | default : state_list
         
         STATE_INC,                          // expr ++
         STATE_DEC,                          // expr --
@@ -120,6 +123,19 @@ typedef struct nodeAST {
         STATE_ASSIGN_SHIFTRIGHT,            // expr >>= expr
         STATE_ASSIGN_ANDNOT,                // expr &^= expr
         
+        STATE_SHORT_DECLARE,                // expr, ... , expr := expr, ..., expr
+        
+        STATE_IF,                           // if cond block
+        STATE_IF_ELSE,                      // if cond block else block
+        STATE_SWITCH,                       // switch cond black
+        STATE_FOR,                          // for cond block
+        
+        STATE_IF_CONDITION,                 // [state;] [expr]
+        STATE_SWITCH_CONDITION,             // [state;] [expr]
+        STATE_SWITCH_CLAUSE,                // case expr : state
+        
+        STATE_CONTROL_BREAK,                // break
+        STATE_CONTROL_CONTINUE              // continue
     } nodeType;
     union {
         GO_IMPLEMENT_INT        intValue;
@@ -196,6 +212,25 @@ typedef struct nodeAST {
         struct {struct nodeAST* left; struct nodeAST* right;} assignShiftLeft;
         struct {struct nodeAST* left; struct nodeAST* right;} assignShiftRight;
         struct {struct nodeAST* left; struct nodeAST* right;} assignAndNot;
+        
+        struct {struct nodeAST* left; struct nodeAST* right;} shortDeclare;
+        
+        struct {struct nodeAST* condition; struct nodeAST* block_true;} ifBlock;
+        struct {
+            struct nodeAST* condition;
+            struct nodeAST* block_true;
+            struct nodeAST* block_false;
+        } ifElseBlock;
+        struct {struct nodeAST* condition; struct nodeAST* block;} switchBlock;
+        struct {struct nodeAST* condition; struct nodeAST* block;} forBlock;
+        struct {struct nodeAST* init; struct nodeAST* condition; struct nodeAST* step;} forClause;
+        
+        struct {struct nodeAST* state; struct nodeAST* expr;} ifCondition;
+        struct {struct nodeAST* state; struct nodeAST* expr;} switchCondition;
+        
+        struct {struct nodeAST* state; struct nodeAST* next;} caseList;
+        struct {struct nodeAST* expr; struct nodeAST* state;} caseClause;
+        
     } nodeValue;
 } nodeAST;
 
@@ -240,7 +275,7 @@ nodeAST* newIdentifier      (const char* _identifier, memoryList _allocator){
     strcpy(returnNode->nodeValue.identifier, _identifier);
     return returnNode;
 }
-nodeAST* newBasicTypeINT    (memoryList _allocator){
+nodeAST* newBasicTypeInt    (memoryList _allocator){
     nodeAST* returnNode = allocateNode(_allocator);
     returnNode->nodeType = BASIC_TYPE;
     returnNode->nodeValue.basicType = BASIC_INT;
@@ -624,4 +659,92 @@ nodeAST* newAssignAndNot    (nodeAST* _left, nodeAST* _right, memoryList _alloca
     returnNode->nodeValue.assignAndNot.right = _right;
     return returnNode;
 }
+
+nodeAST* newShortDeclare    (nodeAST* _left, nodeAST* _right, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_SHORT_DECLARE;
+    returnNode->nodeValue.shortDeclare.left = _left;
+    returnNode->nodeValue.shortDeclare.right = _right;
+    return returnNode;
+}
+
+nodeAST* newIfBlock         (nodeAST* _condition, nodeAST* _block_true, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_IF;
+    returnNode->nodeValue.ifBlock.condition = _condition;
+    returnNode->nodeValue.ifBlock.block_true = _block_true;
+    return returnNode;
+}
+nodeAST* newIfElseBlock     (nodeAST* _condition, nodeAST* _block_ture, nodeAST* _block_false, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_IF_ELSE;
+    returnNode->nodeValue.ifElseBlock.condition = _condition;
+    returnNode->nodeValue.ifElseBlock.block_true = _block_ture;
+    returnNode->nodeValue.ifElseBlock.block_false = _block_false;
+    return returnNode;
+}
+nodeAST* newSwitchBlock     (nodeAST* _condition, nodeAST* _block, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_SWITCH;
+    returnNode->nodeValue.switchBlock.condition = _condition;
+    returnNode->nodeValue.switchBlock.block = _block;
+    return returnNode;
+}
+nodeAST* newForBlock        (nodeAST* _condition, nodeAST* _block, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_FOR;
+    returnNode->nodeValue.forBlock.condition = _condition;
+    returnNode->nodeValue.forBlock.block = _block;
+    return returnNode;
+}
+nodeAST* newForCluase       (nodeAST* _init, nodeAST* _condition, nodeAST* _step, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_UTILITY_FOR_CLAUSE;
+    returnNode->nodeValue.forClause.init = _init;
+    returnNode->nodeValue.forClause.condition = _condition;
+    returnNode->nodeValue.forClause.step = _step;
+    return returnNode;
+}
+
+nodeAST* newIfCondition     (nodeAST* _state, nodeAST* _expr, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_IF_CONDITION;
+    returnNode->nodeValue.ifCondition.state = _state;
+    returnNode->nodeValue.ifCondition.expr = _expr;
+    return returnNode;
+}
+nodeAST* newSwitchCondition (nodeAST* _state, nodeAST* _expr, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_SWITCH_CONDITION;
+    returnNode->nodeValue.switchCondition.state = _state;
+    returnNode->nodeValue.switchCondition.expr = _expr;
+    return returnNode;
+}
+
+nodeAST* newCaseList        (nodeAST* _state, nodeAST* _next, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_UTILITY_CASE_LIST;
+    returnNode->nodeValue.caseList.state = _state;
+    returnNode->nodeValue.caseList.next = _next;
+    return returnNode;
+}
+nodeAST* newCaseClause      (nodeAST* _expr, nodeAST* _state, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_SWITCH_CLAUSE;
+    returnNode->nodeValue.caseClause.expr = _expr;
+    returnNode->nodeValue.caseClause.state = _state;
+    return returnNode;
+}
+
+nodeAST* newControlBreak    (memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_CONTROL_BREAK;
+    return returnNode;
+}
+nodeAST* newControlContinue (memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STATE_CONTROL_CONTINUE;
+    return returnNode;
+}
+
 #endif
