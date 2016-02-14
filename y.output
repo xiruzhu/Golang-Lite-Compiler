@@ -24,8 +24,8 @@ Grammar
 
     2 pckg_decl: package_ id_
 
-    3 top_decl_list: %empty
-    4              | top_decl_list top_decl
+    3 top_decl_list: top_decl_list top_decl
+    4              | %empty
 
     5 top_decl: decl
     6         | func_decl
@@ -65,13 +65,13 @@ Grammar
    26 type_decl: type_ type_spec ';'
    27          | type_ '(' type_spec_list ')' ';'
 
-   28 type_spec_list: %empty
-   29               | type_spec_list type_spec ';'
+   28 type_spec_list: type_spec_list type_spec ';'
+   29               | %empty
 
    30 type_spec: id_ type
 
-   31 var_spec_list: %empty
-   32              | var_spec_list var_spec ';'
+   31 var_spec_list: var_spec_list var_spec ';'
+   32              | %empty
 
    33 var_spec: id_list '=' expr_list
    34         | id_list type '=' expr_list
@@ -93,36 +93,36 @@ Grammar
    47           | bool_
 
    48 field_decl_list: field_decl_list field_decl
-   49                | field_decl_list field_decl ';'
-   50                | %empty
+   49                | %empty
 
-   51 field_decl: id_list type
+   50 field_decl: id_list type
 
-   52 stmt_list: %empty
-   53          | stmt_list stmt
+   51 stmt_list: stmt_list stmt
+   52          | %empty
 
-   54 stmt: decl
-   55     | block
-   56     | print_stmt
-   57     | println_stmt
-   58     | return_stmt
-   59     | if_stmt
-   60     | simple_stmt
-   61     | switch_stmt
-   62     | for_stmt
-   63     | break_stmt
-   64     | cont_stmt
+   53 stmt: decl
+   54     | block
+   55     | print_stmt
+   56     | println_stmt
+   57     | return_stmt
+   58     | if_stmt
+   59     | simple_stmt
+   60     | switch_stmt
+   61     | for_stmt
+   62     | break_stmt
+   63     | cont_stmt
 
-   65 simple_stmt: simple_stmt_v ';'
+   64 simple_stmt: simple_stmt_v ';'
 
-   66 simple_stmt_v: %empty
-   67              | expr_stmt
-   68              | inc_stmt
-   69              | dec_stmt
-   70              | assign_stmt
-   71              | short_decl
+   65 simple_stmt_v: expr_stmt
+   66              | inc_stmt
+   67              | dec_stmt
+   68              | assign_stmt
+   69              | short_decl
+   70              | %empty
 
-   72 assign_stmt: expr_list assign_op expr_list
+   71 assign_stmt: expr_list '=' expr_list
+   72            | expr assign_op expr
 
    73 short_decl: expr_list decla_ expr_list
 
@@ -149,8 +149,8 @@ Grammar
    86 for_clause: condition
    87           | for_stmt_clause
 
-   88 condition: %empty
-   89          | expr
+   88 condition: expr
+   89          | %empty
 
    90 for_stmt_clause: simple_stmt_v ';' condition ';' simple_stmt_v
 
@@ -159,8 +159,8 @@ Grammar
    93            | expr
    94            | %empty
 
-   95 case_clause_list: %empty
-   96                 | case_clause_list case_clause
+   95 case_clause_list: case_clause_list case_clause
+   96                 | %empty
 
    97 case_clause: switch_case ':' stmt_list
 
@@ -177,114 +177,112 @@ Grammar
 
   105 cont_stmt: continue_ ';'
 
-  106 assign_op: '='
-  107          | add_eq_
-  108          | minus_eq_
-  109          | mult_eq_
-  110          | div_eq_
-  111          | mod_eq_
-  112          | amp_eq_
-  113          | vb_eq_
-  114          | caret_eq_
-  115          | ls_eq_
-  116          | rs_eq_
-  117          | unknown_eq_
+  106 assign_op: add_eq_
+  107          | minus_eq_
+  108          | mult_eq_
+  109          | div_eq_
+  110          | mod_eq_
+  111          | amp_eq_
+  112          | vb_eq_
+  113          | caret_eq_
+  114          | ls_eq_
+  115          | rs_eq_
+  116          | unknown_eq_
 
-  118 expr_stmt: expr
+  117 expr_stmt: expr
 
-  119 expr_list: expr
-  120          | expr_list ',' expr
+  118 expr_list: expr
+  119          | expr_list ',' expr
 
-  121 operand: '(' expr ')'
-  122        | operand_name
-  123        | literal
+  120 operand: '(' expr ')'
+  121        | operand_name
+  122        | literal
 
-  124 operand_name: id_
+  123 operand_name: id_
 
-  125 literal: int_lit_
-  126        | float_lit_
-  127        | string_lit_
-  128        | rune_lit_
+  124 literal: int_lit_
+  125        | float_lit_
+  126        | string_lit_
+  127        | rune_lit_
 
-  129 expr: primary_expr
-  130     | expr '*' expr
-  131     | expr '/' expr
-  132     | expr '%' expr
-  133     | expr '&' expr
-  134     | expr unknown_ expr
-  135     | expr ls_ expr
-  136     | expr rs_ expr
-  137     | expr '|' expr
-  138     | expr '^' expr
-  139     | expr '-' expr
-  140     | expr '+' expr
-  141     | expr equality_ expr
-  142     | expr '<' expr
-  143     | expr '>' expr
-  144     | expr lteq_ expr
-  145     | expr gteq_ expr
-  146     | expr not_eq_ expr
-  147     | expr and_ expr
-  148     | expr or_ expr
-  149     | append
-  150     | unary_op expr
+  128 expr: primary_expr
+  129     | expr '*' expr
+  130     | expr '/' expr
+  131     | expr '%' expr
+  132     | expr '&' expr
+  133     | expr unknown_ expr
+  134     | expr ls_ expr
+  135     | expr rs_ expr
+  136     | expr '|' expr
+  137     | expr '^' expr
+  138     | expr '-' expr
+  139     | expr '+' expr
+  140     | expr equality_ expr
+  141     | expr '<' expr
+  142     | expr '>' expr
+  143     | expr lteq_ expr
+  144     | expr gteq_ expr
+  145     | expr not_eq_ expr
+  146     | expr and_ expr
+  147     | expr or_ expr
+  148     | append
+  149     | unary_op expr
 
-  151 unary_op: '+'
-  152         | '-'
-  153         | '^'
-  154         | '!'
+  150 unary_op: '+'
+  151         | '-'
+  152         | '^'
+  153         | '!'
 
-  155 func_call: primary_expr '(' expr_list ')'
-  156          | primary_expr '(' ')'
+  154 func_call: primary_expr '(' expr_list ')'
+  155          | primary_expr '(' ')'
 
-  157 append: append_ '(' id_ ',' expr_list ')'
+  156 append: append_ '(' id_ ',' expr_list ')'
 
-  158 primary_expr: operand
-  159             | func_call
-  160             | type_cast
-  161             | primary_expr selector
-  162             | primary_expr index
-  163             | primary_expr slice
+  157 primary_expr: operand
+  158             | func_call
+  159             | type_cast
+  160             | primary_expr selector
+  161             | primary_expr index
+  162             | primary_expr slice
 
-  164 selector: '.' id_
+  163 selector: '.' id_
 
-  165 type_cast: basic_type '(' expr ')'
+  164 type_cast: basic_type '(' expr ')'
 
-  166 index: '[' expr ']'
+  165 index: '[' expr ']'
 
-  167 slice: '[' expr ':' expr ']'
-  168      | '[' expr ':' ']'
-  169      | '[' ':' expr ']'
-  170      | '[' ':' ']'
-  171      | '[' expr ':' expr ':' expr ']'
-  172      | '[' ':' expr ':' expr ']'
+  166 slice: '[' expr ':' expr ']'
+  167      | '[' expr ':' ']'
+  168      | '[' ':' expr ']'
+  169      | '[' ':' ']'
+  170      | '[' expr ':' expr ':' expr ']'
+  171      | '[' ':' expr ':' expr ']'
 
 
 Terminals, with rules where they appear
 
 $end (0) 0
-'!' (33) 154
-'%' (37) 132
-'&' (38) 133
-'(' (40) 19 20 25 27 76 77 78 79 121 155 156 157 165
-')' (41) 19 20 25 27 76 77 78 79 121 155 156 157 165
-'*' (42) 130
-'+' (43) 140 151
-',' (44) 21 37 120 157
-'-' (45) 139 152
-'.' (46) 164
-'/' (47) 131
-':' (58) 97 167 168 169 170 171 172
-';' (59) 1 14 24 25 26 27 29 32 49 65 76 77 78 79 80 81 90 91 92 104
-    105
-'<' (60) 142
-'=' (61) 33 34 106
-'>' (62) 143
-'[' (91) 39 41 166 167 168 169 170 171 172
-']' (93) 39 41 166 167 168 169 170 171 172
-'^' (94) 138 153
+'!' (33) 153
+'%' (37) 131
+'&' (38) 132
+'(' (40) 19 20 25 27 76 77 78 79 120 154 155 156 164
+')' (41) 19 20 25 27 76 77 78 79 120 154 155 156 164
+'*' (42) 129
+'+' (43) 139 150
+',' (44) 21 37 119 156
+'-' (45) 138 151
+'.' (46) 163
+'/' (47) 130
+':' (58) 97 166 167 168 169 170 171
+';' (59) 1 14 24 25 26 27 28 31 64 76 77 78 79 80 81 90 91 92 104 105
+'<' (60) 141
+'=' (61) 33 34 71
+'>' (62) 142
+'[' (91) 39 41 165 166 167 168 169 170 171
+']' (93) 39 41 165 166 167 168 169 170 171
+'^' (94) 137 152
 '{' (123) 15 40 84
-'|' (124) 137
+'|' (124) 136
 '}' (125) 15 40 84
 error (256)
 error_ (258)
@@ -320,37 +318,37 @@ rune_ (287) 46
 string_ (288) 45
 print_ (289) 76 77
 println_ (290) 78 79
-append_ (291) 157
-ls_ (292) 135
-rs_ (293) 136
-unknown_ (294) 134
-add_eq_ (295) 107
-minus_eq_ (296) 108
-mult_eq_ (297) 109
-div_eq_ (298) 110
-mod_eq_ (299) 111
-amp_eq_ (300) 112
-vb_eq_ (301) 113
-caret_eq_ (302) 114
-ls_eq_ (303) 115
-rs_eq_ (304) 116
-unknown_eq_ (305) 117
-and_ (306) 147
-or_ (307) 148
+append_ (291) 156
+ls_ (292) 134
+rs_ (293) 135
+unknown_ (294) 133
+add_eq_ (295) 106
+minus_eq_ (296) 107
+mult_eq_ (297) 108
+div_eq_ (298) 109
+mod_eq_ (299) 110
+amp_eq_ (300) 111
+vb_eq_ (301) 112
+caret_eq_ (302) 113
+ls_eq_ (303) 114
+rs_eq_ (304) 115
+unknown_eq_ (305) 116
+and_ (306) 146
+or_ (307) 147
 arrow_ (308)
 incre_ (309) 74
 decre_ (310) 75
-equality_ (311) 141
-not_eq_ (312) 146
-lteq_ (313) 144
-gteq_ (314) 145
+equality_ (311) 140
+not_eq_ (312) 145
+lteq_ (313) 143
+gteq_ (314) 144
 decla_ (315) 73
 etc_ (316)
-int_lit_ (317) 41 125
-float_lit_ (318) 126
-string_lit_ (319) 127
-rune_lit_ (320) 128
-id_ (321) 2 11 30 36 37 42 124 157 164
+int_lit_ (317) 41 124
+float_lit_ (318) 125
+string_lit_ (319) 126
+rune_lit_ (320) 127
+id_ (321) 2 11 30 36 37 42 123 156 163
 unary (322)
 
 
@@ -363,11 +361,11 @@ go_prog (91)
 pckg_decl (92)
     on left: 2, on right: 1
 top_decl_list (93)
-    on left: 3 4, on right: 1 4
+    on left: 3 4, on right: 1 3
 top_decl (94)
-    on left: 5 6, on right: 4
+    on left: 5 6, on right: 3
 decl (95)
-    on left: 7 8, on right: 5 54
+    on left: 7 8, on right: 5 53
 func_decl (96)
     on left: 9 10, on right: 6
 func_name (97)
@@ -377,7 +375,7 @@ function (98)
 func_body (99)
     on left: 13, on right: 12
 block (100)
-    on left: 14, on right: 13 55 82 83 85 102
+    on left: 14, on right: 13 54 82 83 85 102
 block_tmp (101)
     on left: 15, on right: 14
 signature (102)
@@ -395,51 +393,51 @@ var_decl (107)
 type_decl (108)
     on left: 26 27, on right: 8
 type_spec_list (109)
-    on left: 28 29, on right: 27 29
+    on left: 28 29, on right: 27 28
 type_spec (110)
-    on left: 30, on right: 26 29
+    on left: 30, on right: 26 28
 var_spec_list (111)
-    on left: 31 32, on right: 25 32
+    on left: 31 32, on right: 25 31
 var_spec (112)
-    on left: 33 34 35, on right: 24 32
+    on left: 33 34 35, on right: 24 31
 id_list (113)
-    on left: 36 37, on right: 23 33 34 35 37 51
+    on left: 36 37, on right: 23 33 34 35 37 50
 type (114)
-    on left: 38 39 40 41 42, on right: 18 23 30 34 35 39 41 51
+    on left: 38 39 40 41 42, on right: 18 23 30 34 35 39 41 50
 basic_type (115)
-    on left: 43 44 45 46 47, on right: 38 165
+    on left: 43 44 45 46 47, on right: 38 164
 field_decl_list (116)
-    on left: 48 49 50, on right: 40 48 49
+    on left: 48 49, on right: 40 48
 field_decl (117)
-    on left: 51, on right: 48 49
+    on left: 50, on right: 48
 stmt_list (118)
-    on left: 52 53, on right: 15 53 97
+    on left: 51 52, on right: 15 51 97
 stmt (119)
-    on left: 54 55 56 57 58 59 60 61 62 63 64, on right: 53
+    on left: 53 54 55 56 57 58 59 60 61 62 63, on right: 51
 simple_stmt (120)
-    on left: 65, on right: 60 91 92 101
+    on left: 64, on right: 59 91 92 101
 simple_stmt_v (121)
-    on left: 66 67 68 69 70 71, on right: 65 90
+    on left: 65 66 67 68 69 70, on right: 64 90
 assign_stmt (122)
-    on left: 72, on right: 70
+    on left: 71 72, on right: 68
 short_decl (123)
-    on left: 73, on right: 71
+    on left: 73, on right: 69
 inc_stmt (124)
-    on left: 74, on right: 68
+    on left: 74, on right: 66
 dec_stmt (125)
-    on left: 75, on right: 69
+    on left: 75, on right: 67
 print_stmt (126)
-    on left: 76 77, on right: 56
+    on left: 76 77, on right: 55
 println_stmt (127)
-    on left: 78 79, on right: 57
+    on left: 78 79, on right: 56
 return_stmt (128)
-    on left: 80 81, on right: 58
+    on left: 80 81, on right: 57
 if_stmt (129)
-    on left: 82 83, on right: 59 103
+    on left: 82 83, on right: 58 103
 switch_stmt (130)
-    on left: 84, on right: 61
+    on left: 84, on right: 60
 for_stmt (131)
-    on left: 85, on right: 62
+    on left: 85, on right: 61
 for_clause (132)
     on left: 86 87, on right: 85
 condition (133)
@@ -449,9 +447,9 @@ for_stmt_clause (134)
 switch_cond (135)
     on left: 91 92 93 94, on right: 84
 case_clause_list (136)
-    on left: 95 96, on right: 84 96
+    on left: 95 96, on right: 84 95
 case_clause (137)
-    on left: 97, on right: 96
+    on left: 97, on right: 95
 switch_case (138)
     on left: 98 99, on right: 97
 if_cond (139)
@@ -459,44 +457,45 @@ if_cond (139)
 else_block (140)
     on left: 102 103, on right: 83
 break_stmt (141)
-    on left: 104, on right: 63
+    on left: 104, on right: 62
 cont_stmt (142)
-    on left: 105, on right: 64
+    on left: 105, on right: 63
 assign_op (143)
-    on left: 106 107 108 109 110 111 112 113 114 115 116 117, on right:
+    on left: 106 107 108 109 110 111 112 113 114 115 116, on right:
     72
 expr_stmt (144)
-    on left: 118, on right: 67
+    on left: 117, on right: 65
 expr_list (145)
-    on left: 119 120, on right: 33 34 72 73 76 78 98 120 155 157
+    on left: 118 119, on right: 33 34 71 73 76 78 98 119 154 156
 operand (146)
-    on left: 121 122 123, on right: 158
+    on left: 120 121 122, on right: 157
 operand_name (147)
-    on left: 124, on right: 122
+    on left: 123, on right: 121
 literal (148)
-    on left: 125 126 127 128, on right: 123
+    on left: 124 125 126 127, on right: 122
 expr (149)
-    on left: 129 130 131 132 133 134 135 136 137 138 139 140 141 142
-    143 144 145 146 147 148 149 150, on right: 74 75 80 89 91 93 100
-    101 118 119 120 121 130 131 132 133 134 135 136 137 138 139 140
-    141 142 143 144 145 146 147 148 150 165 166 167 168 169 171 172
+    on left: 128 129 130 131 132 133 134 135 136 137 138 139 140 141
+    142 143 144 145 146 147 148 149, on right: 72 74 75 80 88 91 93
+    100 101 117 118 119 120 129 130 131 132 133 134 135 136 137 138
+    139 140 141 142 143 144 145 146 147 149 164 165 166 167 168 170
+    171
 unary_op (150)
-    on left: 151 152 153 154, on right: 150
+    on left: 150 151 152 153, on right: 149
 func_call (151)
-    on left: 155 156, on right: 159
+    on left: 154 155, on right: 158
 append (152)
-    on left: 157, on right: 149
+    on left: 156, on right: 148
 primary_expr (153)
-    on left: 158 159 160 161 162 163, on right: 129 155 156 161 162
-    163
+    on left: 157 158 159 160 161 162, on right: 128 154 155 160 161
+    162
 selector (154)
-    on left: 164, on right: 161
+    on left: 163, on right: 160
 type_cast (155)
-    on left: 165, on right: 160
+    on left: 164, on right: 159
 index (156)
-    on left: 166, on right: 162
+    on left: 165, on right: 161
 slice (157)
-    on left: 167 168 169 170 171 172, on right: 163
+    on left: 166 167 168 169 170 171, on right: 162
 
 
 State 0
@@ -548,7 +547,7 @@ State 6
 
     1 go_prog: pckg_decl ';' . top_decl_list
 
-    $default  reduce using rule 3 (top_decl_list)
+    $default  reduce using rule 4 (top_decl_list)
 
     top_decl_list  go to state 7
 
@@ -556,7 +555,7 @@ State 6
 State 7
 
     1 go_prog: pckg_decl ';' top_decl_list .
-    4 top_decl_list: top_decl_list . top_decl
+    3 top_decl_list: top_decl_list . top_decl
 
     func_  shift, and go to state 8
     type_  shift, and go to state 9
@@ -606,9 +605,9 @@ State 10
 
 State 11
 
-    4 top_decl_list: top_decl_list top_decl .
+    3 top_decl_list: top_decl_list top_decl .
 
-    $default  reduce using rule 4 (top_decl_list)
+    $default  reduce using rule 3 (top_decl_list)
 
 
 State 12
@@ -662,7 +661,7 @@ State 18
 
    27 type_decl: type_ '(' . type_spec_list ')' ';'
 
-    $default  reduce using rule 28 (type_spec_list)
+    $default  reduce using rule 29 (type_spec_list)
 
     type_spec_list  go to state 29
 
@@ -695,7 +694,7 @@ State 21
 
    25 var_decl: var_ '(' . var_spec_list ')' ';'
 
-    $default  reduce using rule 31 (var_spec_list)
+    $default  reduce using rule 32 (var_spec_list)
 
     var_spec_list  go to state 41
 
@@ -794,7 +793,7 @@ State 28
 State 29
 
    27 type_decl: type_ '(' type_spec_list . ')' ';'
-   29 type_spec_list: type_spec_list . type_spec ';'
+   28 type_spec_list: type_spec_list . type_spec ';'
 
     ')'  shift, and go to state 56
     id_  shift, and go to state 19
@@ -884,7 +883,7 @@ State 40
 State 41
 
    25 var_decl: var_ '(' var_spec_list . ')' ';'
-   32 var_spec_list: var_spec_list . var_spec ';'
+   31 var_spec_list: var_spec_list . var_spec ';'
 
     ')'  shift, and go to state 61
     id_  shift, and go to state 22
@@ -1046,7 +1045,7 @@ State 56
 
 State 57
 
-   29 type_spec_list: type_spec_list type_spec . ';'
+   28 type_spec_list: type_spec_list type_spec . ';'
 
     ';'  shift, and go to state 93
 
@@ -1055,7 +1054,7 @@ State 58
 
    40 type: struct_ '{' . field_decl_list '}'
 
-    $default  reduce using rule 50 (field_decl_list)
+    $default  reduce using rule 49 (field_decl_list)
 
     field_decl_list  go to state 94
 
@@ -1093,49 +1092,49 @@ State 61
 
 State 62
 
-   32 var_spec_list: var_spec_list var_spec . ';'
+   31 var_spec_list: var_spec_list var_spec . ';'
 
     ';'  shift, and go to state 98
 
 
 State 63
 
-  157 append: append_ . '(' id_ ',' expr_list ')'
+  156 append: append_ . '(' id_ ',' expr_list ')'
 
     '('  shift, and go to state 99
 
 
 State 64
 
-  151 unary_op: '+' .
+  150 unary_op: '+' .
 
-    $default  reduce using rule 151 (unary_op)
+    $default  reduce using rule 150 (unary_op)
 
 
 State 65
 
-  152 unary_op: '-' .
+  151 unary_op: '-' .
 
-    $default  reduce using rule 152 (unary_op)
+    $default  reduce using rule 151 (unary_op)
 
 
 State 66
 
-  153 unary_op: '^' .
+  152 unary_op: '^' .
 
-    $default  reduce using rule 153 (unary_op)
+    $default  reduce using rule 152 (unary_op)
 
 
 State 67
 
-  154 unary_op: '!' .
+  153 unary_op: '!' .
 
-    $default  reduce using rule 154 (unary_op)
+    $default  reduce using rule 153 (unary_op)
 
 
 State 68
 
-  121 operand: '(' . expr ')'
+  120 operand: '(' . expr ')'
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1168,42 +1167,42 @@ State 68
 
 State 69
 
-  125 literal: int_lit_ .
+  124 literal: int_lit_ .
 
-    $default  reduce using rule 125 (literal)
+    $default  reduce using rule 124 (literal)
 
 
 State 70
 
-  126 literal: float_lit_ .
+  125 literal: float_lit_ .
 
-    $default  reduce using rule 126 (literal)
+    $default  reduce using rule 125 (literal)
 
 
 State 71
 
-  127 literal: string_lit_ .
+  126 literal: string_lit_ .
 
-    $default  reduce using rule 127 (literal)
+    $default  reduce using rule 126 (literal)
 
 
 State 72
 
-  128 literal: rune_lit_ .
+  127 literal: rune_lit_ .
 
-    $default  reduce using rule 128 (literal)
+    $default  reduce using rule 127 (literal)
 
 
 State 73
 
-  124 operand_name: id_ .
+  123 operand_name: id_ .
 
-    $default  reduce using rule 124 (operand_name)
+    $default  reduce using rule 123 (operand_name)
 
 
 State 74
 
-  165 type_cast: basic_type . '(' expr ')'
+  164 type_cast: basic_type . '(' expr ')'
 
     '('  shift, and go to state 101
 
@@ -1211,7 +1210,7 @@ State 74
 State 75
 
    33 var_spec: id_list '=' expr_list .
-  120 expr_list: expr_list . ',' expr
+  119 expr_list: expr_list . ',' expr
 
     ','  shift, and go to state 102
 
@@ -1220,47 +1219,47 @@ State 75
 
 State 76
 
-  158 primary_expr: operand .
+  157 primary_expr: operand .
 
-    $default  reduce using rule 158 (primary_expr)
+    $default  reduce using rule 157 (primary_expr)
 
 
 State 77
 
-  122 operand: operand_name .
+  121 operand: operand_name .
 
-    $default  reduce using rule 122 (operand)
+    $default  reduce using rule 121 (operand)
 
 
 State 78
 
-  123 operand: literal .
+  122 operand: literal .
 
-    $default  reduce using rule 123 (operand)
+    $default  reduce using rule 122 (operand)
 
 
 State 79
 
-  119 expr_list: expr .
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  118 expr_list: expr .
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -1282,12 +1281,12 @@ State 79
     gteq_      shift, and go to state 120
     '|'        shift, and go to state 121
 
-    $default  reduce using rule 119 (expr_list)
+    $default  reduce using rule 118 (expr_list)
 
 
 State 80
 
-  150 expr: unary_op . expr
+  149 expr: unary_op . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1320,32 +1319,32 @@ State 80
 
 State 81
 
-  159 primary_expr: func_call .
+  158 primary_expr: func_call .
 
-    $default  reduce using rule 159 (primary_expr)
+    $default  reduce using rule 158 (primary_expr)
 
 
 State 82
 
-  149 expr: append .
+  148 expr: append .
 
-    $default  reduce using rule 149 (expr)
+    $default  reduce using rule 148 (expr)
 
 
 State 83
 
-  129 expr: primary_expr .
-  155 func_call: primary_expr . '(' expr_list ')'
-  156          | primary_expr . '(' ')'
-  161 primary_expr: primary_expr . selector
-  162             | primary_expr . index
-  163             | primary_expr . slice
+  128 expr: primary_expr .
+  154 func_call: primary_expr . '(' expr_list ')'
+  155          | primary_expr . '(' ')'
+  160 primary_expr: primary_expr . selector
+  161             | primary_expr . index
+  162             | primary_expr . slice
 
     '['  shift, and go to state 123
     '('  shift, and go to state 124
     '.'  shift, and go to state 125
 
-    $default  reduce using rule 129 (expr)
+    $default  reduce using rule 128 (expr)
 
     selector  go to state 126
     index     go to state 127
@@ -1354,9 +1353,9 @@ State 83
 
 State 84
 
-  160 primary_expr: type_cast .
+  159 primary_expr: type_cast .
 
-    $default  reduce using rule 160 (primary_expr)
+    $default  reduce using rule 159 (primary_expr)
 
 
 State 85
@@ -1427,7 +1426,7 @@ State 89
 State 90
 
    15 block_tmp: '{' stmt_list . '}'
-   53 stmt_list: stmt_list . stmt
+   51 stmt_list: stmt_list . stmt
 
     break_       shift, and go to state 131
     continue_    shift, and go to state 132
@@ -1458,7 +1457,7 @@ State 90
     rune_lit_    shift, and go to state 72
     id_          shift, and go to state 73
 
-    $default  reduce using rule 66 (simple_stmt_v)
+    $default  reduce using rule 70 (simple_stmt_v)
 
     decl           go to state 140
     block          go to state 141
@@ -1510,16 +1509,15 @@ State 92
 
 State 93
 
-   29 type_spec_list: type_spec_list type_spec ';' .
+   28 type_spec_list: type_spec_list type_spec ';' .
 
-    $default  reduce using rule 29 (type_spec_list)
+    $default  reduce using rule 28 (type_spec_list)
 
 
 State 94
 
    40 type: struct_ '{' field_decl_list . '}'
    48 field_decl_list: field_decl_list . field_decl
-   49                | field_decl_list . field_decl ';'
 
     '}'  shift, and go to state 160
     id_  shift, and go to state 22
@@ -1561,40 +1559,40 @@ State 97
 
 State 98
 
-   32 var_spec_list: var_spec_list var_spec ';' .
+   31 var_spec_list: var_spec_list var_spec ';' .
 
-    $default  reduce using rule 32 (var_spec_list)
+    $default  reduce using rule 31 (var_spec_list)
 
 
 State 99
 
-  157 append: append_ '(' . id_ ',' expr_list ')'
+  156 append: append_ '(' . id_ ',' expr_list ')'
 
     id_  shift, and go to state 164
 
 
 State 100
 
-  121 operand: '(' expr . ')'
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  120 operand: '(' expr . ')'
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -1620,7 +1618,7 @@ State 100
 
 State 101
 
-  165 type_cast: basic_type '(' . expr ')'
+  164 type_cast: basic_type '(' . expr ')'
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1653,7 +1651,7 @@ State 101
 
 State 102
 
-  120 expr_list: expr_list ',' . expr
+  119 expr_list: expr_list ',' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1686,7 +1684,7 @@ State 102
 
 State 103
 
-  140 expr: expr '+' . expr
+  139 expr: expr '+' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1719,7 +1717,7 @@ State 103
 
 State 104
 
-  139 expr: expr '-' . expr
+  138 expr: expr '-' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1752,7 +1750,7 @@ State 104
 
 State 105
 
-  130 expr: expr '*' . expr
+  129 expr: expr '*' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1785,7 +1783,7 @@ State 105
 
 State 106
 
-  131 expr: expr '/' . expr
+  130 expr: expr '/' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1818,7 +1816,7 @@ State 106
 
 State 107
 
-  132 expr: expr '%' . expr
+  131 expr: expr '%' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1851,7 +1849,7 @@ State 107
 
 State 108
 
-  133 expr: expr '&' . expr
+  132 expr: expr '&' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1884,7 +1882,7 @@ State 108
 
 State 109
 
-  138 expr: expr '^' . expr
+  137 expr: expr '^' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1917,7 +1915,7 @@ State 109
 
 State 110
 
-  135 expr: expr ls_ . expr
+  134 expr: expr ls_ . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1950,7 +1948,7 @@ State 110
 
 State 111
 
-  136 expr: expr rs_ . expr
+  135 expr: expr rs_ . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -1983,7 +1981,7 @@ State 111
 
 State 112
 
-  134 expr: expr unknown_ . expr
+  133 expr: expr unknown_ . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2016,7 +2014,7 @@ State 112
 
 State 113
 
-  147 expr: expr and_ . expr
+  146 expr: expr and_ . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2049,7 +2047,7 @@ State 113
 
 State 114
 
-  148 expr: expr or_ . expr
+  147 expr: expr or_ . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2082,7 +2080,7 @@ State 114
 
 State 115
 
-  141 expr: expr equality_ . expr
+  140 expr: expr equality_ . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2115,7 +2113,7 @@ State 115
 
 State 116
 
-  142 expr: expr '<' . expr
+  141 expr: expr '<' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2148,7 +2146,7 @@ State 116
 
 State 117
 
-  143 expr: expr '>' . expr
+  142 expr: expr '>' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2181,7 +2179,7 @@ State 117
 
 State 118
 
-  146 expr: expr not_eq_ . expr
+  145 expr: expr not_eq_ . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2214,7 +2212,7 @@ State 118
 
 State 119
 
-  144 expr: expr lteq_ . expr
+  143 expr: expr lteq_ . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2247,7 +2245,7 @@ State 119
 
 State 120
 
-  145 expr: expr gteq_ . expr
+  144 expr: expr gteq_ . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2280,7 +2278,7 @@ State 120
 
 State 121
 
-  137 expr: expr '|' . expr
+  136 expr: expr '|' . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2313,39 +2311,39 @@ State 121
 
 State 122
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-  150     | unary_op expr .
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+  149     | unary_op expr .
 
-    $default  reduce using rule 150 (expr)
+    $default  reduce using rule 149 (expr)
 
 
 State 123
 
-  166 index: '[' . expr ']'
-  167 slice: '[' . expr ':' expr ']'
-  168      | '[' . expr ':' ']'
-  169      | '[' . ':' expr ']'
-  170      | '[' . ':' ']'
-  171      | '[' . expr ':' expr ':' expr ']'
-  172      | '[' . ':' expr ':' expr ']'
+  165 index: '[' . expr ']'
+  166 slice: '[' . expr ':' expr ']'
+  167      | '[' . expr ':' ']'
+  168      | '[' . ':' expr ']'
+  169      | '[' . ':' ']'
+  170      | '[' . expr ':' expr ':' expr ']'
+  171      | '[' . ':' expr ':' expr ']'
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2379,8 +2377,8 @@ State 123
 
 State 124
 
-  155 func_call: primary_expr '(' . expr_list ')'
-  156          | primary_expr '(' . ')'
+  154 func_call: primary_expr '(' . expr_list ')'
+  155          | primary_expr '(' . ')'
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -2415,36 +2413,36 @@ State 124
 
 State 125
 
-  164 selector: '.' . id_
+  163 selector: '.' . id_
 
     id_  shift, and go to state 191
 
 
 State 126
 
-  161 primary_expr: primary_expr selector .
+  160 primary_expr: primary_expr selector .
 
-    $default  reduce using rule 161 (primary_expr)
+    $default  reduce using rule 160 (primary_expr)
 
 
 State 127
 
-  162 primary_expr: primary_expr index .
+  161 primary_expr: primary_expr index .
 
-    $default  reduce using rule 162 (primary_expr)
+    $default  reduce using rule 161 (primary_expr)
 
 
 State 128
 
-  163 primary_expr: primary_expr slice .
+  162 primary_expr: primary_expr slice .
 
-    $default  reduce using rule 163 (primary_expr)
+    $default  reduce using rule 162 (primary_expr)
 
 
 State 129
 
    34 var_spec: id_list type '=' expr_list .
-  120 expr_list: expr_list . ',' expr
+  119 expr_list: expr_list . ',' expr
 
     ','  shift, and go to state 102
 
@@ -2493,8 +2491,8 @@ State 133
     rune_lit_    shift, and go to state 72
     id_          shift, and go to state 73
 
-    '{'       reduce using rule 88 (condition)
-    $default  reduce using rule 66 (simple_stmt_v)
+    '{'       reduce using rule 89 (condition)
+    $default  reduce using rule 70 (simple_stmt_v)
 
     basic_type       go to state 74
     simple_stmt_v    go to state 194
@@ -2540,7 +2538,7 @@ State 134
     rune_lit_    shift, and go to state 72
     id_          shift, and go to state 73
 
-    $default  reduce using rule 66 (simple_stmt_v)
+    $default  reduce using rule 70 (simple_stmt_v)
 
     basic_type     go to state 74
     simple_stmt    go to state 199
@@ -2620,7 +2618,7 @@ State 136
     id_          shift, and go to state 73
 
     '{'       reduce using rule 94 (switch_cond)
-    $default  reduce using rule 66 (simple_stmt_v)
+    $default  reduce using rule 70 (simple_stmt_v)
 
     basic_type     go to state 74
     simple_stmt    go to state 204
@@ -2668,205 +2666,206 @@ State 139
 
 State 140
 
-   54 stmt: decl .
+   53 stmt: decl .
 
-    $default  reduce using rule 54 (stmt)
+    $default  reduce using rule 53 (stmt)
 
 
 State 141
 
-   55 stmt: block .
+   54 stmt: block .
 
-    $default  reduce using rule 55 (stmt)
+    $default  reduce using rule 54 (stmt)
 
 
 State 142
 
-   53 stmt_list: stmt_list stmt .
+   51 stmt_list: stmt_list stmt .
 
-    $default  reduce using rule 53 (stmt_list)
+    $default  reduce using rule 51 (stmt_list)
 
 
 State 143
 
-   60 stmt: simple_stmt .
+   59 stmt: simple_stmt .
 
-    $default  reduce using rule 60 (stmt)
+    $default  reduce using rule 59 (stmt)
 
 
 State 144
 
-   65 simple_stmt: simple_stmt_v . ';'
+   64 simple_stmt: simple_stmt_v . ';'
 
     ';'  shift, and go to state 209
 
 
 State 145
 
-   70 simple_stmt_v: assign_stmt .
-
-    $default  reduce using rule 70 (simple_stmt_v)
-
-
-State 146
-
-   71 simple_stmt_v: short_decl .
-
-    $default  reduce using rule 71 (simple_stmt_v)
-
-
-State 147
-
-   68 simple_stmt_v: inc_stmt .
+   68 simple_stmt_v: assign_stmt .
 
     $default  reduce using rule 68 (simple_stmt_v)
 
 
-State 148
+State 146
 
-   69 simple_stmt_v: dec_stmt .
+   69 simple_stmt_v: short_decl .
 
     $default  reduce using rule 69 (simple_stmt_v)
 
 
-State 149
+State 147
 
-   56 stmt: print_stmt .
+   66 simple_stmt_v: inc_stmt .
 
-    $default  reduce using rule 56 (stmt)
-
-
-State 150
-
-   57 stmt: println_stmt .
-
-    $default  reduce using rule 57 (stmt)
+    $default  reduce using rule 66 (simple_stmt_v)
 
 
-State 151
+State 148
 
-   58 stmt: return_stmt .
-
-    $default  reduce using rule 58 (stmt)
-
-
-State 152
-
-   59 stmt: if_stmt .
-
-    $default  reduce using rule 59 (stmt)
-
-
-State 153
-
-   61 stmt: switch_stmt .
-
-    $default  reduce using rule 61 (stmt)
-
-
-State 154
-
-   62 stmt: for_stmt .
-
-    $default  reduce using rule 62 (stmt)
-
-
-State 155
-
-   63 stmt: break_stmt .
-
-    $default  reduce using rule 63 (stmt)
-
-
-State 156
-
-   64 stmt: cont_stmt .
-
-    $default  reduce using rule 64 (stmt)
-
-
-State 157
-
-   67 simple_stmt_v: expr_stmt .
+   67 simple_stmt_v: dec_stmt .
 
     $default  reduce using rule 67 (simple_stmt_v)
 
 
+State 149
+
+   55 stmt: print_stmt .
+
+    $default  reduce using rule 55 (stmt)
+
+
+State 150
+
+   56 stmt: println_stmt .
+
+    $default  reduce using rule 56 (stmt)
+
+
+State 151
+
+   57 stmt: return_stmt .
+
+    $default  reduce using rule 57 (stmt)
+
+
+State 152
+
+   58 stmt: if_stmt .
+
+    $default  reduce using rule 58 (stmt)
+
+
+State 153
+
+   60 stmt: switch_stmt .
+
+    $default  reduce using rule 60 (stmt)
+
+
+State 154
+
+   61 stmt: for_stmt .
+
+    $default  reduce using rule 61 (stmt)
+
+
+State 155
+
+   62 stmt: break_stmt .
+
+    $default  reduce using rule 62 (stmt)
+
+
+State 156
+
+   63 stmt: cont_stmt .
+
+    $default  reduce using rule 63 (stmt)
+
+
+State 157
+
+   65 simple_stmt_v: expr_stmt .
+
+    $default  reduce using rule 65 (simple_stmt_v)
+
+
 State 158
 
-   72 assign_stmt: expr_list . assign_op expr_list
+   71 assign_stmt: expr_list . '=' expr_list
    73 short_decl: expr_list . decla_ expr_list
-  120 expr_list: expr_list . ',' expr
+  119 expr_list: expr_list . ',' expr
 
-    add_eq_      shift, and go to state 210
-    minus_eq_    shift, and go to state 211
-    mult_eq_     shift, and go to state 212
-    div_eq_      shift, and go to state 213
-    mod_eq_      shift, and go to state 214
-    amp_eq_      shift, and go to state 215
-    vb_eq_       shift, and go to state 216
-    caret_eq_    shift, and go to state 217
-    ls_eq_       shift, and go to state 218
-    rs_eq_       shift, and go to state 219
-    unknown_eq_  shift, and go to state 220
-    '='          shift, and go to state 221
-    decla_       shift, and go to state 222
-    ','          shift, and go to state 102
-
-    assign_op  go to state 223
+    '='     shift, and go to state 210
+    decla_  shift, and go to state 211
+    ','     shift, and go to state 102
 
 
 State 159
 
+   72 assign_stmt: expr . assign_op expr
    74 inc_stmt: expr . incre_
    75 dec_stmt: expr . decre_
-  118 expr_stmt: expr .
-  119 expr_list: expr .
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  117 expr_stmt: expr .
+  118 expr_list: expr .
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
-    '+'        shift, and go to state 103
-    '-'        shift, and go to state 104
-    '*'        shift, and go to state 105
-    '/'        shift, and go to state 106
-    '%'        shift, and go to state 107
-    '&'        shift, and go to state 108
-    '^'        shift, and go to state 109
-    ls_        shift, and go to state 110
-    rs_        shift, and go to state 111
-    unknown_   shift, and go to state 112
-    and_       shift, and go to state 113
-    or_        shift, and go to state 114
-    incre_     shift, and go to state 224
-    decre_     shift, and go to state 225
-    equality_  shift, and go to state 115
-    '<'        shift, and go to state 116
-    '>'        shift, and go to state 117
-    not_eq_    shift, and go to state 118
-    lteq_      shift, and go to state 119
-    gteq_      shift, and go to state 120
-    '|'        shift, and go to state 121
+    '+'          shift, and go to state 103
+    '-'          shift, and go to state 104
+    '*'          shift, and go to state 105
+    '/'          shift, and go to state 106
+    '%'          shift, and go to state 107
+    '&'          shift, and go to state 108
+    '^'          shift, and go to state 109
+    ls_          shift, and go to state 110
+    rs_          shift, and go to state 111
+    unknown_     shift, and go to state 112
+    add_eq_      shift, and go to state 212
+    minus_eq_    shift, and go to state 213
+    mult_eq_     shift, and go to state 214
+    div_eq_      shift, and go to state 215
+    mod_eq_      shift, and go to state 216
+    amp_eq_      shift, and go to state 217
+    vb_eq_       shift, and go to state 218
+    caret_eq_    shift, and go to state 219
+    ls_eq_       shift, and go to state 220
+    rs_eq_       shift, and go to state 221
+    unknown_eq_  shift, and go to state 222
+    and_         shift, and go to state 113
+    or_          shift, and go to state 114
+    incre_       shift, and go to state 223
+    decre_       shift, and go to state 224
+    equality_    shift, and go to state 115
+    '<'          shift, and go to state 116
+    '>'          shift, and go to state 117
+    not_eq_      shift, and go to state 118
+    lteq_        shift, and go to state 119
+    gteq_        shift, and go to state 120
+    '|'          shift, and go to state 121
 
-    '{'       reduce using rule 118 (expr_stmt)
-    ';'       reduce using rule 118 (expr_stmt)
-    $default  reduce using rule 119 (expr_list)
+    '{'       reduce using rule 117 (expr_stmt)
+    ';'       reduce using rule 117 (expr_stmt)
+    $default  reduce using rule 118 (expr_list)
+
+    assign_op  go to state 225
 
 
 State 160
@@ -2879,7 +2878,7 @@ State 160
 State 161
 
    37 id_list: id_list . ',' id_
-   51 field_decl: id_list . type
+   50 field_decl: id_list . type
 
     struct_  shift, and go to state 30
     int_     shift, and go to state 31
@@ -2898,9 +2897,6 @@ State 161
 State 162
 
    48 field_decl_list: field_decl_list field_decl .
-   49                | field_decl_list field_decl . ';'
-
-    ';'  shift, and go to state 227
 
     $default  reduce using rule 48 (field_decl_list)
 
@@ -2914,40 +2910,40 @@ State 163
 
 State 164
 
-  157 append: append_ '(' id_ . ',' expr_list ')'
+  156 append: append_ '(' id_ . ',' expr_list ')'
 
-    ','  shift, and go to state 228
+    ','  shift, and go to state 227
 
 
 State 165
 
-  121 operand: '(' expr ')' .
+  120 operand: '(' expr ')' .
 
-    $default  reduce using rule 121 (operand)
+    $default  reduce using rule 120 (operand)
 
 
 State 166
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-  165 type_cast: basic_type '(' expr . ')'
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+  164 type_cast: basic_type '(' expr . ')'
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -2967,32 +2963,32 @@ State 166
     not_eq_    shift, and go to state 118
     lteq_      shift, and go to state 119
     gteq_      shift, and go to state 120
-    ')'        shift, and go to state 229
+    ')'        shift, and go to state 228
     '|'        shift, and go to state 121
 
 
 State 167
 
-  120 expr_list: expr_list ',' expr .
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  119 expr_list: expr_list ',' expr .
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -3014,65 +3010,31 @@ State 167
     gteq_      shift, and go to state 120
     '|'        shift, and go to state 121
 
-    $default  reduce using rule 120 (expr_list)
+    $default  reduce using rule 119 (expr_list)
 
 
 State 168
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  140     | expr '+' expr .
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-
-    '*'       shift, and go to state 105
-    '/'       shift, and go to state 106
-    '%'       shift, and go to state 107
-    '&'       shift, and go to state 108
-    ls_       shift, and go to state 110
-    rs_       shift, and go to state 111
-    unknown_  shift, and go to state 112
-
-    $default  reduce using rule 140 (expr)
-
-
-State 169
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  139     | expr '-' expr .
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  139     | expr '+' expr .
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '*'       shift, and go to state 105
     '/'       shift, and go to state 106
@@ -3085,132 +3047,28 @@ State 169
     $default  reduce using rule 139 (expr)
 
 
-State 170
+State 169
 
-  130 expr: expr . '*' expr
-  130     | expr '*' expr .
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-
-    $default  reduce using rule 130 (expr)
-
-
-State 171
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  131     | expr '/' expr .
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-
-    $default  reduce using rule 131 (expr)
-
-
-State 172
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  132     | expr '%' expr .
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-
-    $default  reduce using rule 132 (expr)
-
-
-State 173
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  133     | expr '&' expr .
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-
-    $default  reduce using rule 133 (expr)
-
-
-State 174
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  138     | expr '^' expr .
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  138     | expr '-' expr .
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '*'       shift, and go to state 105
     '/'       shift, and go to state 106
@@ -3223,106 +3081,244 @@ State 174
     $default  reduce using rule 138 (expr)
 
 
+State 170
+
+  129 expr: expr . '*' expr
+  129     | expr '*' expr .
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+
+    $default  reduce using rule 129 (expr)
+
+
+State 171
+
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  130     | expr '/' expr .
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+
+    $default  reduce using rule 130 (expr)
+
+
+State 172
+
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  131     | expr '%' expr .
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+
+    $default  reduce using rule 131 (expr)
+
+
+State 173
+
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  132     | expr '&' expr .
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+
+    $default  reduce using rule 132 (expr)
+
+
+State 174
+
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  137     | expr '^' expr .
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+
+    '*'       shift, and go to state 105
+    '/'       shift, and go to state 106
+    '%'       shift, and go to state 107
+    '&'       shift, and go to state 108
+    ls_       shift, and go to state 110
+    rs_       shift, and go to state 111
+    unknown_  shift, and go to state 112
+
+    $default  reduce using rule 137 (expr)
+
+
 State 175
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  135     | expr ls_ expr .
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-
-    $default  reduce using rule 135 (expr)
-
-
-State 176
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  136     | expr rs_ expr .
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-
-    $default  reduce using rule 136 (expr)
-
-
-State 177
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  134     | expr unknown_ expr .
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  134     | expr ls_ expr .
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     $default  reduce using rule 134 (expr)
 
 
+State 176
+
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  135     | expr rs_ expr .
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+
+    $default  reduce using rule 135 (expr)
+
+
+State 177
+
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  133     | expr unknown_ expr .
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+
+    $default  reduce using rule 133 (expr)
+
+
 State 178
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  147     | expr and_ expr .
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  146     | expr and_ expr .
+  147     | expr . or_ expr
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -3342,31 +3338,31 @@ State 178
     gteq_      shift, and go to state 120
     '|'        shift, and go to state 121
 
-    $default  reduce using rule 147 (expr)
+    $default  reduce using rule 146 (expr)
 
 
 State 179
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-  148     | expr or_ expr .
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+  147     | expr or_ expr .
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -3387,31 +3383,69 @@ State 179
     gteq_      shift, and go to state 120
     '|'        shift, and go to state 121
 
-    $default  reduce using rule 148 (expr)
+    $default  reduce using rule 147 (expr)
 
 
 State 180
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  141     | expr equality_ expr .
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  140     | expr equality_ expr .
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+
+    '+'       shift, and go to state 103
+    '-'       shift, and go to state 104
+    '*'       shift, and go to state 105
+    '/'       shift, and go to state 106
+    '%'       shift, and go to state 107
+    '&'       shift, and go to state 108
+    '^'       shift, and go to state 109
+    ls_       shift, and go to state 110
+    rs_       shift, and go to state 111
+    unknown_  shift, and go to state 112
+    '|'       shift, and go to state 121
+
+    $default  reduce using rule 140 (expr)
+
+
+State 181
+
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  141     | expr '<' expr .
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '+'       shift, and go to state 103
     '-'       shift, and go to state 104
@@ -3428,28 +3462,28 @@ State 180
     $default  reduce using rule 141 (expr)
 
 
-State 181
+State 182
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  142     | expr '<' expr .
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  142     | expr '>' expr .
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '+'       shift, and go to state 103
     '-'       shift, and go to state 104
@@ -3466,142 +3500,28 @@ State 181
     $default  reduce using rule 142 (expr)
 
 
-State 182
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  143     | expr '>' expr .
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-
-    '+'       shift, and go to state 103
-    '-'       shift, and go to state 104
-    '*'       shift, and go to state 105
-    '/'       shift, and go to state 106
-    '%'       shift, and go to state 107
-    '&'       shift, and go to state 108
-    '^'       shift, and go to state 109
-    ls_       shift, and go to state 110
-    rs_       shift, and go to state 111
-    unknown_  shift, and go to state 112
-    '|'       shift, and go to state 121
-
-    $default  reduce using rule 143 (expr)
-
-
 State 183
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  146     | expr not_eq_ expr .
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-
-    '+'       shift, and go to state 103
-    '-'       shift, and go to state 104
-    '*'       shift, and go to state 105
-    '/'       shift, and go to state 106
-    '%'       shift, and go to state 107
-    '&'       shift, and go to state 108
-    '^'       shift, and go to state 109
-    ls_       shift, and go to state 110
-    rs_       shift, and go to state 111
-    unknown_  shift, and go to state 112
-    '|'       shift, and go to state 121
-
-    $default  reduce using rule 146 (expr)
-
-
-State 184
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  144     | expr lteq_ expr .
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-
-    '+'       shift, and go to state 103
-    '-'       shift, and go to state 104
-    '*'       shift, and go to state 105
-    '/'       shift, and go to state 106
-    '%'       shift, and go to state 107
-    '&'       shift, and go to state 108
-    '^'       shift, and go to state 109
-    ls_       shift, and go to state 110
-    rs_       shift, and go to state 111
-    unknown_  shift, and go to state 112
-    '|'       shift, and go to state 121
-
-    $default  reduce using rule 144 (expr)
-
-
-State 185
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  145     | expr gteq_ expr .
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  145     | expr not_eq_ expr .
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '+'       shift, and go to state 103
     '-'       shift, and go to state 104
@@ -3618,28 +3538,104 @@ State 185
     $default  reduce using rule 145 (expr)
 
 
+State 184
+
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  143     | expr lteq_ expr .
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+
+    '+'       shift, and go to state 103
+    '-'       shift, and go to state 104
+    '*'       shift, and go to state 105
+    '/'       shift, and go to state 106
+    '%'       shift, and go to state 107
+    '&'       shift, and go to state 108
+    '^'       shift, and go to state 109
+    ls_       shift, and go to state 110
+    rs_       shift, and go to state 111
+    unknown_  shift, and go to state 112
+    '|'       shift, and go to state 121
+
+    $default  reduce using rule 143 (expr)
+
+
+State 185
+
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  144     | expr gteq_ expr .
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+
+    '+'       shift, and go to state 103
+    '-'       shift, and go to state 104
+    '*'       shift, and go to state 105
+    '/'       shift, and go to state 106
+    '%'       shift, and go to state 107
+    '&'       shift, and go to state 108
+    '^'       shift, and go to state 109
+    ls_       shift, and go to state 110
+    rs_       shift, and go to state 111
+    unknown_  shift, and go to state 112
+    '|'       shift, and go to state 121
+
+    $default  reduce using rule 144 (expr)
+
+
 State 186
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  137     | expr '|' expr .
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  136     | expr '|' expr .
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '*'       shift, and go to state 105
     '/'       shift, and go to state 106
@@ -3649,14 +3645,14 @@ State 186
     rs_       shift, and go to state 111
     unknown_  shift, and go to state 112
 
-    $default  reduce using rule 137 (expr)
+    $default  reduce using rule 136 (expr)
 
 
 State 187
 
-  169 slice: '[' ':' . expr ']'
-  170      | '[' ':' . ']'
-  172      | '[' ':' . expr ':' expr ']'
+  168 slice: '[' ':' . expr ']'
+  169      | '[' ':' . ']'
+  171      | '[' ':' . expr ':' expr ']'
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -3668,7 +3664,7 @@ State 187
     '-'          shift, and go to state 65
     '^'          shift, and go to state 66
     '!'          shift, and go to state 67
-    ']'          shift, and go to state 230
+    ']'          shift, and go to state 229
     '('          shift, and go to state 68
     int_lit_     shift, and go to state 69
     float_lit_   shift, and go to state 70
@@ -3680,7 +3676,7 @@ State 187
     operand       go to state 76
     operand_name  go to state 77
     literal       go to state 78
-    expr          go to state 231
+    expr          go to state 230
     unary_op      go to state 80
     func_call     go to state 81
     append        go to state 82
@@ -3690,29 +3686,29 @@ State 187
 
 State 188
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-  166 index: '[' expr . ']'
-  167 slice: '[' expr . ':' expr ']'
-  168      | '[' expr . ':' ']'
-  171      | '[' expr . ':' expr ':' expr ']'
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+  165 index: '[' expr . ']'
+  166 slice: '[' expr . ':' expr ']'
+  167      | '[' expr . ':' ']'
+  170      | '[' expr . ':' expr ':' expr ']'
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -3732,32 +3728,32 @@ State 188
     not_eq_    shift, and go to state 118
     lteq_      shift, and go to state 119
     gteq_      shift, and go to state 120
-    ']'        shift, and go to state 232
-    ':'        shift, and go to state 233
+    ']'        shift, and go to state 231
+    ':'        shift, and go to state 232
     '|'        shift, and go to state 121
 
 
 State 189
 
-  156 func_call: primary_expr '(' ')' .
+  155 func_call: primary_expr '(' ')' .
 
-    $default  reduce using rule 156 (func_call)
+    $default  reduce using rule 155 (func_call)
 
 
 State 190
 
-  120 expr_list: expr_list . ',' expr
-  155 func_call: primary_expr '(' expr_list . ')'
+  119 expr_list: expr_list . ',' expr
+  154 func_call: primary_expr '(' expr_list . ')'
 
-    ')'  shift, and go to state 234
+    ')'  shift, and go to state 233
     ','  shift, and go to state 102
 
 
 State 191
 
-  164 selector: '.' id_ .
+  163 selector: '.' id_ .
 
-    $default  reduce using rule 164 (selector)
+    $default  reduce using rule 163 (selector)
 
 
 State 192
@@ -3778,7 +3774,7 @@ State 194
 
    90 for_stmt_clause: simple_stmt_v . ';' condition ';' simple_stmt_v
 
-    ';'  shift, and go to state 235
+    ';'  shift, and go to state 234
 
 
 State 195
@@ -3787,7 +3783,7 @@ State 195
 
     '{'  shift, and go to state 50
 
-    block      go to state 236
+    block      go to state 235
     block_tmp  go to state 53
 
 
@@ -3807,56 +3803,70 @@ State 197
 
 State 198
 
+   72 assign_stmt: expr . assign_op expr
    74 inc_stmt: expr . incre_
    75 dec_stmt: expr . decre_
-   89 condition: expr .
-  118 expr_stmt: expr .
-  119 expr_list: expr .
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+   88 condition: expr .
+  117 expr_stmt: expr .
+  118 expr_list: expr .
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
-    '+'        shift, and go to state 103
-    '-'        shift, and go to state 104
-    '*'        shift, and go to state 105
-    '/'        shift, and go to state 106
-    '%'        shift, and go to state 107
-    '&'        shift, and go to state 108
-    '^'        shift, and go to state 109
-    ls_        shift, and go to state 110
-    rs_        shift, and go to state 111
-    unknown_   shift, and go to state 112
-    and_       shift, and go to state 113
-    or_        shift, and go to state 114
-    incre_     shift, and go to state 224
-    decre_     shift, and go to state 225
-    equality_  shift, and go to state 115
-    '<'        shift, and go to state 116
-    '>'        shift, and go to state 117
-    not_eq_    shift, and go to state 118
-    lteq_      shift, and go to state 119
-    gteq_      shift, and go to state 120
-    '|'        shift, and go to state 121
+    '+'          shift, and go to state 103
+    '-'          shift, and go to state 104
+    '*'          shift, and go to state 105
+    '/'          shift, and go to state 106
+    '%'          shift, and go to state 107
+    '&'          shift, and go to state 108
+    '^'          shift, and go to state 109
+    ls_          shift, and go to state 110
+    rs_          shift, and go to state 111
+    unknown_     shift, and go to state 112
+    add_eq_      shift, and go to state 212
+    minus_eq_    shift, and go to state 213
+    mult_eq_     shift, and go to state 214
+    div_eq_      shift, and go to state 215
+    mod_eq_      shift, and go to state 216
+    amp_eq_      shift, and go to state 217
+    vb_eq_       shift, and go to state 218
+    caret_eq_    shift, and go to state 219
+    ls_eq_       shift, and go to state 220
+    rs_eq_       shift, and go to state 221
+    unknown_eq_  shift, and go to state 222
+    and_         shift, and go to state 113
+    or_          shift, and go to state 114
+    incre_       shift, and go to state 223
+    decre_       shift, and go to state 224
+    equality_    shift, and go to state 115
+    '<'          shift, and go to state 116
+    '>'          shift, and go to state 117
+    not_eq_      shift, and go to state 118
+    lteq_        shift, and go to state 119
+    gteq_        shift, and go to state 120
+    '|'          shift, and go to state 121
 
-    '{'       reduce using rule 89 (condition)
-    ';'       reduce using rule 118 (expr_stmt)
-    $default  reduce using rule 119 (expr_list)
+    '{'       reduce using rule 88 (condition)
+    ';'       reduce using rule 117 (expr_stmt)
+    $default  reduce using rule 118 (expr_list)
+
+    assign_op  go to state 225
 
 
 State 199
@@ -3884,7 +3894,7 @@ State 199
     operand       go to state 76
     operand_name  go to state 77
     literal       go to state 78
-    expr          go to state 237
+    expr          go to state 236
     unary_op      go to state 80
     func_call     go to state 81
     append        go to state 82
@@ -3899,62 +3909,76 @@ State 200
 
     '{'  shift, and go to state 50
 
-    block      go to state 238
+    block      go to state 237
     block_tmp  go to state 53
 
 
 State 201
 
+   72 assign_stmt: expr . assign_op expr
    74 inc_stmt: expr . incre_
    75 dec_stmt: expr . decre_
   100 if_cond: expr .
-  118 expr_stmt: expr .
-  119 expr_list: expr .
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  117 expr_stmt: expr .
+  118 expr_list: expr .
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
-    '+'        shift, and go to state 103
-    '-'        shift, and go to state 104
-    '*'        shift, and go to state 105
-    '/'        shift, and go to state 106
-    '%'        shift, and go to state 107
-    '&'        shift, and go to state 108
-    '^'        shift, and go to state 109
-    ls_        shift, and go to state 110
-    rs_        shift, and go to state 111
-    unknown_   shift, and go to state 112
-    and_       shift, and go to state 113
-    or_        shift, and go to state 114
-    incre_     shift, and go to state 224
-    decre_     shift, and go to state 225
-    equality_  shift, and go to state 115
-    '<'        shift, and go to state 116
-    '>'        shift, and go to state 117
-    not_eq_    shift, and go to state 118
-    lteq_      shift, and go to state 119
-    gteq_      shift, and go to state 120
-    '|'        shift, and go to state 121
+    '+'          shift, and go to state 103
+    '-'          shift, and go to state 104
+    '*'          shift, and go to state 105
+    '/'          shift, and go to state 106
+    '%'          shift, and go to state 107
+    '&'          shift, and go to state 108
+    '^'          shift, and go to state 109
+    ls_          shift, and go to state 110
+    rs_          shift, and go to state 111
+    unknown_     shift, and go to state 112
+    add_eq_      shift, and go to state 212
+    minus_eq_    shift, and go to state 213
+    mult_eq_     shift, and go to state 214
+    div_eq_      shift, and go to state 215
+    mod_eq_      shift, and go to state 216
+    amp_eq_      shift, and go to state 217
+    vb_eq_       shift, and go to state 218
+    caret_eq_    shift, and go to state 219
+    ls_eq_       shift, and go to state 220
+    rs_eq_       shift, and go to state 221
+    unknown_eq_  shift, and go to state 222
+    and_         shift, and go to state 113
+    or_          shift, and go to state 114
+    incre_       shift, and go to state 223
+    decre_       shift, and go to state 224
+    equality_    shift, and go to state 115
+    '<'          shift, and go to state 116
+    '>'          shift, and go to state 117
+    not_eq_      shift, and go to state 118
+    lteq_        shift, and go to state 119
+    gteq_        shift, and go to state 120
+    '|'          shift, and go to state 121
 
     '{'       reduce using rule 100 (if_cond)
-    ';'       reduce using rule 118 (expr_stmt)
-    $default  reduce using rule 119 (expr_list)
+    ';'       reduce using rule 117 (expr_stmt)
+    $default  reduce using rule 118 (expr_list)
+
+    assign_op  go to state 225
 
 
 State 202
@@ -3967,25 +3991,25 @@ State 202
 State 203
 
    80 return_stmt: return_ expr . ';'
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -4006,7 +4030,7 @@ State 203
     lteq_      shift, and go to state 119
     gteq_      shift, and go to state 120
     '|'        shift, and go to state 121
-    ';'        shift, and go to state 239
+    ';'        shift, and go to state 238
 
 
 State 204
@@ -4014,68 +4038,82 @@ State 204
    91 switch_cond: simple_stmt . ';' expr
    92            | simple_stmt . ';'
 
-    ';'  shift, and go to state 240
+    ';'  shift, and go to state 239
 
 
 State 205
 
    84 switch_stmt: switch_ switch_cond . '{' case_clause_list '}'
 
-    '{'  shift, and go to state 241
+    '{'  shift, and go to state 240
 
 
 State 206
 
+   72 assign_stmt: expr . assign_op expr
    74 inc_stmt: expr . incre_
    75 dec_stmt: expr . decre_
    93 switch_cond: expr .
-  118 expr_stmt: expr .
-  119 expr_list: expr .
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  117 expr_stmt: expr .
+  118 expr_list: expr .
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
-    '+'        shift, and go to state 103
-    '-'        shift, and go to state 104
-    '*'        shift, and go to state 105
-    '/'        shift, and go to state 106
-    '%'        shift, and go to state 107
-    '&'        shift, and go to state 108
-    '^'        shift, and go to state 109
-    ls_        shift, and go to state 110
-    rs_        shift, and go to state 111
-    unknown_   shift, and go to state 112
-    and_       shift, and go to state 113
-    or_        shift, and go to state 114
-    incre_     shift, and go to state 224
-    decre_     shift, and go to state 225
-    equality_  shift, and go to state 115
-    '<'        shift, and go to state 116
-    '>'        shift, and go to state 117
-    not_eq_    shift, and go to state 118
-    lteq_      shift, and go to state 119
-    gteq_      shift, and go to state 120
-    '|'        shift, and go to state 121
+    '+'          shift, and go to state 103
+    '-'          shift, and go to state 104
+    '*'          shift, and go to state 105
+    '/'          shift, and go to state 106
+    '%'          shift, and go to state 107
+    '&'          shift, and go to state 108
+    '^'          shift, and go to state 109
+    ls_          shift, and go to state 110
+    rs_          shift, and go to state 111
+    unknown_     shift, and go to state 112
+    add_eq_      shift, and go to state 212
+    minus_eq_    shift, and go to state 213
+    mult_eq_     shift, and go to state 214
+    div_eq_      shift, and go to state 215
+    mod_eq_      shift, and go to state 216
+    amp_eq_      shift, and go to state 217
+    vb_eq_       shift, and go to state 218
+    caret_eq_    shift, and go to state 219
+    ls_eq_       shift, and go to state 220
+    rs_eq_       shift, and go to state 221
+    unknown_eq_  shift, and go to state 222
+    and_         shift, and go to state 113
+    or_          shift, and go to state 114
+    incre_       shift, and go to state 223
+    decre_       shift, and go to state 224
+    equality_    shift, and go to state 115
+    '<'          shift, and go to state 116
+    '>'          shift, and go to state 117
+    not_eq_      shift, and go to state 118
+    lteq_        shift, and go to state 119
+    gteq_        shift, and go to state 120
+    '|'          shift, and go to state 121
 
     '{'       reduce using rule 93 (switch_cond)
-    ';'       reduce using rule 118 (expr_stmt)
-    $default  reduce using rule 119 (expr_list)
+    ';'       reduce using rule 117 (expr_stmt)
+    $default  reduce using rule 118 (expr_list)
+
+    assign_op  go to state 225
 
 
 State 207
@@ -4094,7 +4132,7 @@ State 207
     '^'          shift, and go to state 66
     '!'          shift, and go to state 67
     '('          shift, and go to state 68
-    ')'          shift, and go to state 242
+    ')'          shift, and go to state 241
     int_lit_     shift, and go to state 69
     float_lit_   shift, and go to state 70
     string_lit_  shift, and go to state 71
@@ -4102,7 +4140,7 @@ State 207
     id_          shift, and go to state 73
 
     basic_type    go to state 74
-    expr_list     go to state 243
+    expr_list     go to state 242
     operand       go to state 76
     operand_name  go to state 77
     literal       go to state 78
@@ -4130,7 +4168,48 @@ State 208
     '^'          shift, and go to state 66
     '!'          shift, and go to state 67
     '('          shift, and go to state 68
-    ')'          shift, and go to state 244
+    ')'          shift, and go to state 243
+    int_lit_     shift, and go to state 69
+    float_lit_   shift, and go to state 70
+    string_lit_  shift, and go to state 71
+    rune_lit_    shift, and go to state 72
+    id_          shift, and go to state 73
+
+    basic_type    go to state 74
+    expr_list     go to state 244
+    operand       go to state 76
+    operand_name  go to state 77
+    literal       go to state 78
+    expr          go to state 79
+    unary_op      go to state 80
+    func_call     go to state 81
+    append        go to state 82
+    primary_expr  go to state 83
+    type_cast     go to state 84
+
+
+State 209
+
+   64 simple_stmt: simple_stmt_v ';' .
+
+    $default  reduce using rule 64 (simple_stmt)
+
+
+State 210
+
+   71 assign_stmt: expr_list '=' . expr_list
+
+    int_         shift, and go to state 31
+    float_       shift, and go to state 32
+    bool_        shift, and go to state 33
+    rune_        shift, and go to state 34
+    string_      shift, and go to state 35
+    append_      shift, and go to state 63
+    '+'          shift, and go to state 64
+    '-'          shift, and go to state 65
+    '^'          shift, and go to state 66
+    '!'          shift, and go to state 67
+    '('          shift, and go to state 68
     int_lit_     shift, and go to state 69
     float_lit_   shift, and go to state 70
     string_lit_  shift, and go to state 71
@@ -4150,98 +4229,7 @@ State 208
     type_cast     go to state 84
 
 
-State 209
-
-   65 simple_stmt: simple_stmt_v ';' .
-
-    $default  reduce using rule 65 (simple_stmt)
-
-
-State 210
-
-  107 assign_op: add_eq_ .
-
-    $default  reduce using rule 107 (assign_op)
-
-
 State 211
-
-  108 assign_op: minus_eq_ .
-
-    $default  reduce using rule 108 (assign_op)
-
-
-State 212
-
-  109 assign_op: mult_eq_ .
-
-    $default  reduce using rule 109 (assign_op)
-
-
-State 213
-
-  110 assign_op: div_eq_ .
-
-    $default  reduce using rule 110 (assign_op)
-
-
-State 214
-
-  111 assign_op: mod_eq_ .
-
-    $default  reduce using rule 111 (assign_op)
-
-
-State 215
-
-  112 assign_op: amp_eq_ .
-
-    $default  reduce using rule 112 (assign_op)
-
-
-State 216
-
-  113 assign_op: vb_eq_ .
-
-    $default  reduce using rule 113 (assign_op)
-
-
-State 217
-
-  114 assign_op: caret_eq_ .
-
-    $default  reduce using rule 114 (assign_op)
-
-
-State 218
-
-  115 assign_op: ls_eq_ .
-
-    $default  reduce using rule 115 (assign_op)
-
-
-State 219
-
-  116 assign_op: rs_eq_ .
-
-    $default  reduce using rule 116 (assign_op)
-
-
-State 220
-
-  117 assign_op: unknown_eq_ .
-
-    $default  reduce using rule 117 (assign_op)
-
-
-State 221
-
-  106 assign_op: '=' .
-
-    $default  reduce using rule 106 (assign_op)
-
-
-State 222
 
    73 short_decl: expr_list decla_ . expr_list
 
@@ -4275,9 +4263,100 @@ State 222
     type_cast     go to state 84
 
 
+State 212
+
+  106 assign_op: add_eq_ .
+
+    $default  reduce using rule 106 (assign_op)
+
+
+State 213
+
+  107 assign_op: minus_eq_ .
+
+    $default  reduce using rule 107 (assign_op)
+
+
+State 214
+
+  108 assign_op: mult_eq_ .
+
+    $default  reduce using rule 108 (assign_op)
+
+
+State 215
+
+  109 assign_op: div_eq_ .
+
+    $default  reduce using rule 109 (assign_op)
+
+
+State 216
+
+  110 assign_op: mod_eq_ .
+
+    $default  reduce using rule 110 (assign_op)
+
+
+State 217
+
+  111 assign_op: amp_eq_ .
+
+    $default  reduce using rule 111 (assign_op)
+
+
+State 218
+
+  112 assign_op: vb_eq_ .
+
+    $default  reduce using rule 112 (assign_op)
+
+
+State 219
+
+  113 assign_op: caret_eq_ .
+
+    $default  reduce using rule 113 (assign_op)
+
+
+State 220
+
+  114 assign_op: ls_eq_ .
+
+    $default  reduce using rule 114 (assign_op)
+
+
+State 221
+
+  115 assign_op: rs_eq_ .
+
+    $default  reduce using rule 115 (assign_op)
+
+
+State 222
+
+  116 assign_op: unknown_eq_ .
+
+    $default  reduce using rule 116 (assign_op)
+
+
 State 223
 
-   72 assign_stmt: expr_list assign_op . expr_list
+   74 inc_stmt: expr incre_ .
+
+    $default  reduce using rule 74 (inc_stmt)
+
+
+State 224
+
+   75 dec_stmt: expr decre_ .
+
+    $default  reduce using rule 75 (dec_stmt)
+
+
+State 225
+
+   72 assign_stmt: expr assign_op . expr
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -4297,11 +4376,10 @@ State 223
     id_          shift, and go to state 73
 
     basic_type    go to state 74
-    expr_list     go to state 247
     operand       go to state 76
     operand_name  go to state 77
     literal       go to state 78
-    expr          go to state 79
+    expr          go to state 247
     unary_op      go to state 80
     func_call     go to state 81
     append        go to state 82
@@ -4309,37 +4387,16 @@ State 223
     type_cast     go to state 84
 
 
-State 224
-
-   74 inc_stmt: expr incre_ .
-
-    $default  reduce using rule 74 (inc_stmt)
-
-
-State 225
-
-   75 dec_stmt: expr decre_ .
-
-    $default  reduce using rule 75 (dec_stmt)
-
-
 State 226
 
-   51 field_decl: id_list type .
+   50 field_decl: id_list type .
 
-    $default  reduce using rule 51 (field_decl)
+    $default  reduce using rule 50 (field_decl)
 
 
 State 227
 
-   49 field_decl_list: field_decl_list field_decl ';' .
-
-    $default  reduce using rule 49 (field_decl_list)
-
-
-State 228
-
-  157 append: append_ '(' id_ ',' . expr_list ')'
+  156 append: append_ '(' id_ ',' . expr_list ')'
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -4371,43 +4428,43 @@ State 228
     type_cast     go to state 84
 
 
+State 228
+
+  164 type_cast: basic_type '(' expr ')' .
+
+    $default  reduce using rule 164 (type_cast)
+
+
 State 229
 
-  165 type_cast: basic_type '(' expr ')' .
+  169 slice: '[' ':' ']' .
 
-    $default  reduce using rule 165 (type_cast)
+    $default  reduce using rule 169 (slice)
 
 
 State 230
 
-  170 slice: '[' ':' ']' .
-
-    $default  reduce using rule 170 (slice)
-
-
-State 231
-
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-  169 slice: '[' ':' expr . ']'
-  172      | '[' ':' expr . ':' expr ']'
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+  168 slice: '[' ':' expr . ']'
+  171      | '[' ':' expr . ':' expr ']'
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -4432,18 +4489,18 @@ State 231
     '|'        shift, and go to state 121
 
 
+State 231
+
+  165 index: '[' expr ']' .
+
+    $default  reduce using rule 165 (index)
+
+
 State 232
 
-  166 index: '[' expr ']' .
-
-    $default  reduce using rule 166 (index)
-
-
-State 233
-
-  167 slice: '[' expr ':' . expr ']'
-  168      | '[' expr ':' . ']'
-  171      | '[' expr ':' . expr ':' expr ']'
+  166 slice: '[' expr ':' . expr ']'
+  167      | '[' expr ':' . ']'
+  170      | '[' expr ':' . expr ':' expr ']'
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -4475,14 +4532,14 @@ State 233
     type_cast     go to state 84
 
 
+State 233
+
+  154 func_call: primary_expr '(' expr_list ')' .
+
+    $default  reduce using rule 154 (func_call)
+
+
 State 234
-
-  155 func_call: primary_expr '(' expr_list ')' .
-
-    $default  reduce using rule 155 (func_call)
-
-
-State 235
 
    90 for_stmt_clause: simple_stmt_v ';' . condition ';' simple_stmt_v
 
@@ -4503,7 +4560,7 @@ State 235
     rune_lit_    shift, and go to state 72
     id_          shift, and go to state 73
 
-    $default  reduce using rule 88 (condition)
+    $default  reduce using rule 89 (condition)
 
     basic_type    go to state 74
     condition     go to state 253
@@ -4518,35 +4575,35 @@ State 235
     type_cast     go to state 84
 
 
-State 236
+State 235
 
    85 for_stmt: for_ for_clause block .
 
     $default  reduce using rule 85 (for_stmt)
 
 
-State 237
+State 236
 
   101 if_cond: simple_stmt expr .
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -4571,7 +4628,7 @@ State 237
     $default  reduce using rule 101 (if_cond)
 
 
-State 238
+State 237
 
    82 if_stmt: if_ if_cond block .
    83        | if_ if_cond block . else_ else_block
@@ -4581,14 +4638,14 @@ State 238
     $default  reduce using rule 82 (if_stmt)
 
 
-State 239
+State 238
 
    80 return_stmt: return_ expr ';' .
 
     $default  reduce using rule 80 (return_stmt)
 
 
-State 240
+State 239
 
    91 switch_cond: simple_stmt ';' . expr
    92            | simple_stmt ';' .
@@ -4624,51 +4681,61 @@ State 240
     type_cast     go to state 84
 
 
-State 241
+State 240
 
    84 switch_stmt: switch_ switch_cond '{' . case_clause_list '}'
 
-    $default  reduce using rule 95 (case_clause_list)
+    $default  reduce using rule 96 (case_clause_list)
 
     case_clause_list  go to state 257
 
 
-State 242
+State 241
 
    77 print_stmt: print_ '(' ')' . ';'
 
     ';'  shift, and go to state 258
 
 
-State 243
+State 242
 
    76 print_stmt: print_ '(' expr_list . ')' ';'
-  120 expr_list: expr_list . ',' expr
+  119 expr_list: expr_list . ',' expr
 
     ')'  shift, and go to state 259
     ','  shift, and go to state 102
 
 
-State 244
+State 243
 
    79 println_stmt: println_ '(' ')' . ';'
 
     ';'  shift, and go to state 260
 
 
-State 245
+State 244
 
    78 println_stmt: println_ '(' expr_list . ')' ';'
-  120 expr_list: expr_list . ',' expr
+  119 expr_list: expr_list . ',' expr
 
     ')'  shift, and go to state 261
     ','  shift, and go to state 102
 
 
+State 245
+
+   71 assign_stmt: expr_list '=' expr_list .
+  119 expr_list: expr_list . ',' expr
+
+    ','  shift, and go to state 102
+
+    $default  reduce using rule 71 (assign_stmt)
+
+
 State 246
 
    73 short_decl: expr_list decla_ expr_list .
-  120 expr_list: expr_list . ',' expr
+  119 expr_list: expr_list . ',' expr
 
     ','  shift, and go to state 102
 
@@ -4677,18 +4744,54 @@ State 246
 
 State 247
 
-   72 assign_stmt: expr_list assign_op expr_list .
-  120 expr_list: expr_list . ',' expr
+   72 assign_stmt: expr assign_op expr .
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
-    ','  shift, and go to state 102
+    '+'        shift, and go to state 103
+    '-'        shift, and go to state 104
+    '*'        shift, and go to state 105
+    '/'        shift, and go to state 106
+    '%'        shift, and go to state 107
+    '&'        shift, and go to state 108
+    '^'        shift, and go to state 109
+    ls_        shift, and go to state 110
+    rs_        shift, and go to state 111
+    unknown_   shift, and go to state 112
+    and_       shift, and go to state 113
+    or_        shift, and go to state 114
+    equality_  shift, and go to state 115
+    '<'        shift, and go to state 116
+    '>'        shift, and go to state 117
+    not_eq_    shift, and go to state 118
+    lteq_      shift, and go to state 119
+    gteq_      shift, and go to state 120
+    '|'        shift, and go to state 121
 
     $default  reduce using rule 72 (assign_stmt)
 
 
 State 248
 
-  120 expr_list: expr_list . ',' expr
-  157 append: append_ '(' id_ ',' expr_list . ')'
+  119 expr_list: expr_list . ',' expr
+  156 append: append_ '(' id_ ',' expr_list . ')'
 
     ')'  shift, and go to state 262
     ','  shift, and go to state 102
@@ -4696,14 +4799,14 @@ State 248
 
 State 249
 
-  169 slice: '[' ':' expr ']' .
+  168 slice: '[' ':' expr ']' .
 
-    $default  reduce using rule 169 (slice)
+    $default  reduce using rule 168 (slice)
 
 
 State 250
 
-  172 slice: '[' ':' expr ':' . expr ']'
+  171 slice: '[' ':' expr ':' . expr ']'
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -4736,34 +4839,34 @@ State 250
 
 State 251
 
-  168 slice: '[' expr ':' ']' .
+  167 slice: '[' expr ':' ']' .
 
-    $default  reduce using rule 168 (slice)
+    $default  reduce using rule 167 (slice)
 
 
 State 252
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-  167 slice: '[' expr ':' expr . ']'
-  171      | '[' expr ':' expr . ':' expr ']'
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+  166 slice: '[' expr ':' expr . ']'
+  170      | '[' expr ':' expr . ':' expr ']'
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -4797,26 +4900,26 @@ State 253
 
 State 254
 
-   89 condition: expr .
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+   88 condition: expr .
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -4838,7 +4941,7 @@ State 254
     gteq_      shift, and go to state 120
     '|'        shift, and go to state 121
 
-    $default  reduce using rule 89 (condition)
+    $default  reduce using rule 88 (condition)
 
 
 State 255
@@ -4857,25 +4960,25 @@ State 255
 State 256
 
    91 switch_cond: simple_stmt ';' expr .
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -4903,7 +5006,7 @@ State 256
 State 257
 
    84 switch_stmt: switch_ switch_cond '{' case_clause_list . '}'
-   96 case_clause_list: case_clause_list . case_clause
+   95 case_clause_list: case_clause_list . case_clause
 
     case_     shift, and go to state 270
     default_  shift, and go to state 271
@@ -4943,33 +5046,33 @@ State 261
 
 State 262
 
-  157 append: append_ '(' id_ ',' expr_list ')' .
+  156 append: append_ '(' id_ ',' expr_list ')' .
 
-    $default  reduce using rule 157 (append)
+    $default  reduce using rule 156 (append)
 
 
 State 263
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-  172 slice: '[' ':' expr ':' expr . ']'
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+  171 slice: '[' ':' expr ':' expr . ']'
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -4995,14 +5098,14 @@ State 263
 
 State 264
 
-  167 slice: '[' expr ':' expr ']' .
+  166 slice: '[' expr ':' expr ']' .
 
-    $default  reduce using rule 167 (slice)
+    $default  reduce using rule 166 (slice)
 
 
 State 265
 
-  171 slice: '[' expr ':' expr ':' . expr ']'
+  170 slice: '[' expr ':' expr ':' . expr ']'
 
     int_         shift, and go to state 31
     float_       shift, and go to state 32
@@ -5054,7 +5157,7 @@ State 266
     rune_lit_    shift, and go to state 72
     id_          shift, and go to state 73
 
-    $default  reduce using rule 66 (simple_stmt_v)
+    $default  reduce using rule 70 (simple_stmt_v)
 
     basic_type     go to state 74
     simple_stmt_v  go to state 279
@@ -5146,9 +5249,9 @@ State 272
 
 State 273
 
-   96 case_clause_list: case_clause_list case_clause .
+   95 case_clause_list: case_clause_list case_clause .
 
-    $default  reduce using rule 96 (case_clause_list)
+    $default  reduce using rule 95 (case_clause_list)
 
 
 State 274
@@ -5174,33 +5277,33 @@ State 276
 
 State 277
 
-  172 slice: '[' ':' expr ':' expr ']' .
+  171 slice: '[' ':' expr ':' expr ']' .
 
-    $default  reduce using rule 172 (slice)
+    $default  reduce using rule 171 (slice)
 
 
 State 278
 
-  130 expr: expr . '*' expr
-  131     | expr . '/' expr
-  132     | expr . '%' expr
-  133     | expr . '&' expr
-  134     | expr . unknown_ expr
-  135     | expr . ls_ expr
-  136     | expr . rs_ expr
-  137     | expr . '|' expr
-  138     | expr . '^' expr
-  139     | expr . '-' expr
-  140     | expr . '+' expr
-  141     | expr . equality_ expr
-  142     | expr . '<' expr
-  143     | expr . '>' expr
-  144     | expr . lteq_ expr
-  145     | expr . gteq_ expr
-  146     | expr . not_eq_ expr
-  147     | expr . and_ expr
-  148     | expr . or_ expr
-  171 slice: '[' expr ':' expr ':' expr . ']'
+  129 expr: expr . '*' expr
+  130     | expr . '/' expr
+  131     | expr . '%' expr
+  132     | expr . '&' expr
+  133     | expr . unknown_ expr
+  134     | expr . ls_ expr
+  135     | expr . rs_ expr
+  136     | expr . '|' expr
+  137     | expr . '^' expr
+  138     | expr . '-' expr
+  139     | expr . '+' expr
+  140     | expr . equality_ expr
+  141     | expr . '<' expr
+  142     | expr . '>' expr
+  143     | expr . lteq_ expr
+  144     | expr . gteq_ expr
+  145     | expr . not_eq_ expr
+  146     | expr . and_ expr
+  147     | expr . or_ expr
+  170 slice: '[' expr ':' expr ':' expr . ']'
 
     '+'        shift, and go to state 103
     '-'        shift, and go to state 104
@@ -5234,7 +5337,7 @@ State 279
 State 280
 
    98 switch_case: case_ expr_list .
-  120 expr_list: expr_list . ',' expr
+  119 expr_list: expr_list . ',' expr
 
     ','  shift, and go to state 102
 
@@ -5252,14 +5355,14 @@ State 281
 
 State 282
 
-  171 slice: '[' expr ':' expr ':' expr ']' .
+  170 slice: '[' expr ':' expr ':' expr ']' .
 
-    $default  reduce using rule 171 (slice)
+    $default  reduce using rule 170 (slice)
 
 
 State 283
 
-   53 stmt_list: stmt_list . stmt
+   51 stmt_list: stmt_list . stmt
    97 case_clause: switch_case ':' stmt_list .
 
     break_       shift, and go to state 131
@@ -5290,7 +5393,7 @@ State 283
     rune_lit_    shift, and go to state 72
     id_          shift, and go to state 73
 
-    ';'       reduce using rule 66 (simple_stmt_v)
+    ';'       reduce using rule 70 (simple_stmt_v)
     $default  reduce using rule 97 (case_clause)
 
     decl           go to state 140

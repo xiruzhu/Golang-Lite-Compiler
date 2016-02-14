@@ -15,8 +15,6 @@ union value{
   char *  str_val;
 };
 
-
-
 %}
 
 
@@ -130,15 +128,15 @@ union value{
 //A go program is composed of a package declaration and multiple top_level declarations
 
 
-go_prog             : pckg_decl ';' top_decl_list; {}
+go_prog             : pckg_decl ';' top_decl_list
 
 pckg_decl           : package_ id_
 
 
-top_decl_list       :
-                    | top_decl_list top_decl;
+top_decl_list       : top_decl_list top_decl
+                    |
 
-top_decl            : decl | func_decl;
+top_decl            : decl | func_decl
 
 decl                : var_decl | type_decl
 
@@ -168,32 +166,32 @@ params_list         : params_list ',' params_decl | params_decl
 params_decl         : id_list type
 
 var_decl            : var_ var_spec ';'
-                    | var_ '('  var_spec_list ')'  ';' ; //万恶之源 ；
+                    | var_ '('  var_spec_list ')'  ';'  //万恶之源 ；
 
 type_decl           : type_ type_spec ';'
                     | type_ '(' type_spec_list ')' ';'
 
-type_spec_list      :
-                    | type_spec_list type_spec ';'  ;
+type_spec_list      : type_spec_list type_spec ';'
+                    |
 
-type_spec           : id_ type                      ;
+type_spec           : id_ type
 
-var_spec_list       :
-                    | var_spec_list var_spec ';'
+var_spec_list       : var_spec_list var_spec ';'
+                    |
 
 var_spec            : id_list '=' expr_list
                     | id_list type '=' expr_list
-                    | id_list type                  ;
+                    | id_list type
 
 id_list             : id_
-                    | id_list ',' id_               ;
+                    | id_list ',' id_
 
-type                : basic_type | '[' ']' type | struct_ '{' field_decl_list '}' | '[' int_lit_ ']' type | id_;
+type                : basic_type | '[' ']' type | struct_ '{' field_decl_list '}' | '[' int_lit_ ']' type | id_
 
-basic_type          : int_ | float_ | string_ | rune_ | bool_;
+basic_type          : int_ | float_ | string_ | rune_ | bool_
 
-field_decl_list     : field_decl_list field_decl  | field_decl_list field_decl ';' |  //Dangerous stuff, Semi Colon Problems might
-                                                                                      // cause some weird shit later
+field_decl_list     : field_decl_list field_decl
+                    |
 
 field_decl          : id_list type
 
@@ -202,8 +200,8 @@ field_decl          : id_list type
 // statements
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-stmt_list           :
-                    | stmt_list  stmt
+stmt_list           : stmt_list  stmt
+                    |
 
 stmt                : decl
                     | block
@@ -219,14 +217,15 @@ stmt                : decl
 
 simple_stmt         : simple_stmt_v ';'
 
-simple_stmt_v       :
-                    | expr_stmt
+simple_stmt_v       : expr_stmt
                     | inc_stmt
                     | dec_stmt
                     | assign_stmt
                     | short_decl
+                    |
 
-assign_stmt         : expr_list assign_op expr_list
+assign_stmt         : expr_list '=' expr_list
+                    | expr assign_op expr
 
 short_decl          : expr_list decla_ expr_list
 
@@ -253,8 +252,8 @@ for_stmt            : for_ for_clause block
 
 for_clause          : condition | for_stmt_clause
 
-condition           :
-                    | expr
+condition           : expr
+                    |
 
 for_stmt_clause     : simple_stmt_v ';' condition ';' simple_stmt_v
 
@@ -263,8 +262,8 @@ switch_cond         : simple_stmt ';' expr
                     | expr
                     |
 
-case_clause_list    :
-                    | case_clause_list case_clause
+case_clause_list    : case_clause_list case_clause
+                    |
 
 case_clause         : switch_case ':' stmt_list
 
@@ -281,7 +280,7 @@ break_stmt          : break_ ';'
 
 cont_stmt           : continue_ ';'
 
-assign_op           : '=' | add_eq_ | minus_eq_ | mult_eq_ | div_eq_ | mod_eq_ | amp_eq_ | vb_eq_ | caret_eq_ | ls_eq_ | rs_eq_ | unknown_eq_ ;
+assign_op           : add_eq_ | minus_eq_ | mult_eq_ | div_eq_ | mod_eq_ | amp_eq_ | vb_eq_ | caret_eq_ | ls_eq_ | rs_eq_ | unknown_eq_
 
 expr_stmt           : expr
 
@@ -301,7 +300,7 @@ operand_name        : id_
 literal             : int_lit_
                     | float_lit_
                     | string_lit_
-                    | rune_lit_;
+                    | rune_lit_
 
 expr                : primary_expr
                     | expr '*' expr

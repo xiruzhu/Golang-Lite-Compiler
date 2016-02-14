@@ -28,9 +28,9 @@ exponent		["e"|"E"]["+"|"-"]{decimal}|["e"|"E"]{decimal}
 float_lit		{decimal}"."{decimal}|{decimal}"."{exponent}|{decimal}"."{decimal}{exponent}|{decimal}{exponent}|"."{decimal}{exponent}|"."{decimal}
 
 string_lit		{interpreted_string_lit}|{raw_string_lit}
-raw_string_lit	\'(.)*\'
+raw_string_lit	\`[^`]*\`
 interpreted_string_lit	\"(\\.|[^(\\")])*\"
-rune_lit		\'.|\\.\'
+rune_lit		(\'.\')|(\'\\.\')
 
 ID				[a-z|A-Z][a-z|A-Z|0-9|"_"]*
 semi_colon		";"

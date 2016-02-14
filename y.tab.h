@@ -184,7 +184,7 @@ extern int yydebug;
 typedef union YYSTYPE YYSTYPE;
 union YYSTYPE
 {
-#line 23 "go.y" /* yacc.c:1909  */
+#line 21 "go.y" /* yacc.c:1909  */
  //This is for clarity
   int   int_val;
   float   float_val;

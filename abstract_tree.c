@@ -1,5 +1,8 @@
 #include "abstract_tree.h"
 
+/*
+
+*/
 vector * create_vector(){
 	vector * ret = (vector *)calloc(1, sizeof(vector *));
 	if(ret == NULL)

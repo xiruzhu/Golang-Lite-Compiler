@@ -18,6 +18,10 @@ func main() {
     fmt.Println("set:", s)
     fmt.Println("get:", s[2])
 
+    var test1 bool = false;
+
+    fmt.Println('\n');
+
     // `len` returns the length of the slice as expected.
     fmt.Println("len:", len(s))
 
