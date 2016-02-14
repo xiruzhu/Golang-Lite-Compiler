@@ -1,13 +1,11 @@
+
 %{
 #include <stdio.h> /* for printf */
 #include <stdlib.h>
 #include <string.h>
-#include "treeNode.h"
-
 extern char *yytext; /* string from scanner */
 extern int line_num;
 extern int line_char;
-
 void yyerror(char const *s) {fprintf(stderr, "Error: (line %d) %s\n", line_num, s); }
 int yylex(void);
 union value{
@@ -15,19 +13,13 @@ union value{
   float   float_val;
   char *  str_val;
 };
-
 %}
-
-
 %union{ //This is for clarity
   int   int_val;
   float   float_val;
   char *  str_val;
-  char rune_val;
-  struct nodeAST* node_val;
+  struct node * node_val;
 }
-
-
 %token error_
 %token break_
 %token case_
@@ -115,59 +107,36 @@ union value{
 %token ';'
 %token id_
 %token unary
-
 %left or_
 %left and_
 %left equality_ not_eq_ '<' '>' lteq_ gteq_
 %left '+' '-' '|' '^'
 %left '*' '/' '%' ls_ rs_ '&' unknown_
 %left unary
-
-%error-verbose
-%locations
-
-%type <node_val> expr_list operand operand_name literal expr func_call primary_expr type_cast slice basic_type
-%type <node_val> inc_stmt dec_stmt print_stmt println_stmt return_stmt stmt_list simple_stmt_v simple_stmt stmt assign_stmt
-%type <rune_val>  rune_lit_
-%type <string_val> string_lit_ id_
-%type <int_val> int_lit_
-%type <float_val> float_lit_
 %%
-
 //A go program is composed of a package declaration and multiple top_level declarations
-
-
 go_prog             : pckg_decl ';' top_decl_list
 
 pckg_decl           : package_ id_
 
-
 top_decl_list       : top_decl_list top_decl
                     |
 
-top_decl            : decl 
-                    | func_decl
+top_decl            : decl | func_decl
 
-decl                : var_decl 
-                    | type_decl
+decl                : var_decl | type_decl
 
-func_decl           : func_ func_name function
-                    | func_ func_name signature
+func_decl           : func_ id_ function
+                    | func_ id_ signature
 
-func_name           : id_
-
-function            : signature func_body
-
-func_body           : block
+function            : signature block
 
 block               : block_tmp ';'
 
 block_tmp           :'{' stmt_list '}'
 
 signature           : params
-                    | params result
-
-result              : type
+                    | params type
 
 params              : '(' ')'
                     | '(' params_list ')'
@@ -178,7 +147,7 @@ params_list         : params_list ',' params_decl
 params_decl         : id_list type
 
 var_decl            : var_ var_spec ';'
-                    | var_ '('  var_spec_list ')'  ';'  //万恶之源 ；
+                    | var_ '('  var_spec_list ')'  ';'  //万恶之源
 
 type_decl           : type_ type_spec ';'
                     | type_ '(' type_spec_list ')' ';'
@@ -199,16 +168,22 @@ id_list             : id_
                     | id_list ',' id_
 
 type                : basic_type 
-                    | '[' ']' type 
-                    | struct_ '{' field_decl_list '}' 
-                    | '[' int_lit_ ']' type 
-                    | id_
+                    | type_lit
+                    | type_name
+                    | '(' type ')'
 
-basic_type          : int_                                        {$$ = newBasicTypeInt();}
-                    | float_                                      {$$ = newBasicTypeFloat();}
-                    | string_                                     {$$ = newBasicTypeString();}
-                    | rune_                                       {$$ = newBasicTypeRune();}
-                    | bool_                                       {$$ = newBasicTypeBool();}
+type_lit            : '[' ']' type                    // Slices
+                    | struct_ '{' field_decl_list '}' // Struct
+                    | '[' int_lit_ ']' type           // Arrays
+
+type_name           : id_
+                    | id_ '.' id_ 
+
+basic_type          : int_ 
+                    | float_ 
+                    | string_ 
+                    | rune_ 
+                    | bool_
 
 field_decl_list     : field_decl_list field_decl
                     |
@@ -219,59 +194,47 @@ field_decl          : id_list type
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 // statements
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+stmt_list           : stmt_list  stmt
+                    |
 
-stmt_list           : stmt  stmt_list                             {$$ = newStateList($1, $2);}
-                    |                                             {$$ = NULL;}
+stmt                : decl
+                    | block
+                    | print_stmt
+                    | println_stmt
+                    | return_stmt
+                    | if_stmt
+                    | simple_stmt
+                    | switch_stmt
+                    | for_stmt
+                    | break_stmt
+                    | cont_stmt
 
-stmt                : decl                                        {$$ = NULL;}
-                    | block                                       {$$ = NULL;}
-                    | print_stmt                                  {$$ = $1;}
-                    | println_stmt                                {$$ = $1;}
-                    | return_stmt                                 {$$ = $1;}
-                    | if_stmt                                     {$$ = NULL;}
-                    | simple_stmt                                 {$$ = $1;}
-                    | switch_stmt                                 {$$ = NULL;}
-                    | for_stmt                                    {$$ = NULL;}
-                    | break_stmt                                  {$$ = NULL;}
-                    | cont_stmt                                   {$$ = NULL;}
+simple_stmt         : simple_stmt_v ';'
 
-simple_stmt         : simple_stmt_v ';'                           {$$ = $1;}
+simple_stmt_v       : expr_stmt
+                    | inc_stmt
+                    | dec_stmt
+                    | assign_stmt
+                    | short_decl
+                    |
 
-simple_stmt_v       : expr                                        {$$ = $1;}
-                    | inc_stmt                                    {$$ = $1;}
-                    | dec_stmt                                    {$$ = $1;}
-                    | assign_stmt                                 {$$ = $1;}
-                    | short_decl                                  {$$ = NULL;}
-                    |                                             {$$ = NULL;}
-
-assign_stmt         : expr_list '=' expr_list                     {$$ = newAssign($1, $3);}
-                    | expr add_eq_ expr                           {$$ = newAssignAdd($1, $3);}
-                    | expr minus_eq_ expr                         {$$ = newAssignSub($1, $3);}
-                    | expr mult_eq_ expr                          {$$ = newAssignMul($1, $3);}
-                    | expr div_eq_ expr                           {$$ = newAssignDiv($1, $3);}
-                    | expr mod_eq_ expr                           {$$ = newAssignMod($1, $3);}
-                    | expr amp_eq_ expr                           {$$ = newAssignAnd($1, $3);}
-                    | expr vb_eq_ expr                            {$$ = newAssignOr($1, $3);}
-                    | expr caret_eq_ expr                         {$$ = newAssignXor($1, $3);} 
-                    | expr ls_eq_ expr                            {$$ = newAssignShiftLeft($1, $3);}
-                    | expr rs_eq_ expr                            {$$ = newAssignShiftRight($1, $3);}
-                    | expr unknown_eq_ expr                       {$$ = newAssignAndNot($1, $3);}
+assign_stmt         : expr_list '=' expr_list
+                    | expr assign_op expr
 
 short_decl          : expr_list decla_ expr_list
 
-inc_stmt            : expr incre_                                 {$$ = newInc($1);}
+inc_stmt            : expr incre_
 
-dec_stmt            : expr decre_                                 {$$ = newDec($1);}
+dec_stmt            : expr decre_
 
-print_stmt          : print_ '(' expr_list ')' ';'                {$$ = newPrint($3);}
-                    | print_ '(' ')' ';'                          {$$ = newPrint(NULL);}
+print_stmt          : print_ '(' expr_list ')' ';'
+                    | print_ '(' ')' ';'
 
-println_stmt        : println_ '(' expr_list ')' ';'              {$$ = newPrintln($3);}
-                    | println_ '(' ')' ';'                        {$$ = newPrintln(NULL);}
+println_stmt        : println_ '(' expr_list ')' ';'
+                    | println_ '(' ')' ';'
 
-return_stmt         : return_ expr ';'                            {$$ = newRetrun($2);}
-                    | return_ ';'                                 {$$ = newReturn(NULL);}
-
+return_stmt         : return_ expr ';'
+                    | return_ ';'
 
 if_stmt             : if_ if_cond block
                     | if_ if_cond block else_ else_block
@@ -310,66 +273,85 @@ break_stmt          : break_ ';'
 
 cont_stmt           : continue_ ';'
 
+assign_op           : add_eq_ 
+                    | minus_eq_ 
+                    | mult_eq_ 
+                    | div_eq_ 
+                    | mod_eq_ 
+                    | amp_eq_ 
+                    | vb_eq_ 
+                    | caret_eq_ 
+                    | ls_eq_ 
+                    | rs_eq_ 
+                    | unknown_eq_
+
+expr_stmt           : expr
+
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 //expressions done
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+expr_list           : expr
+                    | expr_list ',' expr
 
-expr_list           : expr                                        {$$ = newExprList($1, NULL);}
-                    | expr ',' expr_list                          {$$ = newExprList()}
+operand             : '(' expr ')'
+                    | id_
+                    | literal
 
-operand             : '(' expr ')'                                {$$ = $2;}
-                    | operand_name                                {$$ = $1;}
-                    | literal                                     {$$ = $1;}
+literal             : int_lit_
+                    | float_lit_
+                    | string_lit_
+                    | rune_lit_
 
-operand_name        : id_                                         {$$ = newIdentifier($1);}
+expr                : primary_expr
+                    | expr '*' expr
+                    | expr '/' expr
+                    | expr '%' expr
+                    | expr '&' expr
+                    | expr unknown_ expr
+                    | expr ls_ expr
+                    | expr rs_ expr
+                    | expr '|' expr
+                    | expr '^' expr
+                    | expr '-' expr
+                    | expr '+' expr
+                    | expr equality_ expr
+                    | expr '<' expr
+                    | expr '>' expr
+                    | expr lteq_ expr
+                    | expr gteq_ expr
+                    | expr not_eq_ expr
+                    | expr and_ expr
+                    | expr or_ expr
+                    | append
+                    | unary_op expr %prec unary
 
-literal             : int_lit_                                    {$$ = newLiteralInt($1);}
-                    | float_lit_                                  {$$ = newLiteralFloat($1);}
-                    | string_lit_                                 {$$ = newLiteralString($1);}
-                    | rune_lit_                                   {$$ = newLiteralRune($1);}
+unary_op            : '+' 
+                    | '-' 
+                    | '^' 
+                    | '!'
 
-expr                : primary_expr                                {$$ = $1;}
-                    | expr '*' expr                               {$$ = newMul($1, $3);}
-                    | expr '/' expr                               {$$ = newDiv($1, $3);}
-                    | expr '%' expr                               {$$ = newMod($1, $3);}
-                    | expr '&' expr                               {$$ = newBitAnd($1, $3);}
-                    | expr unknown_ expr                          {$$ = newBitAndNot($1, $3);}
-                    | expr ls_ expr                               {$$ = newShiftLeft($1, $3);}
-                    | expr rs_ expr                               {$$ = newShiftRight($1, $3);}
-                    | expr '|' expr                               {$$ = newBitOr($1, $3);}
-                    | expr '^' expr                               {$$ = newBitNot($1, $3);}
-                    | expr '-' expr                               {$$ = newSub($1, $3);}
-                    | expr '+' expr                               {$$ = newAdd($1, $3);}
-                    | expr equality_ expr                         {$$ = newEqual($1, $3);}
-                    | expr '<' expr                               {$$ = newLess($1, $3);}
-                    | expr '>' expr                               {$$ = newGreat($1, $3);}
-                    | expr lteq_ expr                             {$$ = newLessEqual($1, $3);}
-                    | expr gteq_ expr                             {$$ = newGreatEqual($1, $3);}
-                    | expr not_eq_ expr                           {$$ = newNotEqual($1, $3);}
-                    | expr and_ expr                              {$$ = newLogicAnd($1, $3);}
-                    | expr or_ expr                               {$$ = newLogicOr($1, $3);}
-                    | append_ '(' id_ ',' expr_list ')'           {$$ = newAppend($3, $5);}
-                    | '+' expr         %prec unary                {$$ = newPos($2);}
-                    | '-' expr         %prec unary                {$$ = newNeg($2);}
-                    | '^' expr         %prec unary                {$$ = newBitNot($2);}
-                    | '!' expr         %prec unary                {$$ = newNot($2);}
+func_call           : primary_expr '(' expr_list ')'
+                    | primary_expr '(' ')'
 
-func_call           : primary_expr '(' expr_list ')'              {$$ = newFuncCall($1, $3);}
-                    | primary_expr '(' ')'                        {$$ = newFuncCall($1, NULL);}
+append              : append_ '(' id_ ',' expr_list ')'
 
-primary_expr        : operand                                     {$$ = $1;}
-                    | func_call                                   {$$ = $1;}
-                    | type_cast                                   {$$ = $1;}    //TODO weeding
-                    | primary_expr '[' expr ']'                   {$$ = newSelector($1, $3);}
-                    | primary_expr '.' id_                        {$$ = newIndex($1, $3);}
-                    | primary_expr slice                          {$$ = newSlice($1, $2);}
+primary_expr        : operand
+                    | func_call
+                    | type_cast
+                    | primary_expr selector
+                    | primary_expr index
+                    | primary_expr slice
 
-type_cast           : basic_type '(' expr ')'                     {$$ = newCast($1, $3);}
+selector            : '.' id_
 
-slice               : '[' expr ':' expr ']'                       {$$ = newAddressSlice($2, $4);}
-                    | '[' expr ':'  ']'                           {$$ = newAddressSlice($2, NULL);}
-                    | '['  ':' expr ']'                           {$$ = newAddressSlice(NULL, $3);}
-                    | '['  ':'  ']'                               {$$ = newAddressSlice(NULL, NULL);}
-                    | '[' expr ':' expr ':' expr ']'              {$$ = newAddressSliceFull($2, $4, $6);}
-                    | '['  ':' expr ':' expr ']'                  {$$ = newAddressSliceFull(NULL, $3, $5);}
+type_cast           : basic_type '(' expr ')'
+
+index               : '[' expr ']'
+
+slice               : '[' expr ':' expr ']'
+                    | '[' expr ':'  ']'
+                    | '['  ':' expr ']'
+                    | '['  ':'  ']'
+                    | '[' expr ':' expr ':' expr ']'
+                    | '['  ':' expr ':' expr ']'
 %%
