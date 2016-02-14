@@ -287,8 +287,8 @@ condition           : expr
 
 for_stmt_clause     : simple_stmt_v ';' condition ';' simple_stmt_v
 
-switch_cond         : simple_stmt ';' expr
-                    | simple_stmt ';'
+switch_cond         : simple_stmt expr
+                    | simple_stmt
                     | expr
                     |
 
