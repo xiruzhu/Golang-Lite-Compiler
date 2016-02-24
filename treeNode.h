@@ -55,8 +55,15 @@ typedef struct nodeAST {
         LITERAL_RUNE,
         LITERAL_STRING,
         IDENTIFIER,
-        BASIC_TYPE,
-    
+        IDENTIFIER_LIST,
+        BASIC_TYPE,                         // int, float64, rune, char, bool
+        ARRAY_TYPE,                         // [ int_literal ] type
+        SLICE_TYPE,                         // [] type
+        STRUCT_TYPE,                        // struct { struct_list }
+        STRUCT_TYPE_DEC_LIST,
+        STRUCT_TYPE_DEC,
+        
+        
         EXPR_BINARY_OP_EQUAL,               // expr == expr
         EXPR_BINARY_OP_NEQUAL,              // expr != expr
         EXPR_BINARY_OP_LESS,                // expr < expr
@@ -135,7 +142,19 @@ typedef struct nodeAST {
         STATE_SWITCH_CLAUSE,                // case expr : state
         
         STATE_CONTROL_BREAK,                // break
-        STATE_CONTROL_CONTINUE              // continue
+        STATE_CONTROL_CONTINUE,             // continue
+        
+        PROG_PACKAGE,                       // package id
+        PROG_PROGRAM,
+        
+        PROG_PRAM_DEC_LIST,
+        PROG_PRAM_DEC,
+        PROG_FUNCTION,
+        PROG_LIST,
+        PROG_DECLARE_VAR,
+        RROG_DECLARE_TYPE,
+        PROG_DECLARE_VAR_LIST,
+        PROG_DECLARE_TYPE_LIST
     } nodeType;
     union {
         GO_IMPLEMENT_INT        intValue;
@@ -143,6 +162,7 @@ typedef struct nodeAST {
         GO_IMPLEMENT_RUNE       runeValue;
         GO_IMPLEMENT_STRING     stringValue;
         char*                   identifier;
+        struct {struct nodeAST* identifier; struct nodeAST* next;} identifierList;
         enum basicType{
             BASIC_INT,
             BASIC_FLOAT,
@@ -150,6 +170,11 @@ typedef struct nodeAST {
             BASIC_STRING,
             BASIC_BOOL
         } basicType;
+        struct {struct nodeAST* capacity; struct nodeAST* type;} arrayType;
+        struct {struct nodeAST* type;} sliceType;
+        struct {struct nodeAST* structDec;} structType;
+        struct {struct nodeAST* identifierList; struct nodeAST* type;} structTypeDec;
+        struct {struct nodeAST* declare; struct nodeAST* next;} structTypeDecList;
         
         struct {struct nodeAST* left; struct nodeAST* right;} equal;
         struct {struct nodeAST* left; struct nodeAST* right;} nequal;
@@ -231,6 +256,19 @@ typedef struct nodeAST {
         struct {struct nodeAST* state; struct nodeAST* next;} caseList;
         struct {struct nodeAST* expr; struct nodeAST* state;} caseClause;
         
+        struct {struct nodeAST* identifier;} package;
+        struct {struct nodeAST* package; struct nodeAST* program;} program;
+        struct {struct nodeAST* idList; struct nodeAST* type;} pramDeclare;
+        struct {struct nodeAST* pram; struct nodeAST* next;}   pramDeclareList;
+        
+        struct {struct nodeAST* identifier; struct nodeAST* pramList; struct nodeAST* type; struct nodeAST* block;} function;
+        struct {struct nodeAST* prog; struct nodeAST* next;} progList;
+        
+        struct {struct nodeAST* idList; struct nodeAST* initExpr; struct nodeAST* type;} varDeclare;
+        struct {struct nodeAST* identifier; struct nodeAST* type;} typeDeclare;
+        
+        struct {struct nodeAST* varDeclare; struct nodeAST* next;} varDeclareList;
+        struct {struct nodeAST* typeDeclare; struct nodeAST* next;} typeDeclareList;
     } nodeValue;
 } nodeAST;
 
@@ -275,6 +313,13 @@ nodeAST* newIdentifier      (const char* _identifier, memoryList _allocator){
     strcpy(returnNode->nodeValue.identifier, _identifier);
     return returnNode;
 }
+nodeAST* newIdentifierList  (nodeAST* _identifier, nodeAST* _next, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = IDENTIFIER_LIST;
+    returnNode->nodeValue.identifierList.identifier = _identifier;
+    returnNode->nodeValue.identifierList.next = _next;
+    return returnNode;
+}
 nodeAST* newBasicTypeInt    (memoryList _allocator){
     nodeAST* returnNode = allocateNode(_allocator);
     returnNode->nodeType = BASIC_TYPE;
@@ -303,6 +348,39 @@ nodeAST* newBasicTypeBool   (memoryList _allocator){
     nodeAST* returnNode = allocateNode(_allocator);
     returnNode->nodeType = BASIC_TYPE;
     returnNode->nodeValue.basicType = BASIC_BOOL;
+    return returnNode;
+}
+nodeAST* newArrayType       (nodeAST* _capacity, nodeAST* _type, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = ARRAY_TYPE;
+    returnNode->nodeValue.arrayType.capacity = _capacity;
+    returnNode->nodeValue.arrayType.type = _type;
+    return returnNode;
+}
+nodeAST* newSliceType       (nodeAST* _type, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = SLICE_TYPE;
+    returnNode->nodeValue.sliceType.type = _type;
+    return returnNode;
+}
+nodeAST* newStructDeclare   (nodeAST* _identifierList, nodeAST* _type, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STRUCT_TYPE_DEC;
+    returnNode->nodeValue.structTypeDec.identifierList = _identifierList;
+    returnNode->nodeValue.structTypeDec.type = _type;
+    return returnNode;
+}
+nodeAST* newStructDecList   (nodeAST* _declare, nodeAST* _next, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STRUCT_TYPE_DEC_LIST;
+    returnNode->nodeValue.structTypeDecList.declare = _declare;
+    returnNode->nodeValue.structTypeDecList.next = _next;
+    return returnNode;
+}
+nodeAST* newStruct          (nodeAST* _declareList, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = STRUCT_TYPE;
+    returnNode->nodeValue.structType.structDec = _declareList;
     return returnNode;
 }
 
@@ -747,4 +825,77 @@ nodeAST* newControlContinue (memoryList _allocator){
     return returnNode;
 }
 
+nodeAST* newPackage         (nodeAST* _id, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = PROG_PACKAGE;
+    returnNode->nodeValue.package.identifier = _id;
+    return returnNode;
+}
+nodeAST* newProgram         (nodeAST* _package, nodeAST* _program, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = PROG_PROGRAM;
+    returnNode->nodeValue.program.package = _package;
+    returnNode->nodeValue.program.program = _program;
+    return returnNode;
+}
+nodeAST* newParameter       (nodeAST* _idList, nodeAST* _type, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = PROG_PRAM_DEC;
+    returnNode->nodeValue.pramDeclare.idList = _idList;
+    returnNode->nodeValue.pramDeclare.type = _type;
+    return returnNode;
+}
+nodeAST* newParameterList   (nodeAST* _parm, nodeAST* _next, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = PROG_PRAM_DEC_LIST;
+    returnNode->nodeValue.pramDeclareList.pram = _parm;
+    returnNode->nodeValue.pramDeclareList.next = _next;
+    return returnNode;
+}
+nodeAST* newFunction        (nodeAST* _identifer, nodeAST* _pram, nodeAST* _type, nodeAST* _block, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = PROG_FUNCTION;
+    returnNode->nodeValue.function.identifier = _identifer;
+    returnNode->nodeValue.function.pramList = _pram;
+    returnNode->nodeValue.function.type = _type;
+    returnNode->nodeValue.function.block = _block;
+    return returnNode;
+}
+nodeAST* newProgList        (nodeAST* _prog, nodeAST* _next, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = PROG_LIST;
+    returnNode->nodeValue.progList.prog = _prog;
+    returnNode->nodeValue.progList.next = _next;
+    return returnNode;
+}
+nodeAST* newVarDeclare      (nodeAST* _idList, nodeAST* _initExpr, nodeAST* _type, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = PROG_DECLARE_VAR;
+    returnNode->nodeValue.varDeclare.idList = _idList;
+    returnNode->nodeValue.varDeclare.initExpr = _initExpr;
+    returnNode->nodeValue.varDeclare.type = _type;
+    return returnNode;
+}
+nodeAST* newTypeDeclare     (nodeAST* _identifier, nodeAST* _type, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = RROG_DECLARE_TYPE;
+    returnNode->nodeValue.typeDeclare.identifier = _identifier;
+    returnNode->nodeValue.typeDeclare.type = _type;
+    return returnNode;
+}
+
+nodeAST* newTypeDeclareList (nodeAST* _typeDeclare, nodeAST* _next, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = PROG_DECLARE_TYPE_LIST;
+    returnNode->nodeValue.typeDeclareList.typeDeclare = _typeDeclare;
+    returnNode->nodeValue.typeDeclareList.next = _next;
+    return returnNode;
+}
+nodeAST* newVarDeclareList  (nodeAST* _varDeclare, nodeAST* _next, memoryList _allocator){
+    nodeAST* returnNode = allocateNode(_allocator);
+    returnNode->nodeType = PROG_DECLARE_VAR_LIST;
+    returnNode->nodeValue.varDeclareList.varDeclare = _varDeclare;
+    returnNode->nodeValue.varDeclareList.next = _next;
+    return returnNode;
+}
 #endif
