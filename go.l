@@ -230,7 +230,7 @@ colon 			":"
 						//Ok check if we can strtof it instead
 						yylval.float_val = strtof(yytext, NULL);
 						if(errno == ERANGE){
-							printf("Error! Integer overflow. Cannot be represented as a float!\nLine %d, %d\n", line_num, char_num);
+							printf("Error! Integer overflow. Cannot be represented as a float!\nLine[%d], char [%d]\n", line_num, char_num);
 							return error_;
 						}
 
@@ -239,7 +239,7 @@ colon 			":"
 								break;
 						}
 						if(i >= 16){
-							printf("Warning! Rounding error!\n");
+							printf("Warning! Rounding error! \nLine[%d], char [%d]\n", line_num, char_num);
 						}
 
 						printf("%f\n", yylval.float_val);
@@ -256,7 +256,7 @@ colon 			":"
 					errno = 0;
 					yylval.float_val = strtof(yytext, NULL);
 					if(errno == ERANGE){
-						printf("Error! Float64 overflow. Cannot be represented as a float!\nLine %d, %d\n", line_num, char_num);
+						printf("Error! Float64 overflow. Cannot be represented as a float!\nLine[%d], char [%d]\n", line_num, char_num);
 						error_;
 					}
 					for(i = 0; i < strlen(yytext); i++){
@@ -264,7 +264,7 @@ colon 			":"
 							break;
 					}
 					if(i >= 16){
-					    printf("Warning! Rounding error!\n");
+					    printf("Warning! Rounding error!\nLine[%d], char [%d]\n", line_num, char_num);
 					}
 
 					printf("%d\n", yylval.int_val);

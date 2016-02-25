@@ -7,7 +7,7 @@
 
 extern char *yytext; /* string from scanner */
 extern int line_num;
-extern int line_char;
+extern int char_num;
 extern memoryList _treeNodeAllocator;
 
 void yyerror(char const *s) {fprintf(stderr, "Error: (line %d) %s\n", line_num, s); }
@@ -139,7 +139,7 @@ pckg_decl           : package_ id_                                {$$ = newPacka
 top_decl_list       : top_decl top_decl_list                      {$$ = newProgList($1, $2, _treeNodeAllocator);}
                     |                                             {$$ = NULL;}
 
-top_decl            : var_decl 
+top_decl            : var_decl
                     | type_decl
                     | func_ id_ params block                      {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, NULL, $4, _treeNodeAllocator);}
 					| func_ id_ params type block                 {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, $5, _treeNodeAllocator);}
@@ -150,8 +150,8 @@ block               : '{' stmt_list '}' ';'                       {$$ = $2;}
 
 params              : '(' ')'                                     {$$ = NULL;}
                     | '(' params_list ')'                         {$$ = $2;}
-					
-params_list         : params_decl ',' params_list                 {$$ = newParameterList($1, $3, _treeNodeAllocator);}  
+
+params_list         : params_decl ',' params_list                 {$$ = newParameterList($1, $3, _treeNodeAllocator);}
                     | params_decl                                 {$$ = newParameterList($1, NULL, _treeNodeAllocator);}
 
 params_decl         : id_list type                                {$$ = newParameter($1, $2, _treeNodeAllocator);}
@@ -176,7 +176,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 
 id_list             : id_                                         {$$ = newIdentifierList(newIdentifier($1, _treeNodeAllocator), NULL, _treeNodeAllocator);}
                     | id_ ',' id_list                             {$$ = newIdentifierList(newIdentifier($1, _treeNodeAllocator), $3, _treeNodeAllocator);}
-					
+
 type                : basic_type                                  {$$ = $1;}
                     | '[' ']' type                                {$$ = newSliceType($3, _treeNodeAllocator);}
                     | struct_ '{' field_decl_list '}'             {$$ = newStruct($3, _treeNodeAllocator);}
@@ -202,8 +202,8 @@ field_decl          : id_list type                                {$$ = newStruc
 stmt_list           : stmt  stmt_list                             {$$ = newStateList($1, $2, _treeNodeAllocator);}
                     |                                             {$$ = NULL;}
 
-stmt                : var_decl                                    {$$ = $1;}  
-                    | type_decl                                   {$$ = $1;}  
+stmt                : var_decl                                    {$$ = $1;}
+                    | type_decl                                   {$$ = $1;}
                     | block                                       {$$ = $1;}
                     | print_stmt                                  {$$ = $1;}
                     | println_stmt                                {$$ = $1;}
@@ -232,7 +232,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     | expr mod_eq_ expr                           {$$ = newAssignMod($1, $3, _treeNodeAllocator);}
                     | expr amp_eq_ expr                           {$$ = newAssignAnd($1, $3, _treeNodeAllocator);}
                     | expr vb_eq_ expr                            {$$ = newAssignOr($1, $3, _treeNodeAllocator);}
-                    | expr caret_eq_ expr                         {$$ = newAssignXor($1, $3, _treeNodeAllocator);} 
+                    | expr caret_eq_ expr                         {$$ = newAssignXor($1, $3, _treeNodeAllocator);}
                     | expr ls_eq_ expr                            {$$ = newAssignShiftLeft($1, $3, _treeNodeAllocator);}
                     | expr rs_eq_ expr                            {$$ = newAssignShiftRight($1, $3, _treeNodeAllocator);}
                     | expr unknown_eq_ expr                       {$$ = newAssignAndNot($1, $3, _treeNodeAllocator);}
