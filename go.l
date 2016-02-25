@@ -1,9 +1,17 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "y.tab.h"
+#include "y.tab.c"
 #include <errno.h>
+#include "memory.h"
 
+memoryList _treeNodeAllocator = NULL;
+
+void _func_throwError(const char * test){
+
+}
+
+size_t _AST_LineNumber = 0;
 int line_num = 1;
 int char_num = 1;
 
@@ -354,3 +362,8 @@ colon 			":"
 
 <REALLYEND><<EOF>>      { return 0; }
 %%
+
+int main(int argc, char ** argv){
+	_treeNodeAllocator = newMemoryList();
+	yyparse();
+}
