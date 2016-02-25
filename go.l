@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "y.tab.h"
+#include <errno.h>
 
 int line_num = 1;
 int char_num = 1;
@@ -221,29 +222,54 @@ colon 			":"
 				}
 
 {int_lit}		{
-					char * val = (char *)malloc(strlen(yytext) + 1);
-					if(val == NULL){
-						printf("Mem Alloc Failed\n");
-						exit(1);
+					int i;
+					errno = 0;
+					yylval.int_val = strtol(yytext, NULL, 10);
+					if(errno == ERANGE){
+						errno = 0;
+						//Ok check if we can strtof it instead
+						yylval.float_val = strtof(yytext, NULL);
+						if(errno == ERANGE){
+							printf("Error! Integer overflow. Cannot be represented as a float!\nLine %d, %d\n", line_num, char_num);
+							return error_;
+						}
+
+						for(i = 0; i < strlen(yytext); i++){
+							if(yytext[i] == 'e' || yytext[i] == 'E')
+								break;
+						}
+						if(i >= 16){
+							printf("Warning! Rounding error!\n");
+						}
+
+						printf("%f\n", yylval.float_val);
+						prev_token = int_lit_;
+						return float_lit_;
 					}
-					printf("%s\n", yytext);
-					strcpy(val, yytext);
-					yylval.str_val = val;
-					prev_token = int_lit;
-					return int_lit;
+					printf("%d\n", yylval.int_val);
+					prev_token = int_lit_;
+					return int_lit_;
 				}
 
-{float_lit}			{
-					char * val = (char *)malloc(strlen(yytext) + 1);
-					if(val == NULL){
-						printf("Mem Alloc Failed\n");
-						exit(1);
+{float_lit}		{
+					int i;
+					errno = 0;
+					yylval.float_val = strtof(yytext, NULL);
+					if(errno == ERANGE){
+						printf("Error! Float64 overflow. Cannot be represented as a float!\nLine %d, %d\n", line_num, char_num);
+						error_;
 					}
-					printf("%s\n", yytext);
-					strcpy(val, yytext);
-					yylval.str_val = val;
-					prev_token = float_lit;
-					return float_lit;
+					for(i = 0; i < strlen(yytext); i++){
+						if(yytext[i] == 'e' || yytext[i] == 'E')
+							break;
+					}
+					if(i >= 16){
+					    printf("Warning! Rounding error!\n");
+					}
+
+					printf("%d\n", yylval.int_val);
+					prev_token = int_lit_;
+					return float_lit_;
 				}
 {string_lit}	{
 					char * val = (char *)malloc(strlen(yytext) + 1);
@@ -284,6 +310,11 @@ colon 			":"
 						case float_lit_: return ';';
 						case string_lit_: return ';';
 						case rune_lit_: return ';';
+						case int_: return ';';
+						case bool_: return ';';
+						case float_: return ';';
+						case string_: return ';';
+						case rune_: return ';';
 						case break_: return ';';
 						case continue_: return ';';
 						case return_: return ';';
@@ -304,6 +335,11 @@ colon 			":"
 								case float_lit_: return ';';
 								case string_lit_: return ';';
 								case rune_lit_: return ';';
+								case int_: return ';';
+								case bool_: return ';';
+								case float_: return ';';
+								case string_: return ';';
+								case rune_: return ';';
 								case break_: return ';';
 								case continue_: return ';';
 								case return_: return ';';
