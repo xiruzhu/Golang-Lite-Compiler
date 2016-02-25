@@ -10,6 +10,6 @@ fi
 
 bison --yacc --defines --verbose $Y
 flex $L
-gcc -std=c99 lex.yy.c y.tab.c y.tab.h main.c -lfl -o run
+gcc -std=c99 lex.yy.c -lfl -o run
 cat $S | ./run
 
