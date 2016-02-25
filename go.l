@@ -217,15 +217,24 @@ colon 			":"
 {vb}			{printf("%s\n", yytext); prev_token = '|'; return '|';}
 
 {rune_lit}		{
-					char * val = (char *)malloc(strlen(yytext) + 1);
-					if(val == NULL){
-						printf("Mem Alloc Failed\n");
-						exit(1);
+					if(yytext[1] == 92 && yytext[2] != 39){
+						printf("%d\n", yytext[2]);
+						switch(yytext[2]){
+							case 'a': yylval.rune_val = 7; break;
+							case 'b': yylval.rune_val = 8; break;
+							case 'f': yylval.rune_val = 12; break;
+							case 'n': yylval.rune_val = 10; break;
+							case 'r': yylval.rune_val = 13; break;
+							case 't': yylval.rune_val = 9; break;
+							case 'v': yylval.rune_val = 11; break;
+							case 92: yylval.rune_val = 92; break;
+							case 39: yylval.rune_val = 39; break;
+						}
 					}
-					printf("%s\n", yytext);
-					strcpy(val, yytext);
-					yylval.str_val = val;
-					prev_token = rune_lit_;
+					else
+						yylval.rune_val = yytext[1];
+
+					printf("%c\n", yylval.rune_val);
 					return rune_lit_;
 				}
 
