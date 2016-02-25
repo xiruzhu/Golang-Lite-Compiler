@@ -142,9 +142,9 @@ top_decl_list       : top_decl top_decl_list                      {$$ = newProgL
 top_decl            : var_decl
                     | type_decl
                     | func_ id_ params block                      {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, NULL, $4, _treeNodeAllocator);}
-					| func_ id_ params type block                 {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, $5, _treeNodeAllocator);}
+			     | func_ id_ params type block                 {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, $5, _treeNodeAllocator);}
                     | func_ id_ params                            {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, NULL, NULL, _treeNodeAllocator);}
-					| func_ id_ params type                       {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, NULL, _treeNodeAllocator);}
+			     | func_ id_ params type                       {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, NULL, _treeNodeAllocator);}
 
 block               : '{' stmt_list '}' ';'                       {$$ = $2;}
 
@@ -256,7 +256,7 @@ switch_stmt         : switch_ switch_cond '{' case_clause_list '}'{$$ = newSwitc
 for_stmt            : for_ for_clause block                       {$$ = newForBlock($2, $3, _treeNodeAllocator);}
 
 for_clause          : condition                                   {$$ = $1;}
-	                | for_stmt_clause                             {$$ = $1;}
+	               | for_stmt_clause                             {$$ = $1;}
 
 condition           : expr                                        {$$ = $1;}
                     |                                             {$$ = NULL;}
@@ -272,7 +272,7 @@ case_clause_list    : case_clause case_clause_list                {$$ = newCaseL
                     |                                             {$$ = NULL;}
 
 case_clause         : case_ expr_list ':' stmt_list               {$$ = newCaseClause($2, $4, _treeNodeAllocator);}
-					| default_ ':' stmt_list                      {$$ = newCaseClause(NULL, $3, _treeNodeAllocator);}
+			     | default_ ':' stmt_list                      {$$ = newCaseClause(NULL, $3, _treeNodeAllocator);}
 
 if_cond             : expr                                        {$$ = newIfCondition(NULL, $1, _treeNodeAllocator);}
                     | simple_stmt expr                            {$$ = newIfCondition($1, $2, _treeNodeAllocator);}
@@ -319,13 +319,15 @@ expr                : primary_expr                                {$$ = $1;}
                     | expr and_ expr                              {$$ = newLogicAnd($1, $3, _treeNodeAllocator);}
                     | expr or_ expr                               {$$ = newLogicOr($1, $3, _treeNodeAllocator);}
                     | append_ '(' id_ ',' expr_list ')'           {$$ = newAppend(newIdentifier($3, _treeNodeAllocator), $5, _treeNodeAllocator);}
+                    | append_ '(' id_ ',' expr_list ')' '[' expr ']'    {$$ = NULL;} //TODO
+                    | append_ '(' id_ ',' expr_list ')' slice     {$$ = NULL;} //TODO
                     | '+' expr         %prec unary                {$$ = newPos($2, _treeNodeAllocator);}
                     | '-' expr         %prec unary                {$$ = newNeg($2, _treeNodeAllocator);}
                     | '^' expr         %prec unary                {$$ = newBitNot($2, _treeNodeAllocator);}
                     | '!' expr         %prec unary                {$$ = newLogicNot($2, _treeNodeAllocator);}
 
-func_call           : primary_expr '(' expr_list ')'              {$$ = newFuncCall($1, $3, _treeNodeAllocator);}
-                    | primary_expr '(' ')'                        {$$ = newFuncCall($1, NULL, _treeNodeAllocator);}
+func_call           : id_ '(' expr_list ')'                       {$$ = newFuncCall($1, $3, _treeNodeAllocator);}
+                    | id_ '(' ')'                                 {$$ = newFuncCall($1, NULL, _treeNodeAllocator);}
 
 primary_expr        : operand                                     {$$ = $1;}
                     | func_call                                   {$$ = $1;}
