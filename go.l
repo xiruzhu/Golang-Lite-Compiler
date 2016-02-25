@@ -221,27 +221,29 @@ colon 			":"
 				}
 
 {int_lit}		{
-					char ** temp;
-					printf("%s\n", yytext);
-					yylval.int_val = strtol(yytext, temp, 10);
-					if(temp != NULL){
-						printf("Integer parse error %s\n", yytext);
-						return error_;
+					char * val = (char *)malloc(strlen(yytext) + 1);
+					if(val == NULL){
+						printf("Mem Alloc Failed\n");
+						exit(1);
 					}
-					prev_token = int_lit_;
-					return int_lit_;
+					printf("%s\n", yytext);
+					strcpy(val, yytext);
+					yylval.str_val = val;
+					prev_token = int_lit;
+					return int_lit;
 				}
 
 {float_lit}			{
-					char ** temp;
-					printf("%s\n", yytext);
-					yylval.float_val = strtof(yytext, temp);
-					if(temp != NULL){
-						printf("Integer parse error %s\n", yytext);
-						return error_;
+					char * val = (char *)malloc(strlen(yytext) + 1);
+					if(val == NULL){
+						printf("Mem Alloc Failed\n");
+						exit(1);
 					}
-					prev_token = float_lit_;
-					return float_lit_;
+					printf("%s\n", yytext);
+					strcpy(val, yytext);
+					yylval.str_val = val;
+					prev_token = float_lit;
+					return float_lit;
 				}
 {string_lit}	{
 					char * val = (char *)malloc(strlen(yytext) + 1);
