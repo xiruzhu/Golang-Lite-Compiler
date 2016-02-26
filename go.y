@@ -146,7 +146,7 @@ top_decl            : var_decl
                     | func_ id_ params                            {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, NULL, NULL, _treeNodeAllocator);}
 			     | func_ id_ params type                       {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, NULL, _treeNodeAllocator);}
 
-block               : '{' stmt_list '}' ';'                       {$$ = $2;}
+block               : '{' stmt_list '}'                           {$$ = $2;}
 
 params              : '(' ')'                                     {$$ = NULL;}
                     | '(' params_list ')'                         {$$ = $2;}
