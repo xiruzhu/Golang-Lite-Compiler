@@ -419,6 +419,7 @@ void prettyPrintType(nodeAST* _AST, FILE* _ostream){
 
 void prettyPrintAssignStatement(nodeAST* _AST, FILE* _ostream){
     assert(isAssignment(_AST) == true);
+    if (_AST == NULL) return;
     switch (_AST->nodeType) {
         case STATE_ASSIGN:{             // expr, ...., expr = expr, ..., expr
             prettyPrintExpr(_AST->nodeValue.assign.left, _ostream);
@@ -625,19 +626,21 @@ void prettyPrintStatement(nodeAST* _AST, FILE* _ostream){
         case STATE_FOR: {
             nodeAST* condition = _AST->nodeValue.forBlock.condition;
             fprintf(_ostream, "for ");
-            if (isExpr(condition)) {
-                prettyPrintExpr(condition, _ostream);
-            } else {
-                if (condition->nodeValue.forClause.init != NULL) {
-                    prettyPrintStatement(condition->nodeValue.forClause.init, _ostream);
-                }
-                fprintf(_ostream, "; ");
-                if (condition->nodeValue.forClause.condition != NULL) {
-                    prettyPrintStatement(condition->nodeValue.forClause.condition, _ostream);
-                }
-                fprintf(_ostream, "; ");
-                if (condition->nodeValue.forClause.step != NULL) {
-                    prettyPrintStatement(condition->nodeValue.forClause.step, _ostream);
+            if (condition != NULL){
+                if (isExpr(condition)) {
+                    prettyPrintExpr(condition, _ostream);
+                } else {
+                    if (condition->nodeValue.forClause.init != NULL) {
+                        prettyPrintStatement(condition->nodeValue.forClause.init, _ostream);
+                    }
+                    fprintf(_ostream, "; ");
+                    if (condition->nodeValue.forClause.condition != NULL) {
+                        prettyPrintStatement(condition->nodeValue.forClause.condition, _ostream);
+                    }
+                    fprintf(_ostream, "; ");
+                    if (condition->nodeValue.forClause.step != NULL) {
+                        prettyPrintStatement(condition->nodeValue.forClause.step, _ostream);
+                    }
                 }
             }
             fprintf(_ostream, " {\n");
