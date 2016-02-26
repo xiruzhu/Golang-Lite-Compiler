@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ "$#" -eq 3 ]; then
+if [ "$#" -ge 3 ]; then
 	L=$1
 	Y=$2
 	S=$3
@@ -8,8 +8,11 @@ else
 	read L Y S
 fi
 
-bison --yacc --defines --verbose $Y
-flex $L
-gcc -std=c99 lex.yy.c -lfl -o run
-cat $S | ./run
+flex $L && bison $Y && clang lex.yy.c -o goCompiler -lfl
+
+if [ "$#" -eq 4 ]; then
+	cat $S | ./goCompiler $4
+else
+	cat $S | ./goCompiler
+fi
 

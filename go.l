@@ -272,7 +272,7 @@ colon 			":"
 					yylval.float_val = strtof(yytext, NULL);
 					if(errno == ERANGE){
 						printf("Error! Float64 overflow. Cannot be represented as a float!\nLine[%d], char [%d]\n", line_num, char_num);
-						error_;
+						return error_;
 					}
 					for(i = 0; i < strlen(yytext); i++){
 						if(yytext[i] == 'e' || yytext[i] == 'E')
@@ -367,7 +367,15 @@ colon 			":"
 %%
 
 int main(int argc, char ** argv){
+	FILE * stream = stdout;
 	_treeNodeAllocator = newMemoryList();
 	yyparse();
-	prettyPrint(_ast, stdout);
+
+	if(argc == 2){
+		stream = fopen(argv[1], "w+");
+		if(stream == NULL){
+			stream = stdout;
+		}
+	}
+	prettyPrint(_ast, stream);
 }
