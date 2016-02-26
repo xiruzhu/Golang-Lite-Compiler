@@ -191,7 +191,7 @@ basic_type          : int_                                        {$$ = newBasic
                     | rune_                                       {$$ = newBasicTypeRune(_treeNodeAllocator);}
                     | bool_                                       {$$ = newBasicTypeBool(_treeNodeAllocator);}
 
-field_decl_list     : field_decl field_decl_list                  {$$ = newStructDecList($1, $2, _treeNodeAllocator);}
+field_decl_list     : field_decl ';' field_decl_list              {$$ = newStructDecList($1, $3, _treeNodeAllocator);}
                     |                                             {$$ = NULL;}
 
 field_decl          : id_list type                                {$$ = newStructDeclare($1, $2, _treeNodeAllocator);}

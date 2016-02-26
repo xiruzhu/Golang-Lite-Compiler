@@ -9,9 +9,6 @@
 #include "memory.h"
 
 extern void yyerror(const char*);
-
-size_t _PRETTY_INDENT = 0L;
-
 bool isExpr (nodeAST* _AST){
     if (_AST == NULL) return false;
     switch (_AST->nodeType) {
@@ -363,7 +360,7 @@ void prettyPrintExpr(nodeAST* _ASTExpr, FILE* _ostream){
 }
 void prettyPrintIdList(nodeAST* _AST, FILE* _ostream){
     assert(_AST->nodeType == IDENTIFIER_LIST);
-    prettyPrintExpr(_AST, _ostream);
+    prettyPrintExpr(_AST->nodeValue.identifierList.identifier, _ostream);
     if (_AST->nodeValue.identifierList.next == NULL) return;
     fprintf(_ostream, ", ");
     prettyPrintIdList(_AST->nodeValue.identifierList.next, _ostream);
@@ -374,9 +371,7 @@ void prettyPrintStructDecList(nodeAST* _AST, FILE* _ostream){
     nodeAST* currentDeclare = _AST->nodeValue.structTypeDecList.declare;
     prettyPrintIdList(currentDeclare->nodeValue.structTypeDec.identifierList, _ostream);
     fprintf(_ostream, " ");
-    _PRETTY_INDENT++;
     prettyPrintType(currentDeclare->nodeValue.structTypeDec.type, _ostream);
-    _PRETTY_INDENT--;
     fprintf(_ostream, "\n");
     if (_AST->nodeValue.structTypeDecList.next == NULL) {return;}
     prettyPrintStructDecList(_AST->nodeValue.structTypeDecList.next, _ostream);
