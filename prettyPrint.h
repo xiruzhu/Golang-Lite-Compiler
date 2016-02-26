@@ -91,7 +91,7 @@ void prettyPrintExpr(nodeAST* _ASTExpr, FILE* _ostream){
         case LITERAL_FLOAT:
             fprintf(_ostream, "%lf", _ASTExpr->nodeValue.floatValue); return;
         case LITERAL_RUNE:
-            fprintf(_ostream, "%c", _ASTExpr->nodeValue.runeValue); return;
+            fprintf(_ostream, "'%c'", _ASTExpr->nodeValue.runeValue); return;
         case LITERAL_STRING:        //TODO
             fprintf(_ostream, "%s", _ASTExpr->nodeValue.stringValue); return;
         case IDENTIFIER:
@@ -604,6 +604,7 @@ void prettyPrintStatement(nodeAST* _AST, FILE* _ostream){
             if (caseNode == NULL) {
                 fprintf(_ostream, "default");
             } else {
+                fprintf(_ostream, "case ");
                 prettyPrintExpr(caseNode, _ostream);
             }
             fprintf(_ostream, " : {\n");
@@ -650,8 +651,10 @@ void prettyPrintStatement(nodeAST* _AST, FILE* _ostream){
             prettyPrintIdList(_AST->nodeValue.varDeclare.idList, _ostream);
             fprintf(_ostream, " ");
             prettyPrintType(_AST->nodeValue.varDeclare.type, _ostream);
-            fprintf(_ostream, " = ");
-            prettyPrintExpr(_AST->nodeValue.varDeclare.initExpr, _ostream);
+            if (_AST->nodeValue.varDeclare.initExpr != NULL) {
+                fprintf(_ostream, " = ");
+                prettyPrintExpr(_AST->nodeValue.varDeclare.initExpr, _ostream);
+            }
             return;
         }
         case PROG_DECLARE_VAR_LIST: {
@@ -672,6 +675,12 @@ void prettyPrintStatement(nodeAST* _AST, FILE* _ostream){
             prettyPrintStatement(_AST->nodeValue.typeDeclareList.typeDeclare, _ostream);
             //fprintf(_ostream, "\n");
             prettyPrintStatement(_AST->nodeValue.typeDeclareList.next, _ostream);
+            return;
+        }
+        case STATE_SHORT_DECLARE: {
+            prettyPrintExpr(_AST->nodeValue.shortDeclare.left, _ostream);
+            fprintf(_ostream, " := ");
+            prettyPrintExpr(_AST->nodeValue.shortDeclare.right, _ostream);
             return;
         }
         default: return;
