@@ -146,7 +146,7 @@ top_decl            : var_decl
                     | func_ id_ params                            {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, NULL, NULL, _treeNodeAllocator);}
 			     | func_ id_ params type                       {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, NULL, _treeNodeAllocator);}
 
-block               : '{' stmt_list '}'                           {$$ = $2;}
+block               : '{' stmt_list '}' ';'                       {$$ = $2;}
 
 params              : '(' ')'                                     {$$ = NULL;}
                     | '(' params_list ')'                         {$$ = $2;}
@@ -249,7 +249,7 @@ return_stmt         : return_ expr ';'                            {$$ = newRetur
                     | return_ ';'                                 {$$ = newReturn(NULL, _treeNodeAllocator);}
 
 if_stmt             : if_ if_cond block                           {$$ = newIfBlock($2, $3, _treeNodeAllocator);}
-                    | if_ if_cond block else_ else_block          {$$ = newIfElseBlock($2, $3, $5, _treeNodeAllocator);}
+                    | if_ if_cond '{' stmt_list '}' else_ else_block          {$$ = newIfElseBlock($2, $4, $7, _treeNodeAllocator);} //CHECK HERE
 
 switch_stmt         : switch_ switch_cond '{' case_clause_list '}'{$$ = newSwitchBlock($2, $4, _treeNodeAllocator);}
 
