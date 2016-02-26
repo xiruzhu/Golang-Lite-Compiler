@@ -2,10 +2,8 @@
 // Click here and start typing.
 package main
 
-import "fmt"
-
 func main() {
-   Println(nextPrime(25325))
+   println(nextPrime(25325))
 }
 
 func isPrime (number int) bool{

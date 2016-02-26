@@ -371,11 +371,13 @@ int main(int argc, char ** argv){
 	_treeNodeAllocator = newMemoryList();
 	yyparse();
 
+
 	if(argc == 2){
 		stream = fopen(argv[1], "w+");
 		if(stream == NULL){
 			stream = stdout;
 		}
-	}
+	 }
+
 	prettyPrint(_ast, stream);
 }
