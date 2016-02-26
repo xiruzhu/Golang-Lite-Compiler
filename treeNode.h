@@ -6,8 +6,8 @@
 #include <stdbool.h>
 #include <string.h>
 
-extern void _func_throwError(const char*);
-extern size_t _AST_LineNumber;
+extern void yyerror(const char*);
+extern int line_num;
 
 #define TREENODE_ERROR_MALLOC   "Malloc Error"
 
@@ -139,7 +139,6 @@ typedef struct nodeAST {
         
         STATE_IF_CONDITION,                 // [state;] [expr]
         STATE_SWITCH_CONDITION,             // [state;] [expr]
-        STATE_SWITCH_CLAUSE,                // case expr : state
         
         STATE_CONTROL_BREAK,                // break
         STATE_CONTROL_CONTINUE,             // continue
@@ -274,9 +273,9 @@ typedef struct nodeAST {
 
 nodeAST* allocateNode(memoryList _allocator){
     nodeAST* returnNode = (nodeAST*)mallocList(sizeof(nodeAST), _allocator);
-    if (returnNode == NULL) _func_throwError(TREENODE_ERROR_MALLOC);
+    if (returnNode == NULL) yyerror(TREENODE_ERROR_MALLOC);
     returnNode->nodeType = NODE_INIT;
-    returnNode->lineNumber = _AST_LineNumber;
+    returnNode->lineNumber = line_num;
     return returnNode;
 }
 
@@ -308,7 +307,7 @@ nodeAST* newIdentifier      (const char* _identifier, memoryList _allocator){
     nodeAST* returnNode = allocateNode(_allocator);
     returnNode->nodeType = IDENTIFIER;
     returnNode->nodeValue.identifier = (char*)mallocList(sizeof(char)*(strlen(_identifier)+1), _allocator);
-    if (returnNode->nodeValue.identifier == NULL) _func_throwError(TREENODE_ERROR_MALLOC);
+    if (returnNode->nodeValue.identifier == NULL) yyerror(TREENODE_ERROR_MALLOC);
     memset(returnNode->nodeValue.identifier, '\0', sizeof(char)*(strlen(_identifier)+1));
     strcpy(returnNode->nodeValue.identifier, _identifier);
     return returnNode;
@@ -808,7 +807,7 @@ nodeAST* newCaseList        (nodeAST* _state, nodeAST* _next, memoryList _alloca
 }
 nodeAST* newCaseClause      (nodeAST* _expr, nodeAST* _state, memoryList _allocator){
     nodeAST* returnNode = allocateNode(_allocator);
-    returnNode->nodeType = STATE_SWITCH_CLAUSE;
+    returnNode->nodeType = STATE_UTILITY_CASE_CLAUSE;
     returnNode->nodeValue.caseClause.expr = _expr;
     returnNode->nodeValue.caseClause.state = _state;
     return returnNode;

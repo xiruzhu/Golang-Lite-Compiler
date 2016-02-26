@@ -4,14 +4,14 @@
 #include <string.h>
 #include "treeNode.h"
 #include "memory.h"
-
 extern char *yytext; /* string from scanner */
 extern int line_num;
 extern int char_num;
 extern memoryList _treeNodeAllocator;
-
 void yyerror(char const *s) {fprintf(stderr, "Error: (line %d) %s\n", line_num, s); }
 int yylex(void);
+
+extern nodeAST* _ast;
 %}
 
 
@@ -129,10 +129,12 @@ int yylex(void);
 %type <str_val> string_lit_ id_
 %type <int_val> int_lit_
 %type <float_val> float_lit_
+
+%start go_prog
 %%
 
 //A go program is composed of a package declaration and multiple top_level declarations
-go_prog             : pckg_decl ';' top_decl_list                 {$$ = newProgram($1, $3, _treeNodeAllocator);}
+go_prog             : pckg_decl ';' top_decl_list                 {_ast = newProgram($1, $3, _treeNodeAllocator);}
 
 pckg_decl           : package_ id_                                {$$ = newPackage(newIdentifier($2, _treeNodeAllocator), _treeNodeAllocator);}
 
@@ -142,9 +144,9 @@ top_decl_list       : top_decl top_decl_list                      {$$ = newProgL
 top_decl            : var_decl
                     | type_decl
                     | func_ id_ params block                      {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, NULL, $4, _treeNodeAllocator);}
-			     | func_ id_ params type block                 {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, $5, _treeNodeAllocator);}
+			        | func_ id_ params type block                 {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, $5, _treeNodeAllocator);}
                     | func_ id_ params                            {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, NULL, NULL, _treeNodeAllocator);}
-			     | func_ id_ params type                       {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, NULL, _treeNodeAllocator);}
+			        | func_ id_ params type                       {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, NULL, _treeNodeAllocator);}
 
 block               : '{' stmt_list '}' ';'                       {$$ = $2;}
 
@@ -256,7 +258,7 @@ switch_stmt         : switch_ switch_cond '{' case_clause_list '}'{$$ = newSwitc
 for_stmt            : for_ for_clause block                       {$$ = newForBlock($2, $3, _treeNodeAllocator);}
 
 for_clause          : condition                                   {$$ = $1;}
-	               | for_stmt_clause                             {$$ = $1;}
+	                | for_stmt_clause                             {$$ = $1;}
 
 condition           : expr                                        {$$ = $1;}
                     |                                             {$$ = NULL;}
@@ -272,7 +274,7 @@ case_clause_list    : case_clause case_clause_list                {$$ = newCaseL
                     |                                             {$$ = NULL;}
 
 case_clause         : case_ expr_list ':' stmt_list               {$$ = newCaseClause($2, $4, _treeNodeAllocator);}
-			     | default_ ':' stmt_list                      {$$ = newCaseClause(NULL, $3, _treeNodeAllocator);}
+			        | default_ ':' stmt_list                      {$$ = newCaseClause(NULL, $3, _treeNodeAllocator);}
 
 if_cond             : expr                                        {$$ = newIfCondition(NULL, $1, _treeNodeAllocator);}
                     | simple_stmt expr                            {$$ = newIfCondition($1, $2, _treeNodeAllocator);}
@@ -319,15 +321,17 @@ expr                : primary_expr                                {$$ = $1;}
                     | expr and_ expr                              {$$ = newLogicAnd($1, $3, _treeNodeAllocator);}
                     | expr or_ expr                               {$$ = newLogicOr($1, $3, _treeNodeAllocator);}
                     | append_ '(' id_ ',' expr_list ')'           {$$ = newAppend(newIdentifier($3, _treeNodeAllocator), $5, _treeNodeAllocator);}
-                    | append_ '(' id_ ',' expr_list ')' '[' expr ']'    {$$ = NULL;} //TODO
-                    | append_ '(' id_ ',' expr_list ')' slice     {$$ = NULL;} //TODO
+                    | append_ '(' id_ ',' expr_list ')' '[' expr ']'  
+					        {$$ = newIndex(newAppend(newIdentifier($3, _treeNodeAllocator), $5, _treeNodeAllocator), $8, _treeNodeAllocator);} 
+                    | append_ '(' id_ ',' expr_list ')' slice           
+					        {$$ = newSlice(newAppend(newIdentifier($3, _treeNodeAllocator), $5, _treeNodeAllocator), $7, _treeNodeAllocator);}
                     | '+' expr         %prec unary                {$$ = newPos($2, _treeNodeAllocator);}
                     | '-' expr         %prec unary                {$$ = newNeg($2, _treeNodeAllocator);}
                     | '^' expr         %prec unary                {$$ = newBitNot($2, _treeNodeAllocator);}
                     | '!' expr         %prec unary                {$$ = newLogicNot($2, _treeNodeAllocator);}
 
-func_call           : id_ '(' expr_list ')'                       {$$ = newFuncCall($1, $3, _treeNodeAllocator);}
-                    | id_ '(' ')'                                 {$$ = newFuncCall($1, NULL, _treeNodeAllocator);}
+func_call           : id_ '(' expr_list ')'                       {$$ = newFuncCall(newIdentifier($1, _treeNodeAllocator), $3, _treeNodeAllocator);}
+                    | id_ '(' ')'                                 {$$ = newFuncCall(newIdentifier($1, _treeNodeAllocator), NULL, _treeNodeAllocator);}
 
 primary_expr        : operand                                     {$$ = $1;}
                     | func_call                                   {$$ = $1;}

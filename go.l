@@ -1,11 +1,14 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "y.tab.c"
+#include "go.tab.c"
 #include <errno.h>
 #include "memory.h"
+#include "treeNode.h"
+#include "prettyPrint.h"
 
 memoryList _treeNodeAllocator = NULL;
+nodeAST* _ast;
 
 void _func_throwError(const char * test){
 
@@ -136,85 +139,85 @@ colon 			":"
 				if(yytext[i] == '\n')
 					line_num++;
 			}
-{break}			{printf("%s\n", yytext); prev_token = break_; return break_;}
-{case}			{printf("%s\n", yytext); prev_token = case_; return case_;}
-{chan}			{printf("%s\n", yytext); prev_token = chan_; return chan_;}
-{const}         {printf("%s\n", yytext); prev_token = const_; return const_;}
-{continue}		{printf("%s\n", yytext); prev_token = continue_; return continue_;}
-{default}		{printf("%s\n", yytext); prev_token = default_; return default_;}
-{defer}			{printf("%s\n", yytext); prev_token = defer_; return defer_;}
-{else}			{printf("%s\n", yytext); prev_token = else_; return else_;}
-{fallthrough}	{printf("%s\n", yytext); prev_token = fallthrough_; return fallthrough_;}
-{for}           {printf("%s\n", yytext); prev_token = for_; return for_;}
-{func}          {printf("%s\n", yytext); prev_token = func_; return func_;}
-{go}            {printf("%s\n", yytext); prev_token = go_; return go_;}
-{goto}          {printf("%s\n", yytext); prev_token = goto_; return goto_;}
-{if}            {printf("%s\n", yytext); prev_token = if_; return if_;}
-{import}        {printf("%s\n", yytext); prev_token = import_; return import_;}
-{interface}     {printf("%s\n", yytext); prev_token = interface_; return interface_;}
-{map}           {printf("%s\n", yytext); prev_token = map_; return map_;}
-{package}       {printf("%s\n", yytext); prev_token = package_; return package_;}
-{range}			{printf("%s\n", yytext); prev_token = range_; return range_;}
-{return} 		{printf("%s\n", yytext); prev_token = return_; return return_;}
-{select} 		{printf("%s\n", yytext); prev_token = select_; return select_;}
-{struct}		{printf("%s\n", yytext); prev_token = struct_; return struct_;}
-{switch}		{printf("%s\n", yytext); prev_token = switch_; return switch_;}
-{type}			{printf("%s\n", yytext); prev_token = type_; return type_;}
-{var}			{printf("%s\n", yytext); prev_token = var_; return var_;}
-{int} 	        {printf("%s\n", yytext); prev_token = int_; return int_;}
-{float}         {printf("%s\n", yytext); prev_token = float_; return float_;}
-{bool}          {printf("%s\n", yytext); prev_token = bool_; return bool_;}
-{rune}          {printf("%s\n", yytext); prev_token = rune_; return rune_;}
-{string}        {printf("%s\n", yytext); prev_token = string_; return string_;}
-{print}         {printf("%s\n", yytext); prev_token = print_; return print_;}
-{println}       {printf("%s\n", yytext); prev_token = println_; return println_;}
-{append}		{printf("%s\n", yytext); prev_token = append_; return append_;}
-{add}			{printf("%s\n", yytext); prev_token = '+'; return '+';}
-{minus}			{printf("%s\n", yytext); prev_token = '-'; return '-';}
-{mult}			{printf("%s\n", yytext); prev_token = '*'; return '*';}
-{div}			{printf("%s\n", yytext); prev_token = '/'; return '/';}
-{mod}			{printf("%s\n", yytext); prev_token = '*'; return '*';}
-{amp}			{printf("%s\n", yytext); prev_token = '&'; return '&';}
-{caret}			{printf("%s\n", yytext); prev_token = '^'; return '^';}
-{ls}			{printf("%s\n", yytext); prev_token = ls_; return ls_;}
-{rs}			{printf("%s\n", yytext); prev_token = rs_; return rs_;}
-{unknown} 		{printf("%s\n", yytext); prev_token = unknown_; return unknown_;}
-{add_eq}		{printf("%s\n", yytext); prev_token = add_eq_; return add_eq_;}
-{minus_eq}		{printf("%s\n", yytext); prev_token = minus_eq_; return minus_eq_;}
-{mult_eq}		{printf("%s\n", yytext); prev_token = mult_eq_; return mult_eq_;}
-{div_eq}		{printf("%s\n", yytext); prev_token = div_eq_; return div_eq_;}
-{mod_eq}		{printf("%s\n", yytext); prev_token = mod_eq_; return mod_eq_;}
-{amp_eq}		{printf("%s\n", yytext); prev_token = amp_eq_; return amp_eq_;}
-{vb_eq}			{printf("%s\n", yytext); prev_token = vb_eq_; return vb_eq_;}
-{caret_eq}		{printf("%s\n", yytext); prev_token = caret_eq_; return caret_eq_;}
-{ls_eq}			{printf("%s\n", yytext); prev_token = ls_eq_; return ls_eq_;}
-{rs_eq}			{printf("%s\n", yytext); prev_token = rs_eq_; return rs_eq_;}
-{unknown_eq}	{printf("%s\n", yytext); prev_token = unknown_eq_; return unknown_eq_;}
-{and}           {printf("%s\n", yytext); prev_token = and_; return and_;}
-{or}			{printf("%s\n", yytext); prev_token = or_; return or_;}
-{arrow} 		{printf("%s\n", yytext); prev_token = arrow_; return arrow_;}
-{incre}         {printf("%s\n", yytext); prev_token = incre_; return incre_;}
-{decre}			{printf("%s\n", yytext); prev_token = decre_; return decre_;}
-{equality}		{printf("%s\n", yytext); prev_token = equality_; return equality_;}
-{lt}            {printf("%s\n", yytext); prev_token = '<'; return '<';}
-{gt}            {printf("%s\n", yytext); prev_token = '>'; return '>';}
-{eq}            {printf("%s\n", yytext); prev_token = '='; return '=';}
-{not}           {printf("%s\n", yytext); prev_token = '!'; return '!';}
-{not_eq}        {printf("%s\n", yytext); prev_token = not_eq_; return not_eq_;}
-{lteq}          {printf("%s\n", yytext); prev_token = lteq_; return lteq_;}
-{gteq}			{printf("%s\n", yytext); prev_token = gteq_; return gteq_;}
-{decla}         {printf("%s\n", yytext); prev_token = decla_; return decla_;}
-{etc}           {printf("%s\n", yytext); prev_token = etc_; return etc_;}
-{lrbrac}		{printf("%s\n", yytext); prev_token = '('; return '(';}
-{rrbrac}		{printf("%s\n", yytext); prev_token = ')'; return ')';}
-{lsbrac}		{printf("%s\n", yytext); prev_token = '['; return '[';}
-{rsbrac}		{printf("%s\n", yytext); prev_token = ']'; return ']';}
-{lcbrac}		{printf("%s\n", yytext); prev_token = '{'; return '{';}
-{rcbrac}		{printf("%s\n", yytext); prev_token = '}'; return '}';}
-{comma}			{printf("%s\n", yytext); prev_token = ','; return ',';}
-{dot}			{printf("%s\n", yytext); prev_token = '.'; return '.';}
-{colon} 		{printf("%s\n", yytext); prev_token = ':'; return ':';}
-{vb}			{printf("%s\n", yytext); prev_token = '|'; return '|';}
+{break}			{prev_token = break_; return break_;}
+{case}			{prev_token = case_; return case_;}
+{chan}			{prev_token = chan_; return chan_;}
+{const}         {prev_token = const_; return const_;}
+{continue}		{prev_token = continue_; return continue_;}
+{default}		{prev_token = default_; return default_;}
+{defer}			{prev_token = defer_; return defer_;}
+{else}			{prev_token = else_; return else_;}
+{fallthrough}	{prev_token = fallthrough_; return fallthrough_;}
+{for}           {prev_token = for_; return for_;}
+{func}          {prev_token = func_; return func_;}
+{go}            {prev_token = go_; return go_;}
+{goto}          {prev_token = goto_; return goto_;}
+{if}            {prev_token = if_; return if_;}
+{import}        {prev_token = import_; return import_;}
+{interface}     {prev_token = interface_; return interface_;}
+{map}           {prev_token = map_; return map_;}
+{package}       {prev_token = package_; return package_;}
+{range}			{prev_token = range_; return range_;}
+{return} 		{prev_token = return_; return return_;}
+{select} 		{prev_token = select_; return select_;}
+{struct}		{prev_token = struct_; return struct_;}
+{switch}		{prev_token = switch_; return switch_;}
+{type}			{prev_token = type_; return type_;}
+{var}			{prev_token = var_; return var_;}
+{int} 	        {prev_token = int_; return int_;}
+{float}         {prev_token = float_; return float_;}
+{bool}          {prev_token = bool_; return bool_;}
+{rune}          {prev_token = rune_; return rune_;}
+{string}        {prev_token = string_; return string_;}
+{print}         {prev_token = print_; return print_;}
+{println}       {prev_token = println_; return println_;}
+{append}		{prev_token = append_; return append_;}
+{add}			{prev_token = '+'; return '+';}
+{minus}			{prev_token = '-'; return '-';}
+{mult}			{prev_token = '*'; return '*';}
+{div}			{prev_token = '/'; return '/';}
+{mod}			{prev_token = '*'; return '*';}
+{amp}			{prev_token = '&'; return '&';}
+{caret}			{prev_token = '^'; return '^';}
+{ls}			{prev_token = ls_; return ls_;}
+{rs}			{prev_token = rs_; return rs_;}
+{unknown} 		{prev_token = unknown_; return unknown_;}
+{add_eq}		{prev_token = add_eq_; return add_eq_;}
+{minus_eq}		{prev_token = minus_eq_; return minus_eq_;}
+{mult_eq}		{prev_token = mult_eq_; return mult_eq_;}
+{div_eq}		{prev_token = div_eq_; return div_eq_;}
+{mod_eq}		{prev_token = mod_eq_; return mod_eq_;}
+{amp_eq}		{prev_token = amp_eq_; return amp_eq_;}
+{vb_eq}			{prev_token = vb_eq_; return vb_eq_;}
+{caret_eq}		{prev_token = caret_eq_; return caret_eq_;}
+{ls_eq}			{prev_token = ls_eq_; return ls_eq_;}
+{rs_eq}			{prev_token = rs_eq_; return rs_eq_;}
+{unknown_eq}	{prev_token = unknown_eq_; return unknown_eq_;}
+{and}           {prev_token = and_; return and_;}
+{or}			{prev_token = or_; return or_;}
+{arrow} 		{prev_token = arrow_; return arrow_;}
+{incre}         {prev_token = incre_; return incre_;}
+{decre}			{prev_token = decre_; return decre_;}
+{equality}		{prev_token = equality_; return equality_;}
+{lt}            {prev_token = '<'; return '<';}
+{gt}            {prev_token = '>'; return '>';}
+{eq}            {prev_token = '='; return '=';}
+{not}           {prev_token = '!'; return '!';}
+{not_eq}        {prev_token = not_eq_; return not_eq_;}
+{lteq}          {prev_token = lteq_; return lteq_;}
+{gteq}			{prev_token = gteq_; return gteq_;}
+{decla}         {prev_token = decla_; return decla_;}
+{etc}           {prev_token = etc_; return etc_;}
+{lrbrac}		{prev_token = '('; return '(';}
+{rrbrac}		{prev_token = ')'; return ')';}
+{lsbrac}		{prev_token = '['; return '[';}
+{rsbrac}		{prev_token = ']'; return ']';}
+{lcbrac}		{prev_token = '{'; return '{';}
+{rcbrac}		{prev_token = '}'; return '}';}
+{comma}			{prev_token = ','; return ',';}
+{dot}			{prev_token = '.'; return '.';}
+{colon} 		{prev_token = ':'; return ':';}
+{vb}			{prev_token = '|'; return '|';}
 
 {rune_lit}		{
 					if(yytext[1] == 92 && yytext[2] != 39){
@@ -233,8 +236,6 @@ colon 			":"
 					}
 					else
 						yylval.rune_val = yytext[1];
-
-					printf("%c\n", yylval.rune_val);
 					return rune_lit_;
 				}
 
@@ -258,12 +259,9 @@ colon 			":"
 						if(i >= 16){
 							printf("Warning! Rounding error! \nLine[%d], char [%d]\n", line_num, char_num);
 						}
-
-						printf("%f\n", yylval.float_val);
 						prev_token = int_lit_;
 						return float_lit_;
 					}
-					printf("%d\n", yylval.int_val);
 					prev_token = int_lit_;
 					return int_lit_;
 				}
@@ -283,8 +281,6 @@ colon 			":"
 					if(i >= 16){
 					    printf("Warning! Rounding error!\nLine[%d], char [%d]\n", line_num, char_num);
 					}
-
-					printf("%d\n", yylval.int_val);
 					prev_token = int_lit_;
 					return float_lit_;
 				}
@@ -294,14 +290,13 @@ colon 			":"
 						printf("Mem Alloc Failed\n");
 						exit(1);
 					}
-					printf("%s\n", yytext);
 					strcpy(val, yytext);
 					yylval.str_val = val;
 					prev_token = string_lit_;
 					return string_lit_;
 				}
 
-{semi_colon}	{printf("%s\n", yytext); prev_token = ';'; return ';';}
+{semi_colon}	{prev_token = ';'; return ';';}
 
 {ID}			{
 					char * val = (char *)malloc(strlen(yytext) + 1);
@@ -309,7 +304,6 @@ colon 			":"
 						printf("Mem Alloc Failed\n");
 						exit(1);
 					}
-					printf("%s\n", yytext);
 					strcpy(val, yytext);
 					yylval.str_val = val;
 					prev_token = id_;
@@ -375,4 +369,5 @@ colon 			":"
 int main(int argc, char ** argv){
 	_treeNodeAllocator = newMemoryList();
 	yyparse();
+	prettyPrint(_ast, stdout);
 }
