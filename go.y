@@ -336,8 +336,8 @@ func_call           : id_ '(' expr_list ')'                       {$$ = newFuncC
 primary_expr        : operand                                     {$$ = $1;}
                     | func_call                                   {$$ = $1;}
                     | type_cast                                   {$$ = $1;}    //TODO weeding
-                    | primary_expr '[' expr ']'                   {$$ = newSelector($1, $3, _treeNodeAllocator);}
-                    | primary_expr '.' id_                        {$$ = newIndex($1, newIdentifier($3, _treeNodeAllocator), _treeNodeAllocator);}
+                    | primary_expr '[' expr ']'                   {$$ = newIndex($1, $3, _treeNodeAllocator);}
+                    | primary_expr '.' id_                        {$$ = newSelector($1, newIdentifier($3, _treeNodeAllocator), _treeNodeAllocator);}
                     | primary_expr slice                          {$$ = newSlice($1, $2, _treeNodeAllocator);}
 
 type_cast           : basic_type '(' expr ')'                     {$$ = newCast($1, $3, _treeNodeAllocator);}
