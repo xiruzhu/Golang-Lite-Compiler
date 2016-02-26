@@ -1,12 +1,14 @@
-// Atoi
+// Atoi && bad atof
 package main
 
-import "fmt"
+//undefined behavior with bad values or long values just like real life
+func atoi(value string, length int) int {
+	return atoi_implementation(value, length, 0);
+}
 
-//undefined behavior with bad values
-func atoi( value string, length int ) int {
-	var ret int = 0;
-	for i := 0; i < length; i++ {
+func atoi_implementation( value string, length int, start int) int {
+	var ret int;
+	for i := start; i < length; i++ {
 		if value[i] > '0' && value[i] < '9'{
 			ret = ret << 3 + ret << 1;
 			switch value[i]{
@@ -29,6 +31,26 @@ func atoi( value string, length int ) int {
 	return ret;
 }
 
+func atof( value string, length int ) float64 {
+	var ret float64 = 0;
+	var decimal float64;
+	var i int;
+	for i = 0; i < length; i++ {
+		if(value[i] == '.'){
+		   break;
+		}
+	}
+	ret += float64(atoi_implementation(value, i, 0));
+
+	i++;
+	decimal = float64(atoi_implementation(value, length, i));
+	for j:= 0; j < length - i; j++{
+		decimal /= 10;
+	}
+
+	return ret + decimal;
+
+}
 func main() {
 	println( 1 << 3);
 	println(atoi("2344", 4));
