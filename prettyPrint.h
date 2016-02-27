@@ -543,8 +543,8 @@ void prettyPrintStatement(nodeAST* _AST, FILE* _ostream){
             if (current != NULL) {
                 prettyPrintStatement(current, _ostream);
             }
-            fprintf(_ostream, "\n");
             if (next != NULL) {
+                fprintf(_ostream, "\n");
                 prettyPrintStatement(next, _ostream);
             }
             return;
@@ -559,7 +559,7 @@ void prettyPrintStatement(nodeAST* _AST, FILE* _ostream){
             prettyPrintExpr(condition->nodeValue.ifCondition.expr, _ostream);
             fprintf(_ostream, " {\n");
             prettyPrintStatement(_AST->nodeValue.ifBlock.block_true, _ostream);
-            fprintf(_ostream, "}");
+            fprintf(_ostream, "\n}");
             return;
         }
         case STATE_IF_ELSE: {
@@ -572,9 +572,9 @@ void prettyPrintStatement(nodeAST* _AST, FILE* _ostream){
             prettyPrintExpr(condition->nodeValue.ifCondition.expr, _ostream);
             fprintf(_ostream, " {\n");
             prettyPrintStatement(_AST->nodeValue.ifElseBlock.block_true, _ostream);
-            fprintf(_ostream, "} else {\n");
+            fprintf(_ostream, "\n} else {\n");
             prettyPrintStatement(_AST->nodeValue.ifElseBlock.block_false, _ostream);
-            fprintf(_ostream, "}");
+            fprintf(_ostream, "\n}");
             return;
         }
         case STATE_SWITCH:{
@@ -591,7 +591,7 @@ void prettyPrintStatement(nodeAST* _AST, FILE* _ostream){
             if (_AST->nodeValue.switchBlock.block != NULL) {
                 prettyPrintStatement(_AST->nodeValue.switchBlock.block, _ostream);
             }
-            fprintf(_ostream, "}");
+            fprintf(_ostream, "\n}");
             return;
         }
         case STATE_UTILITY_CASE_CLAUSE: {
@@ -605,7 +605,7 @@ void prettyPrintStatement(nodeAST* _AST, FILE* _ostream){
             }
             fprintf(_ostream, " : {\n");
             prettyPrintStatement(block, _ostream);
-            fprintf(_ostream, "}");
+            fprintf(_ostream, "\n}");
             return;
         }
         case STATE_UTILITY_CASE_LIST: {
@@ -642,7 +642,7 @@ void prettyPrintStatement(nodeAST* _AST, FILE* _ostream){
             if (_AST->nodeValue.forBlock.block != NULL) {
                 prettyPrintStatement(_AST->nodeValue.forBlock.block, _ostream);
             }
-            fprintf(_ostream, "}");
+            fprintf(_ostream, "\n}");
             return;
         }
         case PROG_DECLARE_VAR: {
@@ -714,7 +714,7 @@ void prettyPrint(nodeAST* _AST, FILE* _ostream){
             prettyPrintType(_AST->nodeValue.function.type, _ostream);
             fprintf(_ostream, "{\n");
             prettyPrintStatement(_AST->nodeValue.function.block, _ostream);
-            fprintf(_ostream, "}");
+            fprintf(_ostream, "\n}");
             return;
         }
         case PROG_DECLARE_VAR_LIST: prettyPrintStatement(_AST, _ostream); return;
