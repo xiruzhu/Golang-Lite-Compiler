@@ -1,0 +1,1 @@
+./goLite > temp && ./goLite < temp | diff temp -

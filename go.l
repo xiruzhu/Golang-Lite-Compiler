@@ -1,8 +1,10 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include "go.tab.c"
 #include <errno.h>
+#include <stdbool.h>
+#include <string.h>
+#include "go.tab.c"
 #include "memory.h"
 #include "treeNode.h"
 #include "prettyPrint.h"
@@ -10,17 +12,8 @@
 memoryList _treeNodeAllocator = NULL;
 nodeAST* _ast;
 
-void _func_throwError(const char * test){
-
-}
-
-size_t _AST_LineNumber = 0;
 int line_num = 1;
 int char_num = 1;
-
-char* tokens[3000];
-size_t numToken = 0;
-
 int temp;
 int prev_token = 0;
 %}
@@ -365,17 +358,42 @@ colon 			":"
 %%
 
 int main(int argc, char ** argv){
-	FILE * stream = stdout;
+	if (argc != 2) {
+		printf("Usage : %s [goLite file]\n", argv[0]);
+		return 1;
+	}
+	bool validInput = false;
+	size_t mark = 0;
+	for (size_t iter = 0; iter < strlen(argv[1]) - 2; iter++){
+		if (argv[1][iter] == '.' && argv[1][iter+1] == 'g' && argv[1][iter+2] == 'o') {
+			mark = iter;
+			validInput = true;
+			break;
+		}
+	}
+	if (!validInput) {
+		printf("Usage : %s [goLite file]\n", argv[0]);
+		return 1;
+	}
+	char* istreamPath = (char*)malloc(sizeof(char)*(strlen(argv[1])+10));
+	memset(istreamPath, '\0', sizeof(char)*(strlen(argv[1])+10));
+	strcpy(istreamPath, argv[1]);
+	istreamPath[mark+1] = 'p';
+	istreamPath[mark+2] = 'r';
+	istreamPath[mark+3] = 'e';
+	istreamPath[mark+4] = 't';
+	istreamPath[mark+5] = 't';
+	istreamPath[mark+6] = 'y';
+	istreamPath[mark+7] = '.';
+	istreamPath[mark+8] = 'g';
+	istreamPath[mark+9] = 'o';
+	freopen(argv[1], "r", stdin);
+	FILE* output = fopen(istreamPath, "w");
+	free(istreamPath);
 	_treeNodeAllocator = newMemoryList();
 	yyparse();
-
-
-	if(argc == 2){
-		stream = fopen(argv[1], "w+");
-		if(stream == NULL){
-			stream = stdout;
-		}
-	 }
-
-	prettyPrint(_ast, stream);
+	prettyPrint(_ast, output);
+	freeList(_treeNodeAllocator);
+	fclose(stdin);
+	fclose(output);
 }
