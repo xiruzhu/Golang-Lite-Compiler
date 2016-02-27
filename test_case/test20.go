@@ -23,9 +23,10 @@ func pop(current stack) string {
 }
 
 func push(current stack, value string) stack{
-	current.element = append(current.element, value);
+	current.element = append(current.element, stack);
 	return current;
 }
+
 
 func main() {
 	println("Hello, 世界")

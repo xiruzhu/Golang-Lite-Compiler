@@ -320,11 +320,11 @@ expr                : primary_expr                                {$$ = $1;}
                     | expr not_eq_ expr                           {$$ = newNotEqual($1, $3, _treeNodeAllocator);}
                     | expr and_ expr                              {$$ = newLogicAnd($1, $3, _treeNodeAllocator);}
                     | expr or_ expr                               {$$ = newLogicOr($1, $3, _treeNodeAllocator);}
-                    | append_ '(' id_ ',' expr_list ')'           {$$ = newAppend(newIdentifier($3, _treeNodeAllocator), $5, _treeNodeAllocator);}
-                    | append_ '(' id_ ',' expr_list ')' '[' expr ']'  
-					        {$$ = newIndex(newAppend(newIdentifier($3, _treeNodeAllocator), $5, _treeNodeAllocator), $8, _treeNodeAllocator);} 
-                    | append_ '(' id_ ',' expr_list ')' slice           
-					        {$$ = newSlice(newAppend(newIdentifier($3, _treeNodeAllocator), $5, _treeNodeAllocator), $7, _treeNodeAllocator);}
+                    | append_ '(' primary_expr ',' expr_list ')'           {$$ = newAppend($3, $5, _treeNodeAllocator);}
+                    | append_ '(' primary_expr ',' expr_list ')' '[' expr ']'
+					        {$$ = newIndex(newAppend($3, $5, _treeNodeAllocator), $8, _treeNodeAllocator);}
+                    | append_ '(' primary_expr ',' expr_list ')' slice
+					        {$$ = newSlice(newAppend($3, $5, _treeNodeAllocator), $7, _treeNodeAllocator);}
                     | '+' expr         %prec unary                {$$ = newPos($2, _treeNodeAllocator);}
                     | '-' expr         %prec unary                {$$ = newNeg($2, _treeNodeAllocator);}
                     | '^' expr         %prec unary                {$$ = newBitNot($2, _treeNodeAllocator);}

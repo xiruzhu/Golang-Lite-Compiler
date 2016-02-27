@@ -3,7 +3,7 @@
 package main
 
 type stack struct{
-	element []string
+	element [20]string
 	size int;
 }
 
@@ -22,9 +22,8 @@ func pop(current stack) string {
 	}
 }
 
-func push(current stack, value string) stack{
-	current.element = append(current.element, value);
-	return current;
+func push(current stack, string value) {
+	current.element[current.size++] = value;
 }
 
 func main() {

@@ -129,12 +129,10 @@ colon 			":"
 
 %%
 "//".*		{
-				printf("Eating ...%s\n", yytext);
 				char_num += strlen(yytext);
 			}
 
 \/\*([^\*]|\*+^\/)*\*\/ {
-			printf("Eating ...%s\n", yytext);
 			for(int i = 0; i < strlen(yytext); i++)
 				if(yytext[i] == '\n')
 					line_num++;
