@@ -1,0 +1,12 @@
+Build:
+$cd src
+$make
+
+Reference:
+	https://golang.org/ref/spec
+	https://github.com/NineKa/COMP520_MINILANG_COMPILER	(memory.h)
+
+Group:
+	CHEN Hongji 260610116
+	YANG Tianzi 260599365
+	ZHU Xiru 	260498154
