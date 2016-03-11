@@ -1,0 +1,55 @@
+                               ━━━━━━━━━
+                                TEAM 11
+                               ━━━━━━━━━
+
+
+Members
+═══════
+
+  • CHEN Hongji 260610116
+  • YANG Tianzi 260599365
+  • ZHU Xiru 260498154
+
+
+Q1
+══
+
+  • Total: 9/10
+    • bubble.go contains a syntax error: in GoLite, append takes exactly
+      two arguments, unlike Go. (-1)
+    • atoi is a good program, but it won't type check in GoLite as we
+      don't support indexing into strings.
+
+
+Q2
+══
+
+  • Total: 25.2/30
+    • Valid programs: 12.3/16
+      • Recognized as valid: 224/269
+      • Recognized as invalid: 45/269
+      • Pretty print should be indented (-1)
+    • Invalid programs: 8.9/10
+      • Recognized as valid: 335/378
+      • I removed the tests that check weeding
+    • Good error messages: 4/4
+      • Contains position information (line number)
+      • Message explains nature of the error
+
+
+Q3
+══
+
+  • Total: 10/10
+    • Interesting details in the report
+    • It's fine if you don't support arbitrary-precision numbers in your
+      compiler, we don't ask for that in GoLite
+    • Please make sure the PDF output is correct; the margin is a bit
+      too wide and causes words to be cut in weird places
+
+
+Comments
+════════
+
+  • Make sure to not remove debugging statements (e.g. printing
+    character codes in the scanner) before submitting
