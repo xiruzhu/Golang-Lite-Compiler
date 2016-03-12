@@ -37,14 +37,14 @@ int_lit			{decimal_lit}|{octal_lit}|{hex_lit}
 
 decimal  		[0-9]+
 exponent		["e"|"E"]["+"|"-"]{decimal}|["e"|"E"]{decimal}
-float_lit		{decimal}"."{decimal}|{decimal}"."{exponent}|{decimal}"."{decimal}{exponent}|{decimal}{exponent}|"."{decimal}{exponent}|"."{decimal}
+float_lit		{decimal}"."{decimal}|"."{decimal}|{decimal}"."{exponent}|{decimal}"."{decimal}{exponent}|{decimal}{exponent}|"."{decimal}{exponent}|"."{decimal}
 
 string_lit		{interpreted_string_lit}|{raw_string_lit}
 raw_string_lit	\`[^`]*\`
 interpreted_string_lit	\"(\\.|[^(\\")])*\"
 rune_lit		(\'.\')|(\'\\.\')
 
-ID				[a-z|A-Z][a-z|A-Z|0-9|"_"]*
+ID				[a-z|A-Z|"_"][a-z|A-Z|0-9|"_"]*
 semi_colon		";"
 break			"break"
 case			"case"
@@ -234,6 +234,7 @@ colon 			":"
 					}
 					else
 						yylval.rune_val = yytext[1];
+					prev_token = rune_lit_;
 					return rune_lit_;
 				}
 
