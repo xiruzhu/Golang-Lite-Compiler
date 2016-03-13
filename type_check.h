@@ -46,10 +46,13 @@ int print_err_msg(msg_list head);
 int type_check_prog();
 int type_check_prog_list(nodeAST * node, sym_tbl * scope);
 int type_check_func(nodeAST * node, sym_tbl * scope);
-int type_check_type(nodeAST * node, sym_tbl * scope);
+int type_check_type_decl_list(nodeAST * node, sym_tbl * scope);
+type * type_check_type(nodeAST * node, sym_tbl * scope);
 int type_check_var_decl_list(nodeAST * node , sym_tbl * scope);
 int type_check_var_decl(nodeAST * node , sym_tbl * scope);
 type * type_check_expr(nodeAST * node, sym_tbl * scope);
+type * type_check_params_list(nodeAST * node, sym_tbl * scope);
+int type_check_block(nodeAST * node, sym_tbl * scope);
 
 msg_list * prepare_id_list(nodeAST * node);
 /*
@@ -142,7 +145,7 @@ int type_check_prog_list(nodeAST * node, sym_tbl * scope){
     for(nodeAST * i = node; i != NULL; i = node->nodeValue.progList.next){
     	switch(i->nodeValue.progList.next->nodeType){
     		case PROG_DECLARE_VAR_LIST: type_check_var_decl_list(i->nodeValue.progList.prog, scope); break;
-    		case PROG_DECLARE_TYPE_LIST: type_check_type(i->nodeValue.progList.prog, scope); break;
+    		case PROG_DECLARE_TYPE_LIST: type_check_type_decl_list(i->nodeValue.progList.prog, scope); break;
     		case PROG_FUNCTION: type_check_func(i->nodeValue.progList.prog, scope); break;
     		default: add_msg_line("Error Unexpected NodeType at prog_list", current, node->lineNumber); break;
     	}
@@ -175,41 +178,150 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
                     | id_list type                                {$$ = newVarDeclare($1, NULL, $2, _treeNodeAllocator);}
 
 	*/
-
 	msg_list * id_list = prepare_id_list(node->nodeValue.varDeclare.idList); //var_decl must have an id_list
-	if(node->nodeValue.varDeclare.initExpr == NULL){
+	if(node->nodeValue.varDeclare.type == NULL){
 		type * expr_type = type_check_expr(node->nodeValue.varDeclare.initExpr, scope);
 		//Now that we have all the types
 		int type_iterator = 0;
 		for(msg_list * i = id_list; i != NULL; i = i->next){
-			if(type_iterator > expr_type->list_size){
-				add_msg_line("var declaration number of id does not max number of expr type", current, node->lineNumber);
-				break;
-			}
 			tbl_entry * current_entry = sym_tbl_find_entry(i->msg, scope);
-			if(current != NULL){ //Redeclaration in the same scope
+			if(current_entry != NULL){ //Redeclaration in the same scope
 				add_msg_line("Redeclaration of ID", current, node->lineNumber);
 				break;
-			}else if(expr_type->list[type_iterator] == NULL){
+			}else if(expr_type->spec_type.list_type.type_list[type_iterator] == NULL){
 				add_msg_line("Invalid Type", current, node->lineNumber);
 				break;
 			}else{//Everything is good
 				//We need to add these things to the symbol table
-				sym_tbl_add_entry(new_tbl_entry(i->msg, i->line, NULL, expr_type->list[type_iterator]), scope);
+				sym_tbl_add_entry(new_tbl_entry(i->msg, i->line, NULL, expr_type->spec_type.list_type.type_list[type_iterator]), scope);
 			}
 			type_iterator++;
 		}
-		if(type_iterator != expr_type->list_size){
+		if(type_iterator != expr_type->spec_type.list_type.list_size){
 			add_msg_line("var declaration number of id does not max number of expr type", current, node->lineNumber);
 		}
 	}
-	else if(node->nodeValue.varDeclare.type == NULL){
-
+	else if(node->nodeValue.varDeclare.initExpr == NULL){
+		type * type_decl = type_check_type(node->nodeValue.varDeclare.initExpr, scope);
+		int type_iterator = 0;
+		for(msg_list * i = id_list; i != NULL; i = i->next){
+			tbl_entry * current_entry = sym_tbl_find_entry(i->msg, scope);
+			if(current_entry != NULL){ //Redeclaration in the same scope
+				add_msg_line("Redeclaration of ID", current, node->lineNumber);
+				break;
+			}else if(type_decl->spec_type.list_type.type_list[type_iterator] == NULL){
+				add_msg_line("Invalid Type", current, node->lineNumber);
+				break;
+			}else{//Everything is good
+				//We need to add these things to the symbol table
+				sym_tbl_add_entry(new_tbl_entry(i->msg, i->line, NULL, type_decl->spec_type.list_type.type_list[type_iterator]), scope);
+			}
+			type_iterator++;
+		}
+		if(type_iterator != type_decl->spec_type.list_type.list_size){
+			add_msg_line("var declaration number of id does not max number of expr type", current, node->lineNumber);
+		}
 	}
 	else{
-
+		type * expr_decl = type_check_expr(node->nodeValue.varDeclare.initExpr, scope);
+		type * type_decl = type_check_type(node->nodeValue.varDeclare.initExpr, scope);
+		int type_iterator = 0;
+		for(msg_list * i = id_list; i != NULL; i = i->next){
+			if(compare_type(type_decl->spec_type.list_type.type_list[type_iterator], expr_decl->spec_type.list_type.type_list[type_iterator]) != 0){
+				add_msg_line("expr type and type declaration does not match", current, node->lineNumber);
+				break;
+			}
+			tbl_entry * current_entry = sym_tbl_find_entry(i->msg, scope);
+			if(current_entry != NULL){ //Redeclaration in the same scope
+				add_msg_line("Redeclaration of ID", current, node->lineNumber);
+				break;
+			}else if(type_decl->spec_type.list_type.type_list[type_iterator] == NULL){
+				add_msg_line("Invalid Type", current, node->lineNumber);
+				break;
+			}else{//Everything is good
+				//We need to add these things to the symbol table
+				sym_tbl_add_entry(new_tbl_entry(i->msg, i->line, NULL, type_decl->spec_type.list_type.type_list[type_iterator]), scope);
+			}
+			type_iterator++;
+		}
+		if(type_iterator != type_decl->spec_type.list_type.list_size){
+			add_msg_line("var declaration number of id does not max number of expr type", current, node->lineNumber);
+		}
 	}
+	return 0;
 }
+
+int type_check_func(nodeAST * node, sym_tbl * scope){
+	/*
+	returnNode->nodeType = PROG_FUNCTION;
+    returnNode->nodeValue.function.identifier = _identifer;
+    returnNode->nodeValue.function.pramList = _pram;
+    returnNode->nodeValue.function.type = _type;
+    returnNode->nodeValue.function.block = _block;
+	*/
+	tbl_entry * current_entry = sym_tbl_find_entry(node->nodeValue.function.identifier->nodeValue.identifier, scope);
+	if(current_entry != NULL){ //Redeclaration in the same scope
+		add_msg_line("Redeclaration of id when declaring function", current, node->lineNumber);
+		return 0;
+	}
+	type * function = alloc(1, sizeof(type));
+	type * return_type = NULL;
+	sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
+	if(node->nodeValue.function.type != NULL)
+		return_type = type_check_type(node->nodeValue.function.type, new_scope);
+	type * param_type = type_check_params_list(node->nodeValue.function.pramList, new_scope);
+
+	function->spec_type.func_type.params_type = param_type;
+	function->spec_type.func_type.return_type = return_type;
+	type_check_block(node->nodeValue.function.block, new_scope);
+	sym_tbl_add_entry(new_tbl_entry(node->nodeValue.function.identifier->nodeValue.identifier, node->lineNumber, node, function), scope);
+}
+
+type * type_check_params_list(nodeAST * node, sym_tbl * scope){
+	/*
+    returnNode->nodeType = PROG_PRAM_DEC_LIST;
+    returnNode->nodeValue.pramDeclareList.pram = _parm;
+    returnNode->nodeValue.pramDeclareList.next = _next;
+	*/
+
+	//Params is
+	/*
+	PROG_PRAM_DEC
+    returnNode->nodeValue.pramDeclare.idList = _idList;
+    returnNode->nodeValue.pramDeclare.type = _type;
+	*/
+	type * param_list = new_list_type(node); //Initializes thew new empty list_type
+    for(nodeAST * i = node; i != NULL; i = i->nodeValue.pramDeclareList.next){
+    	type * id_list_type = type_check_type(i->nodeValue.pramDeclareList.pram->nodeValue.pramDeclare.type, scope);
+    	//Get the type of the id_list type
+    	for(nodeAST * j = i->nodeValue.pramDeclare.idList; j != NULL; j = j->nodeValue.identifierList.next){
+    		sym_tbl_add_entry(new_tbl_entry(j->nodeValue.identifierList.identifier->nodeValue.identifier, j->nodeValue.identifierList.identifier->lineNumber, j->nodeValue.identifierList.identifier, id_list_type), scope);
+    	}
+    }
+
+    return param_list;
+}
+
+int type_check_type_decl_list(nodeAST * node, sym_tbl * scope){
+	/*
+    returnNode->nodeType = PROG_DECLARE_TYPE_LIST;
+    returnNode->nodeValue.typeDeclareList.typeDeclare = _typeDeclare;
+    returnNode->nodeValue.typeDeclareList.next = _next;
+
+    returnNode->nodeType = RROG_DECLARE_TYPE;
+    returnNode->nodeValue.typeDeclare.identifier = _identifier;
+    returnNode->nodeValue.typeDeclare.type = _type;
+	*/
+    for(nodeAST * i = node; i != NULL; i = i->nodeValue.typeDeclareList.next){
+    	type * id_type = type_check_type(i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.type, scope);
+    	char * id = i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.identifier->nodeValue.identifier;
+    	sym_tbl_add_entry(new_tbl_entry(id, i->nodeValue.typeDeclareList.typeDeclare->lineNumber, i->nodeValue.typeDeclareList.typeDeclare, id_type), scope);
+    }
+
+    return 0;
+}
+
+
 
 msg_list * prepare_id_list(nodeAST * node){
 	msg_list * head = alloc(1, sizeof(msg_list));

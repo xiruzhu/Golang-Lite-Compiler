@@ -37,7 +37,7 @@ int_lit			{decimal_lit}|{octal_lit}|{hex_lit}
 
 decimal  		[0-9]+
 exponent		["e"|"E"]["+"|"-"]{decimal}|["e"|"E"]{decimal}
-float_lit		{decimal}"."{decimal}|"."{decimal}|{decimal}"."{exponent}|{decimal}"."{decimal}{exponent}|{decimal}{exponent}|"."{decimal}{exponent}|"."{decimal}
+float_lit		{decimal}"."{decimal}|{decimal}"."|{decimal}"."{exponent}|{decimal}"."{decimal}{exponent}|{decimal}{exponent}|"."{decimal}{exponent}|"."{decimal}
 
 string_lit		{interpreted_string_lit}|{raw_string_lit}
 raw_string_lit	\`[^`]*\`
@@ -132,7 +132,7 @@ colon 			":"
 				char_num += strlen(yytext);
 			}
 
-\/\*([^\*]|\*+^\/)*\*\/ {
+\/\*([^\*]|\*+^\/)*\*+\/ {
 			for(int i = 0; i < strlen(yytext); i++)
 				if(yytext[i] == '\n')
 					line_num++;
@@ -234,7 +234,7 @@ colon 			":"
 					}
 					else
 						yylval.rune_val = yytext[1];
-					prev_token = rune_lit_;
+						prev_token = rune_lit_;
 					return rune_lit_;
 				}
 
