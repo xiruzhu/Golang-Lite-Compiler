@@ -28,7 +28,6 @@ typedef struct table_entry{
 
 	unsigned int line_num;
 	type * type_info;
-
 }tbl_entry;
 
 /*

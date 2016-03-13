@@ -317,8 +317,33 @@ int type_check_type_decl_list(nodeAST * node, sym_tbl * scope){
     	char * id = i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.identifier->nodeValue.identifier;
     	sym_tbl_add_entry(new_tbl_entry(id, i->nodeValue.typeDeclareList.typeDeclare->lineNumber, i->nodeValue.typeDeclareList.typeDeclare, id_type), scope);
     }
-
     return 0;
+}
+
+type * type_check_type(nodeAST * node, sym_tbl * scope){
+/*
+type                : basic_type                                  {$$ = $1;}
+                    | '[' ']' type                                {$$ = newSliceType($3, _treeNodeAllocator);}
+                    | struct_ '{' field_decl_list '}'             {$$ = newStruct($3, _treeNodeAllocator);}
+                    | '[' int_lit_ ']' type                       {$$ = newArrayType(newLiteralInt($2, _treeNodeAllocator), $4, _treeNodeAllocator);}
+                    | id_                                         {$$ = newIdentifier($1, _treeNodeAllocator);}
+*/	type * ret;
+	switch(node->nodeType){
+		case BASIC_TYPE: return get_basic_type(node);
+		case SLICE_TYPE: ret = new_slice_type();
+
+	}
+}
+
+type * get_basic_type(nodeAST * node){
+		switch(node->nodeValue.basicType){
+	    	case BASIC_INT: return new_int_type();
+        	case BASIC_FLOAT: return new_float_type();
+        	case BASIC_RUNE: return new_rune_type();
+        	case BASIC_STRING: return new_string_type();
+        	case BASIC_BOOL: return new_bool_type();
+        	default: return NULL;
+    	}
 }
 
 

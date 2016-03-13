@@ -49,11 +49,12 @@ type * new_float_type();
 type * new_bool_type();
 type * new_rune_type();
 type * new_string_type();
-type * new_basic_type(nodeAST * AST);
-type * new_slice_type(nodeAST * AST);
-type * new_array_type(nodeAST * AST);
-type * new_struct_type(nodeAST * AST);
-type * new_func_type(nodeAST * AST);
+type * new_basic_type();
+type * new_slice_type();
+type * new_array_type();
+type * new_struct_type();
+type * new_func_type();
+type * new_alias_type();
 
 void free_type(type * garbage);
 
@@ -106,21 +107,21 @@ type * new_string_type(){
 	return ret;
 }
 
-type * new_slice_type(nodeAST * AST){
+type * new_slice_type(){
 	type * ret = alloc(1, sizeof(struct type));
 	ret->type = SLICE_TYPE;
 	ret->spec_type.slice_type.s_type = NULL;
 	return ret;
 }
 
-type * new_array_type(nodeAST * AST){
+type * new_array_type(){
 	type * ret = alloc(1, sizeof(struct type));
 	ret->type = ARRAY_TYPE;
 	ret->spec_type.array_type.a_type = NULL;
 	return ret;
 }
 
-type * new_func_type(nodeAST * AST){
+type * new_func_type(){
 	type * ret = alloc(1, sizeof(ret));
 	ret->type = FUNC_TYPE;
 	ret->spec_type.func_type.return_type = NULL;
@@ -128,7 +129,7 @@ type * new_func_type(nodeAST * AST){
 	return ret;
 }
 
-type * new_list_type(nodeAST * AST){
+type * new_list_type(){
 	type * ret = alloc(1, sizeof(ret));
 	ret->type = LIST_TYPE;
 	ret->spec_type.list_type.type_list = alloc(8, sizeof(type *));
@@ -175,32 +176,6 @@ void free_type(type * garbage){
 		default: break;
 	}
 	free(garbage);
-}
-
-type * get_basic_type(nodeAST * node){
-		switch(node->nodeValue.basicType){
-	    case BASIC_INT: return new_int_type();
-        case BASIC_FLOAT: return new_float_type();
-        case BASIC_RUNE: return new_rune_type();
-        case BASIC_STRING: return new_string_type();
-        case BASIC_BOOL: return new_bool_type();
-        default: return NULL;
-    	}
-}
-
-type * get_var_type(nodeAST * node){
-	switch(node->nodeType){
-		case LITERAL_INT: return new_int_type();
-		case LITERAL_FLOAT: return new_float_type();
-		case LITERAL_RUNE: return new_rune_type();
-		case LITERAL_STRING: return new_string_type();
-		case BASIC_TYPE: return new_basic_type(node);
-        case ARRAY_TYPE: return new_array_type(node);
-        case SLICE_TYPE: return new_slice_type(node);
-        case STRUCT_TYPE: return new_struct_type(node);
-        case PROG_FUNCTION: return get_func_type(node);
-        default: return NULL;
-	}
 }
 
 /*

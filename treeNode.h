@@ -47,11 +47,12 @@ typedef enum {
 
 typedef struct nodeAST {
     size_t lineNumber;
+    void * sym_tbl_ptr;
     enum {
         NODE_INIT,                          // Exception upon future encounter
-    
+
         LITERAL_INT,
-        LITERAL_FLOAT,                        
+        LITERAL_FLOAT,
         LITERAL_RUNE,
         LITERAL_STRING,
         IDENTIFIER,
@@ -62,15 +63,15 @@ typedef struct nodeAST {
         STRUCT_TYPE,                        // struct { struct_list }
         STRUCT_TYPE_DEC_LIST,
         STRUCT_TYPE_DEC,
-        
-        
+
+
         EXPR_BINARY_OP_EQUAL,               // expr == expr
         EXPR_BINARY_OP_NEQUAL,              // expr != expr
         EXPR_BINARY_OP_LESS,                // expr < expr
         EXPR_BINARY_OP_LESSEQUAL,           // expr <= expr
         EXPR_BINARY_OP_GREAT,               // expr > expr
         EXPR_BINARY_OP_GREATEQUAL,          // expr >= expr
-    
+
         EXPR_BINARY_OP_ADD,                 // expr + expr
         EXPR_BINARY_OP_SUB,                 // expr - expr
         EXPR_BINARY_OP_MUL,                 // expr * expr
@@ -81,10 +82,10 @@ typedef struct nodeAST {
         EXPR_BINARY_OP_OR,                  // expr | expr        (bitwise)
         EXPR_BINARY_OP_XOR,                 // expr ^ expr        (bitwise)
         EXPR_BINARY_OP_ANDNOT,              // expr &^ expr       (bitwise)
-    
+
         EXPR_BINARY_OP_LSHIFT,              // expr << expr
         EXPR_BINARY_OP_RSHIFT,              // expr >> expr
-    
+
         EXPR_BINARY_OP_LOGIC_AND,           // expr && expr       (logical)
         EXPR_BINARY_OP_LOGIC_OR,            // expr || expr       (logical)
 
@@ -92,31 +93,31 @@ typedef struct nodeAST {
         EXPR_UNIARY_OP_POS,                 // + expr
         EXPR_UNIARY_OP_NEG,                 // - expr
         EXPR_UNIARY_OP_NOT,                 // ^ expr             (bitwise)
-    
+
         EXPR_APPEND,                        // append ( indentifier, expr )
         EXPR_FUNC_CALL,                     // expr ( [expr_list] )
         EXPR_CAST,                          // type ( expr )      TODO: weeding
-    
+
         EXPR_SELECTOR,                      // expr EXPR_ADDRESS_SELECTOR
         EXPR_INDEX,                         // expr EXPR_ADDERSS_INDEX
         EXPR_SLICE,                         // expr EXPR_ADDRESS_SLICE
                                             // expr EXPR_ADDRESS_SLICE_FULL
-    
+
         EXPR_ADDRESS_SLICE,                 // [ expr : expr ]
         EXPR_ADDRESS_SLICE_FULL,            // [ expr : expr : expr ]
-        
+
         EXPR_UTILITY_EXPRLIST,              // expr, ... , expr
         STATE_UTILITY_STATELIST,            // state .... state
         STATE_UTILITY_FOR_CLAUSE,           // expr; expr; expr
         STATE_UTILITY_CASE_LIST,            // case_clause ... case_clause
         STATE_UTILITY_CASE_CLAUSE,          // case [expr] | default : state_list
-        
+
         STATE_INC,                          // expr ++
         STATE_DEC,                          // expr --
         STATE_PRINT,                        // print ( [expr, ... , expr] )
         STATE_PRINTLN,                      // println ( [expr, ... , expr] )
         STATE_RETURN,                       // return [expr]
-        
+
         STATE_ASSIGN,                       // expr, ... , expr = expr, ... , expr
         STATE_ASSIGN_ADD,                   // expr += expr
         STATE_ASSIGN_SUB,                   // expr -= expr
@@ -129,23 +130,23 @@ typedef struct nodeAST {
         STATE_ASSIGN_SHIFTLEFT,             // expr <<= expr
         STATE_ASSIGN_SHIFTRIGHT,            // expr >>= expr
         STATE_ASSIGN_ANDNOT,                // expr &^= expr
-        
+
         STATE_SHORT_DECLARE,                // expr, ... , expr := expr, ..., expr
-        
+
         STATE_IF,                           // if cond block
         STATE_IF_ELSE,                      // if cond block else block
         STATE_SWITCH,                       // switch cond black
         STATE_FOR,                          // for cond block
-        
+
         STATE_IF_CONDITION,                 // [state;] [expr]
         STATE_SWITCH_CONDITION,             // [state;] [expr]
-        
+
         STATE_CONTROL_BREAK,                // break
         STATE_CONTROL_CONTINUE,             // continue
-        
+
         PROG_PACKAGE,                       // package id
         PROG_PROGRAM,
-        
+
         PROG_PRAM_DEC_LIST,
         PROG_PRAM_DEC,
         PROG_FUNCTION,
@@ -174,56 +175,56 @@ typedef struct nodeAST {
         struct {struct nodeAST* structDec;} structType;
         struct {struct nodeAST* identifierList; struct nodeAST* type;} structTypeDec;
         struct {struct nodeAST* declare; struct nodeAST* next;} structTypeDecList;
-        
+
         struct {struct nodeAST* left; struct nodeAST* right;} equal;
         struct {struct nodeAST* left; struct nodeAST* right;} nequal;
         struct {struct nodeAST* left; struct nodeAST* right;} less;
         struct {struct nodeAST* left; struct nodeAST* right;} lessEqual;
         struct {struct nodeAST* left; struct nodeAST* right;} great;
         struct {struct nodeAST* left; struct nodeAST* right;} greatEqual;
-        
+
         struct {struct nodeAST* left; struct nodeAST* right;} add;
         struct {struct nodeAST* left; struct nodeAST* right;} sub;
         struct {struct nodeAST* left; struct nodeAST* right;} mul;
         struct {struct nodeAST* left; struct nodeAST* right;} div;
         struct {struct nodeAST* left; struct nodeAST* right;} mod;
-        
+
         struct {struct nodeAST* left; struct nodeAST* right;} bitAnd;
         struct {struct nodeAST* left; struct nodeAST* right;} bitOr;
         struct {struct nodeAST* left; struct nodeAST* right;} bitXor;
         struct {struct nodeAST* left; struct nodeAST* right;} bitAndNot;
         struct {struct nodeAST* expr;} bitNot;
-        
+
         struct {struct nodeAST* left; struct nodeAST* right;} shiftLeft;
         struct {struct nodeAST* left; struct nodeAST* right;} shiftRight;
-        
+
         struct {struct nodeAST* left; struct nodeAST* right;} logicAnd;
         struct {struct nodeAST* left; struct nodeAST* right;} logicOr;
         struct {struct nodeAST* expr;} logicNot;
-        
+
         struct {struct nodeAST* expr;} pos;
         struct {struct nodeAST* expr;} neg;
-        
+
         struct {struct nodeAST* target; struct nodeAST* expr;} append;
         struct {struct nodeAST* target; struct nodeAST* expr;} funcCall;
         struct {struct nodeAST* target; struct nodeAST* expr;} cast;
-        
+
         struct {struct nodeAST* target; struct nodeAST* entry;} selector;
         struct {struct nodeAST* target; struct nodeAST* entry;} index;
         struct {struct nodeAST* target; struct nodeAST* entry;} slice;
-        
+
         struct {struct nodeAST* start; struct nodeAST* end;} addressSlice;
         struct {struct nodeAST* start; struct nodeAST* end; struct nodeAST* max;} addressSliceFull;
-        
+
         struct {struct nodeAST* expr; struct nodeAST* next;} exprList;
         struct {struct nodeAST* state; struct nodeAST* next;} stateList;
-        
+
         struct {struct nodeAST* expr;} inc;
         struct {struct nodeAST* expr;} dec;
         struct {struct nodeAST* expr;} print;
         struct {struct nodeAST* expr;} println;
         struct {struct nodeAST* expr;} ret;
-        
+
         struct {struct nodeAST* left; struct nodeAST* right;} assign;
         struct {struct nodeAST* left; struct nodeAST* right;} assignAdd;
         struct {struct nodeAST* left; struct nodeAST* right;} assignSub;
@@ -236,9 +237,9 @@ typedef struct nodeAST {
         struct {struct nodeAST* left; struct nodeAST* right;} assignShiftLeft;
         struct {struct nodeAST* left; struct nodeAST* right;} assignShiftRight;
         struct {struct nodeAST* left; struct nodeAST* right;} assignAndNot;
-        
+
         struct {struct nodeAST* left; struct nodeAST* right;} shortDeclare;
-        
+
         struct {struct nodeAST* condition; struct nodeAST* block_true;} ifBlock;
         struct {
             struct nodeAST* condition;
@@ -248,24 +249,24 @@ typedef struct nodeAST {
         struct {struct nodeAST* condition; struct nodeAST* block;} switchBlock;
         struct {struct nodeAST* condition; struct nodeAST* block;} forBlock;
         struct {struct nodeAST* init; struct nodeAST* condition; struct nodeAST* step;} forClause;
-        
+
         struct {struct nodeAST* state; struct nodeAST* expr;} ifCondition;
         struct {struct nodeAST* state; struct nodeAST* expr;} switchCondition;
-        
+
         struct {struct nodeAST* state; struct nodeAST* next;} caseList;
         struct {struct nodeAST* expr; struct nodeAST* state;} caseClause;
-        
+
         struct {struct nodeAST* identifier;} package;
         struct {struct nodeAST* package; struct nodeAST* program;} program;
         struct {struct nodeAST* idList; struct nodeAST* type;} pramDeclare;
         struct {struct nodeAST* pram; struct nodeAST* next;}   pramDeclareList;
-        
+
         struct {struct nodeAST* identifier; struct nodeAST* pramList; struct nodeAST* type; struct nodeAST* block;} function;
         struct {struct nodeAST* prog; struct nodeAST* next;} progList;
-        
+
         struct {struct nodeAST* idList; struct nodeAST* initExpr; struct nodeAST* type;} varDeclare;
         struct {struct nodeAST* identifier; struct nodeAST* type;} typeDeclare;
-        
+
         struct {struct nodeAST* varDeclare; struct nodeAST* next;} varDeclareList;
         struct {struct nodeAST* typeDeclare; struct nodeAST* next;} typeDeclareList;
     } nodeValue;
