@@ -10,6 +10,8 @@
 #define FUNC_TYPE   10001
 #define LIST_TYPE   10002
 #define ALIAS_TYPE	10003
+#define INVALID_TYPE 10004
+#define LITERAL_BOOL 10005
 
 int id_generator = 0;
 char err_msg[200];
@@ -40,6 +42,8 @@ typedef struct type{
 		}list_type;
 		struct{
 			struct type * a_type;
+			char * id;
+			int alias_id;
 		}alias_type;
 	}spec_type; //Special types
 }type;
@@ -55,6 +59,7 @@ type * new_array_type();
 type * new_struct_type();
 type * new_func_type();
 type * new_alias_type();
+type * new_invalid_type();
 
 void free_type(type * garbage);
 
@@ -77,33 +82,39 @@ type * type_cpy(type * val){
 	return ret;
 }
 
+type * new_invalid_type(){
+	type * ret = alloc(1, sizeof(struct type));
+	ret->type = INVALID_TYPE;
+	return ret;
+}
+
 type * new_int_type(){
 	type * ret = alloc(1, sizeof(struct type));
-	ret->type = VAR_INT;
+	ret->type = LITERAL_INT;
 	return ret;
 }
 
 type * new_float_type(){
 	type * ret = alloc(1, sizeof(struct type));
-	ret->type = VAR_FLOAT64;
+	ret->type = LITERAL_FLOAT;
 	return ret;
 }
 
 type * new_bool_type(){
 	type * ret = alloc(1, sizeof(struct type));
-	ret->type = VAR_BOOL;
+	ret->type = LITERAL_BOOL;
 	return ret;
 }
 
 type * new_rune_type(){
 	type * ret = alloc(1, sizeof(struct type));
-	ret->type = VAR_RUNE;
+	ret->type = LITERAL_RUNE;
 	return ret;
 }
 
 type * new_string_type(){
 	type * ret = alloc(1, sizeof(struct type));
-	ret->type = VAR_STRING;
+	ret->type = LITERAL_STRING;
 	return ret;
 }
 
@@ -138,7 +149,7 @@ type * new_list_type(){
 	return ret;
 }
 
-type * new_struct_type(nodeAST * AST){
+type * new_struct_type(){
 	type * ret = alloc(1, sizeof(struct type));
 	ret->type = STRUCT_TYPE;
 	ret->spec_type.struct_type.type_list = alloc(8, sizeof(type *));
@@ -148,10 +159,12 @@ type * new_struct_type(nodeAST * AST){
 	return ret;
 }
 
-type * new_alias_type(nodeAST * AST){
+type * new_alias_type(){
 	type * ret = alloc(1, sizeof(struct type));
 	ret->type = ARRAY_TYPE;
 	ret->spec_type.alias_type.a_type = NULL;
+	ret->spec_type.alias_type.id = NULL;
+	ret->spec_type.alias_type.alias_id = id_generator++;
 	return ret;
 }
 
@@ -183,19 +196,50 @@ void free_type(type * garbage){
 * Returns 0 if true
 */
 int compare_type(type * arg0, type * arg1){
+	if(arg0 == NULL || arg1 == NULL)
+		return -1;
 	if(arg0->type != arg1->type)
 		return -1;
 	switch(arg0->type){
-		case ARRAY_TYPE: return compare_type(arg0->spec_type.array_type.a_type, arg1->spec_type.array_type.a_type);
-		case SLICE_TYPE: return compare_type(arg0->spec_type.slice_type.s_type, arg1->spec_type.slice_type.s_type);
+		case BASIC_TYPE: 	return 0;
+		case ARRAY_TYPE: 	return compare_type(arg0->spec_type.array_type.a_type, arg1->spec_type.array_type.a_type);
+		case SLICE_TYPE: 	return compare_type(arg0->spec_type.slice_type.s_type, arg1->spec_type.slice_type.s_type);
 		case STRUCT_TYPE:
 						 //Comparing the type of struct
 						 //We need to test if all the ids are the same
+							if(arg0->spec_type.struct_type.list_size != arg1->spec_type.struct_type.list_size)
+								return -1;
+							for(int i = 0; i < arg0->spec_type.struct_type.list_size; i++){
+								if(strcmp(arg0->spec_type.struct_type.id_list[i], arg1->spec_type.struct_type.id_list[i]) == -1)
+									return -1;
+								if(compare_type(arg0->spec_type.struct_type.type_list[i], arg1->spec_type.struct_type.type_list[i]) == -1)
+									return -1;
+							}
 							return 0;
-		case PROG_FUNCTION:
+		case FUNC_TYPE:
+							if(compare_type(arg0->spec_type.func_type.params_type, arg1->spec_type.func_type.params_type) == -1)
+								return -1;
+							if(compare_type(arg0->spec_type.func_type.return_type, arg1->spec_type.func_type.return_type) == -1)
+								return -1;
 							return 0;
+		case ALIAS_TYPE:
+							return arg0->spec_type.alias_type.alias_id == arg1->spec_type.alias_type.alias_id;
+							/*
+							if(strcmp(arg0->spec_type.alias_type.id,arg1->spec_type.alias_type.id) != 0)
+								return -1;
+							if(compare_type(arg0->spec_type.alias_type.a_type, arg1->spec_type.alias_type.a_type) != 0)
+								return -1;
+							*/
+							//return 0;
 		case LIST_TYPE:
+							if(arg0->spec_type.list_type.list_size != arg1->spec_type.list_type.list_size)
+								return -1;
+							for(int i = 0; i < arg0->spec_type.list_type.list_size; i++){
+								if(compare_type(arg0->spec_type.list_type.type_list[i], arg1->spec_type.list_type.type_list[i]) == -1)
+									return -1;
+							}
 							return 0;
+		case INVALID_TYPE: 	return -1;
 		default:
 						 return 0;
 	}

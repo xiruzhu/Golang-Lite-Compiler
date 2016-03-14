@@ -34,10 +34,12 @@ void init_table(){
 void free_table(){
     for(int i = 0; i < MAX_SIZE; i++){
         for(mem_node * j = table[i]; j != NULL;){
+            if(j != NULL){
             void * next = j->next;
             free(j->ptr);
             free(j);
             j = next;
+            }
         }
     }
 }
@@ -61,7 +63,7 @@ static inline void *alloc(int number, int size)
     }
 
     for(mem_node * i = table[simple_hash(AllocMem)];; i = i->next){
-        if(i = NULL){
+        if(i == NULL){
            mem_node * node = malloc(sizeof(mem_node));
            node->ptr = AllocMem;
            node->next = NULL;
@@ -84,8 +86,10 @@ static inline void *ralloc(void * pointer, int size)
         exit(-1);
     }
     for(mem_node * i = table[simple_hash(AllocMem)]; i != NULL; i = i->next){
+        if(i != NULL){
         if(i == pointer){
             pointer = AllocMem;
+        }
         }
     }
 
