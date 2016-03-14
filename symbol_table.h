@@ -382,19 +382,13 @@ int print_hash_tbl(hash_tbl * tbl, FILE * file){
 				\n______________________________________________________________________________________n");
 	for(int i = 0; i < tbl->max_size; i++){
 		for(int j = 0; j < tbl->entry_list_size[i]; j++){
-			fprintf(file, "[ ID: %s | Line: %d ]", tbl->hash_system[i][j].id, tbl->hash_system[i][j].line_num);
-			print_type(tbl->hash_system[i][j].type_info, file);
-			fprintf(file, "\n");
+			fprintf(file, "[ ID: %s | Line: %d | ", tbl->hash_system[i][j].id, tbl->hash_system[i][j].line_num);
+			print_type_to_file(tbl->hash_system[i][j].type_info, file);
+			fprintf(file, "]\n");
 		}
 	}
 	return 0;
 }
-
-int print_type(type * t, FILE * file){
-
-	return 0;
-}
-
 
 
 

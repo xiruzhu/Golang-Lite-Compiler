@@ -14,7 +14,8 @@
 #define LITERAL_BOOL 10005
 
 int id_generator = 0;
-char err_msg[200];
+char err_msg[256];
+char extra_buf[256];
 
 typedef struct type{
 	int type;
@@ -67,7 +68,8 @@ type * get_var_type(nodeAST * AST);
 type * get_func_type(nodeAST * node);
 type * get_typedef_type(nodeAST * node);
 int compare_type(type * arg0, type * arg1);
-int print_type(type * to_print, FILE * file);
+int print_type_to_file(type * to_print, FILE * file);
+int print_type_to_string(type * to_print, char * buf);
 
 /*
 * -----------------------------------------------------------------------------------------------------------
@@ -245,6 +247,61 @@ int compare_type(type * arg0, type * arg1){
 	}
 }
 
+int print_type_to_file(type * to_print, FILE * file){
+	switch(to_print->type){
+	    case LITERAL_INT: fprintf(file, "Int Type"); break;
+        case LITERAL_FLOAT: fprintf(file, "Float Type"); break;
+        case LITERAL_RUNE: fprintf(file, "Rune Type"); break;
+        case LITERAL_STRING: fprintf(file, "String Type"); break;
+        case LITERAL_BOOL: fprintf(file, "Bool Type"); break;
+		case ARRAY_TYPE: fprintf(file, "Array Type[");
+						 print_type_to_file(to_print->spec_type.array_type.a_type, file);
+						 fprintf(file, "] ");
+						 break;
+		case SLICE_TYPE: fprintf(file, "Slice Type[");
+						 print_type_to_file(to_print->spec_type.slice_type.s_type, file);
+						 fprintf(file, "] ");
+						 break;
+		case STRUCT_TYPE: fprintf(file, "Struct Type"); break;
+		case FUNC_TYPE: fprintf(file, "Function Type"); break;
+		case ALIAS_TYPE: fprintf(file, "Alias Type %s:", to_print->spec_type.alias_type.id);
+						 print_type_to_file(to_print->spec_type.alias_type.a_type, file);
+						 break;
+		case LIST_TYPE: break; //Technically List doesn't have a type
+		case INVALID_TYPE: fprintf(file, "Invalid Type"); break;
+		default: break;
+	}
+	return 0;
+}
+
+int print_type_to_string(type * to_print, char * buf){
+	switch(to_print->type){
+	    case LITERAL_INT: sprintf(buf, "Int Type"); break;
+        case LITERAL_FLOAT: sprintf(buf, "Float Type"); break;
+        case LITERAL_RUNE: sprintf(buf, "Rune Type"); break;
+        case LITERAL_STRING: sprintf(buf, "String Type"); break;
+        case LITERAL_BOOL: sprintf(buf, "Bool Type"); break;
+		case ARRAY_TYPE:
+						 print_type_to_string(to_print->spec_type.array_type.a_type, extra_buf);
+						 sprintf(buf, "Array Type[%s]", extra_buf);
+						 break;
+		case SLICE_TYPE:
+						 print_type_to_string(to_print->spec_type.array_type.a_type, extra_buf);
+						 sprintf(buf, "Slice Type[%s]", extra_buf);
+						 break;
+						 break;
+		case STRUCT_TYPE: sprintf(buf, "Struct Type"); break;
+		case FUNC_TYPE: sprintf(buf, "Function Type"); break;
+		case ALIAS_TYPE:
+						 print_type_to_string(to_print->spec_type.alias_type.a_type, extra_buf);
+				         sprintf(buf, "Alias Type %s:%s", to_print->spec_type.alias_type.id, extra_buf);
+				         break;
+		case LIST_TYPE: break; //Technically List doesn't have a type
+		case INVALID_TYPE: sprintf(buf, "Invalid Type"); break;
+		default: break;
+	}
+	return 0;
+}
 //var_decl
 //func_decl
 //type_decl
