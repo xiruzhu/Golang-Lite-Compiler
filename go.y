@@ -144,9 +144,7 @@ top_decl_list       : top_decl top_decl_list                      {$$ = newProgL
 top_decl            : var_decl
                     | type_decl
                     | func_ id_ params block                      {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, NULL, $4, _treeNodeAllocator);}
-			        | func_ id_ params type block                 {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, $5, _treeNodeAllocator);}
-                    | func_ id_ params                            {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, NULL, NULL, _treeNodeAllocator);}
-			        | func_ id_ params type                       {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, NULL, _treeNodeAllocator);}
+			     | func_ id_ params type block                 {$$ = newFunction(newIdentifier($2, _treeNodeAllocator), $3, $4, $5, _treeNodeAllocator);}
 
 block               : '{' stmt_list '}' ';'                       {$$ = $2;}
 
@@ -184,6 +182,8 @@ type                : basic_type                                  {$$ = $1;}
                     | struct_ '{' field_decl_list '}'             {$$ = newStruct($3, _treeNodeAllocator);}
                     | '[' int_lit_ ']' type                       {$$ = newArrayType(newLiteralInt($2, _treeNodeAllocator), $4, _treeNodeAllocator);}
                     | id_                                         {$$ = newIdentifier($1, _treeNodeAllocator);}
+                    | '(' type ')'                                {$$ = $2;}
+
 
 basic_type          : int_                                        {$$ = newBasicTypeInt(_treeNodeAllocator);}
                     | float_                                      {$$ = newBasicTypeFloat(_treeNodeAllocator);}
@@ -217,7 +217,8 @@ stmt                : var_decl                                    {$$ = $1;}
                     | break_ ';'                                  {$$ = newControlBreak(_treeNodeAllocator);}
                     | continue_ ';'                               {$$ = newControlContinue(_treeNodeAllocator);}
 
-simple_stmt         : simple_stmt_v ';'                           {$$ = $1;}
+simple_stmt         : '(' simple_stmt  ')'                                {$$ = $2;}
+                    | simple_stmt_v ';'                           {$$ = $1;}
 
 simple_stmt_v       : expr                                        {$$ = $1;}
                     | expr incre_                                 {$$ = newInc($1, _treeNodeAllocator);}
@@ -274,7 +275,8 @@ case_clause_list    : case_clause case_clause_list                {$$ = newCaseL
                     |                                             {$$ = NULL;}
 
 case_clause         : case_ expr_list ':' stmt_list               {$$ = newCaseClause($2, $4, _treeNodeAllocator);}
-			        | default_ ':' stmt_list                      {$$ = newCaseClause(NULL, $3, _treeNodeAllocator);}
+			     | default_ ':' stmt_list                      {$$ = newCaseClause(NULL, $3, _treeNodeAllocator);}
+
 
 if_cond             : expr                                        {$$ = newIfCondition(NULL, $1, _treeNodeAllocator);}
                     | simple_stmt expr                            {$$ = newIfCondition($1, $2, _treeNodeAllocator);}
@@ -330,8 +332,8 @@ expr                : primary_expr                                {$$ = $1;}
                     | '^' expr         %prec unary                {$$ = newBitNot($2, _treeNodeAllocator);}
                     | '!' expr         %prec unary                {$$ = newLogicNot($2, _treeNodeAllocator);}
 
-func_call           : id_ '(' expr_list ')'                       {$$ = newFuncCall(newIdentifier($1, _treeNodeAllocator), $3, _treeNodeAllocator);}
-                    | id_ '(' ')'                                 {$$ = newFuncCall(newIdentifier($1, _treeNodeAllocator), NULL, _treeNodeAllocator);}
+func_call           :  primary_expr '(' expr_list ')'                      {$$ = newFuncCall($1, $3, _treeNodeAllocator);}
+                    |  primary_expr '(' ')'                                {$$ = newFuncCall($1, NULL, _treeNodeAllocator);}
 
 primary_expr        : operand                                     {$$ = $1;}
                     | func_call                                   {$$ = $1;}

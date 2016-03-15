@@ -17,7 +17,9 @@ void _func_throwError(const char * test){
 size_t _AST_LineNumber = 0;
 int line_num = 1;
 int char_num = 1;
-
+int switchE = 0;
+int counter = 0;
+int forE = 0;
 char* tokens[3000];
 size_t numToken = 0;
 
@@ -41,10 +43,10 @@ float_lit		{decimal}"."{decimal}|{decimal}"."|{decimal}"."{exponent}|{decimal}".
 
 string_lit		{interpreted_string_lit}|{raw_string_lit}
 raw_string_lit	\`[^`]*\`
-interpreted_string_lit	\"(\\.|[^(\\")])*\"
+interpreted_string_lit	\"([^\\\"\n]|\\.)*\"
 rune_lit		(\'.\')|(\'\\.\')
 
-ID				[a-z|A-Z|"_"][a-z|A-Z|0-9|"_"]*
+ID				[a-zA-Z_][a-zA-Z0-9_]*
 semi_colon		";"
 break			"break"
 case			"case"
@@ -128,14 +130,35 @@ colon 			":"
 %x REALLYEND
 
 %%
-"//".*		{
+\/\/.*		{
 				char_num += strlen(yytext);
 			}
-
-\/\*([^\*]|\*+^\/)*\*+\/ {
-			for(int i = 0; i < strlen(yytext); i++)
-				if(yytext[i] == '\n')
-					line_num++;
+\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\/ {
+				for(int i = 0; i < strlen(yytext); i++){
+					if(yytext[i] == '\n')line_num++;
+				}
+				temp = prev_token;
+				prev_token = 0;
+				switch(temp){
+					case int_lit_: return ';';
+					case float_lit_: return ';';
+			    	case string_lit_: return ';';
+			    	case rune_lit_: return ';';
+					case int_: return ';';
+					case bool_: return ';';
+					case float_: return ';';
+					case string_: return ';';
+					case rune_: return ';';
+					case break_: return ';';
+					case continue_: return ';';
+					case return_: return ';';
+					case incre_: return ';';
+					case decre_: return ';';
+					case ']': return ';';
+					case ')': return ';';
+					case '}': return ';';
+					default: break;
+				}
 			}
 {break}			{prev_token = break_; return break_;}
 {case}			{prev_token = case_; return case_;}
@@ -146,7 +169,7 @@ colon 			":"
 {defer}			{prev_token = defer_; return defer_;}
 {else}			{prev_token = else_; return else_;}
 {fallthrough}	{prev_token = fallthrough_; return fallthrough_;}
-{for}           {prev_token = for_; return for_;}
+{for}           {prev_token = for_; forE = 1; return for_;}
 {func}          {prev_token = func_; return func_;}
 {go}            {prev_token = go_; return go_;}
 {goto}          {prev_token = goto_; return goto_;}
@@ -159,7 +182,7 @@ colon 			":"
 {return} 		{prev_token = return_; return return_;}
 {select} 		{prev_token = select_; return select_;}
 {struct}		{prev_token = struct_; return struct_;}
-{switch}		{prev_token = switch_; return switch_;}
+{switch}		{prev_token = switch_; switchE = 1; return switch_;}
 {type}			{prev_token = type_; return type_;}
 {var}			{prev_token = var_; return var_;}
 {int} 	        {prev_token = int_; return int_;}
@@ -210,7 +233,10 @@ colon 			":"
 {rrbrac}		{prev_token = ')'; return ')';}
 {lsbrac}		{prev_token = '['; return '[';}
 {rsbrac}		{prev_token = ']'; return ']';}
-{lcbrac}		{prev_token = '{'; return '{';}
+{lcbrac}		{
+					prev_token = '{'; 
+					return '{';
+				}
 {rcbrac}		{prev_token = '}'; return '}';}
 {comma}			{prev_token = ','; return ',';}
 {dot}			{prev_token = '.'; return '.';}
@@ -219,7 +245,7 @@ colon 			":"
 
 {rune_lit}		{
 					if(yytext[1] == 92 && yytext[2] != 39){
-						printf("%d\n", yytext[2]);
+						//printf("Test %d\n", yytext[2]);
 						switch(yytext[2]){
 							case 'a': yylval.rune_val = 7; break;
 							case 'b': yylval.rune_val = 8; break;
@@ -284,6 +310,7 @@ colon 			":"
 					return float_lit_;
 				}
 {string_lit}	{
+					//printf("String here: %s\n",yytext);
 					char * val = (char *)malloc(strlen(yytext) + 1);
 					if(val == NULL){
 						printf("Mem Alloc Failed\n");
@@ -295,10 +322,16 @@ colon 			":"
 					return string_lit_;
 				}
 
-{semi_colon}	{prev_token = ';'; return ';';}
+{semi_colon}	{ 
+	                counter ++;
+					prev_token = ';'; 
+					return ';';
+				}
 
 {ID}			{
 					char * val = (char *)malloc(strlen(yytext) + 1);
+
+					//printf("ID here: %s, %d\n", yytext, prev_token);
 					if(val == NULL){
 						printf("Mem Alloc Failed\n");
 						exit(1);
@@ -309,8 +342,33 @@ colon 			":"
 					return id_;
 				}
 
-" "|"\t"		char_num++;
+" "|"\t"		{
+				char_num++;
+				//printf("test\n");
+				}
+
 "\n"			{
+					if(forE && prev_token == ';'){
+						forE = 0;
+					}
+					if(forE){
+						if(prev_token == '{' || prev_token == '}') forE = 0;
+						else{
+							printf("Error: (line %d), syntax error: missing { after for clause\n", line_num);
+							exit(1);
+						}
+					}
+					if(switchE && counter == 2){
+						if(prev_token == '{' || prev_token == '}'){
+							switchE = 0;
+							counter = 0;
+						}
+						else{
+							printf("Error: (line %d), syntax error: missing { after switch clause\n", line_num);
+							exit(1);
+						}
+					}
+					counter = 0;
 					line_num += 1;
 					temp = prev_token;
 					prev_token = 0;
@@ -335,6 +393,9 @@ colon 			":"
 						case '}': return ';';
 						default: break;
 					}
+				}
+[!-~]			{
+					return error_;
 				}
 
 <INITIAL><<EOF>>        {
@@ -378,5 +439,5 @@ int main(int argc, char ** argv){
 		}
 	 }
 
-	prettyPrint(_ast, stream);
+	//prettyPrint(_ast, stream);
 }
