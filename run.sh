@@ -8,7 +8,7 @@ else
 	read L Y S
 fi
 
-flex $L && bison $Y && clang lex.yy.c -o goCompiler -lfl
+flex $L && bison $Y && clang lex.yy.c -o goCompiler -lfl -lm
 
 if [ "$#" -eq 4 ]; then
 	cat $S | ./goCompiler $4

@@ -128,6 +128,7 @@ type_check * new_type_check(int size){
 	sym_tbl_add_entry(new_tbl_entry("true", 0, NULL, new_bool_type()), ret->current_tbl);
 
 	sym_tbl_add_entry(new_tbl_entry("false", 0, NULL, new_bool_type()), ret->current_tbl);
+
 	current = &head;
 	current->msg = NULL;
 
@@ -201,10 +202,8 @@ int type_check_prog(nodeAST * node){
 	}
 	init_table();
 	tcsystem = new_type_check(DEFAULT_SIZE);
-
-	tcsystem->current_tbl = new_sym_tbl(DEFAULT_SIZE);
-
-	add_child_sym_tbl(tcsystem->root_tbl, tcsystem->current_tbl);
+	sym_tbl * scope = tcsystem->current_tbl;
+	tcsystem->current_tbl= new_sym_tbl_parent(scope, DEFAULT_SIZE);
 
 	//At this point We should have two things
 	//returnNode->nodeValue.program.package = _package;
@@ -235,8 +234,8 @@ int type_check_prog_list(nodeAST * node, sym_tbl * scope){
     			case PROG_DECLARE_TYPE_LIST: type_check_type_decl_list(i->nodeValue.progList.prog, scope); break;
     			case PROG_FUNCTION: type_check_func(i->nodeValue.progList.prog, scope); break;
     			default:
-    						sprintf(err_buf, "Error Unexpected NodeType at line %zd", node->lineNumber);
-    						add_msg_line(err_buf, current, node->lineNumber); break;
+    				sprintf(err_buf, "Error Unexpected NodeType at line %zd", node->lineNumber);
+    				add_msg_line(err_buf, current, node->lineNumber); break;
     		}
     	}
     }
@@ -591,6 +590,8 @@ type * type_check_expr_list(nodeAST * node, sym_tbl * scope){
 
 type * type_check_expr_id(nodeAST * node, sym_tbl * scope){
 	//We need to find it first in the hash_table
+			tbl_entry * boolean = sym_tbl_find_entry("false",scope);
+			printf("%p\n", boolean);
     		tbl_entry * entry = sym_tbl_find_entry( node->nodeValue.identifier,scope);
     			if(entry == NULL){
 					sprintf(err_buf, "Undeclared id %s at line %zd", node->nodeValue.identifier, node->lineNumber);

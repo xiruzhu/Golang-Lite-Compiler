@@ -6,6 +6,8 @@
 #include "memory.h"
 #include "treeNode.h"
 #include "prettyPrint.h"
+#include "type_check.h"
+#include "mem_sys.h"
 
 memoryList _treeNodeAllocator = NULL;
 nodeAST* _ast;
@@ -87,7 +89,7 @@ mult			"*"
 div				"/"
 mod				"%"
 amp				"&"
-vb				'|'
+vb				"|"
 caret			"^"
 ls				"<<"
 rs				">>"
@@ -234,7 +236,7 @@ colon 			":"
 {lsbrac}		{prev_token = '['; return '[';}
 {rsbrac}		{prev_token = ']'; return ']';}
 {lcbrac}		{
-					prev_token = '{'; 
+					prev_token = '{';
 					return '{';
 				}
 {rcbrac}		{prev_token = '}'; return '}';}
@@ -322,9 +324,9 @@ colon 			":"
 					return string_lit_;
 				}
 
-{semi_colon}	{ 
+{semi_colon}	{
 	                counter ++;
-					prev_token = ';'; 
+					prev_token = ';';
 					return ';';
 				}
 
@@ -394,7 +396,7 @@ colon 			":"
 						default: break;
 					}
 				}
-[!-~]			{
+(.)				{
 					return error_;
 				}
 
@@ -439,5 +441,6 @@ int main(int argc, char ** argv){
 		}
 	 }
 
-	//prettyPrint(_ast, stream);
+	prettyPrint(_ast, stream);
+	type_check_prog(_ast);
 }
