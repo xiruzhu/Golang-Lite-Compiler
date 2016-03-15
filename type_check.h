@@ -12,6 +12,9 @@
 #define DEFAULT_SIZE	2048
 #define MAX_ID_LENGTH	256
 #define MAX_ERR_MSG		256
+#define WHITE_COLOR  "\033[1m\033[37m"
+#define RED_COLOR "\033[1m\033[31m"
+#define RESET_COLOR "\e[m"
 #define FILE_PATH	"log.txt"
 
 extern nodeAST* _ast;
@@ -172,18 +175,22 @@ int add_msg_line(char * msg, msg_list * current_node, size_t line_num){
 	current->msg = NULL;
 	return 0;
 }
-
+/*
+* Has Neat Colors
+*
+*/
 int print_err_msg(msg_list head){
 	int count = 0;
-	printf("\n-----------------------------Type Checking Error-------------------------------------\n");
+	printf("%s\n-----------------------------Type Checking Error-------------------------------------\n", RED_COLOR);
 	for(msg_list * i = &head; i != NULL; i = i->next){
 		if(i != NULL){
-			if(i->msg != NULL)
-				printf("\nError[%d] %s\n", count++, i->msg);
+			if(i->msg != NULL){
+				printf(RED_COLOR "\nError"WHITE_COLOR"[%d]: ", count++);
+				printf("%s\n",i->msg);
+			}
 		}
 	}
-	printf("\n-------------------------------END-----------------------------------------------------\n\n");
-
+	printf(RED_COLOR "\n-------------------------------END-----------------------------------------------------\n\n" RESET_COLOR);
 	return 0;
 }
 
@@ -1565,8 +1572,8 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
 */
                     	case STATE_SHORT_DECLARE: type_check_short_decl(node, scope); break;
                     	case STATE_ASSIGN:  {
-                    						type * left = type_check_expr_list(node->nodeValue.shortDeclare.left, scope);
-      										type * right = type_check_expr_list(node->nodeValue.shortDeclare.right, scope);
+                    						type * left = type_check_expr_list(node->nodeValue.assign.left, scope);
+      										type * right = type_check_expr_list(node->nodeValue.assign.right, scope);
       										if(left->spec_type.list_type.list_size != left->spec_type.list_type.list_size){
 												sprintf(err_buf, "Expression list size does not match at line %zd" ,node->lineNumber);
 												add_msg_line(err_buf, current, node->lineNumber);
