@@ -75,12 +75,13 @@ void free_sym_tbl(sym_tbl *);
 void free_hash_tbl(hash_tbl *);
 
 
-unsigned long hash_func(unsigned char *str, int max_size);
+unsigned long hash_func(char *str, int max_size);
 int add_hash_entry(tbl_entry * entry, hash_tbl * table);
 tbl_entry * find_hash_entry_node(nodeAST * node, hash_tbl * table);
 tbl_entry * find_hash_entry_id(char * id, hash_tbl * table);
 int add_child_sym_tbl(sym_tbl * child, sym_tbl * parent);
 tbl_entry * sym_tbl_find_entry(char * id, sym_tbl * table);
+tbl_entry * sym_tbl_find_entry_scoped(char * id, sym_tbl * table);
 int sym_tbl_add_entry(tbl_entry * entry, sym_tbl * table);
 int print_sym_tbl_init(sym_tbl * table, char * file_path);
 int print_sym_tbl(sym_tbl * table, FILE * file);
@@ -138,17 +139,26 @@ hash_tbl * new_hash_tbl(){
 	ret->max_size = DEFAULT_HASH_SIZE;
 	ret->entry_list_size = (int *)alloc(DEFAULT_HASH_SIZE,sizeof(int));
 	ret->entry_list_size_cap = (int *)alloc(DEFAULT_HASH_SIZE, sizeof(int));
+	for(int i = 0; i < DEFAULT_HASH_SIZE; i++){
+		ret->entry_list_size[i] = 0;
+		ret->entry_list_size_cap[i] = DEFAULT_HASH_LIST_SIZE;
+	}
 	return ret;
 }
 
 hash_tbl * new_hash_tbl_size(int size){
 	hash_tbl * ret = (hash_tbl *)alloc(1, sizeof(sym_tbl));
 	ret->hash_system = (tbl_entry **)alloc(size, sizeof(tbl_entry *));
-	for(int i = 0; i < size; i++)
+	for(int i = 0; i < size; i++){
 		ret->hash_system[i] = (tbl_entry *)alloc(DEFAULT_HASH_LIST_SIZE, sizeof(tbl_entry));
+	}
 	ret->max_size = size;
 	ret->entry_list_size = (int *)alloc(size, sizeof(int));
 	ret->entry_list_size_cap = (int *)alloc(size, sizeof(int));
+	for(int i = 0; i < DEFAULT_HASH_SIZE; i++){
+		ret->entry_list_size[i] = 0;
+		ret->entry_list_size_cap[i] = DEFAULT_HASH_LIST_SIZE;
+	}
 	return ret;
 }
 
@@ -185,7 +195,7 @@ void free_sym_tbl(sym_tbl * table){
 /*
 * The hash function, will return us an int given a string and max_size
 */
-unsigned long hash_func(unsigned char *str, int max_size)
+unsigned long hash_func(char *str, int max_size)
 {
   unsigned long hash = 0;
   int c;
@@ -207,13 +217,12 @@ int add_hash_entry(tbl_entry * entry, hash_tbl * table){
 	}
 	//First step is to get the entry hash value
 	index = hash_func(entry->id, table->max_size);
-
 	//Next we check if that entry is already filled up
+	//printf("Alive %p %d %d\n", table->hash_system[index], table->entry_list_size[index], table->entry_list_size_cap[index]);
 	if(table->entry_list_size[index] == table->entry_list_size_cap[index]){
 		table->hash_system[index] = ralloc(table->hash_system[index], table->entry_list_size_cap[index] * 2);// Realloc stuff, Need to talk to K9
 		table->entry_list_size_cap[index] *= 2;
 	}
-
 	//Now we can add the entry
 	table->hash_system[index][table->entry_list_size[index]++] = *entry;
 	return 0;
@@ -296,11 +305,27 @@ tbl_entry * sym_tbl_find_entry(char * id, sym_tbl * table){
 		return NULL;
 	}
 	for(sym_tbl * current = table; current != NULL; current = current->parent){
-		ret = find_hash_entry_id(id, current->tbl);
-		if(ret != NULL)
-			return ret;
+		if(current != NULL){
+			ret = find_hash_entry_id(id, current->tbl);
+			if(ret != NULL)
+				return ret;
+		}
 	}
 	return NULL;
+}
+/*
+* Find tbl_entry given an id in current scope only
+* Will return address to entry on success
+* Will return NULL for failure
+*/
+tbl_entry * sym_tbl_find_entry_scoped(char * id, sym_tbl * table){
+	tbl_entry * ret;
+	if(id == NULL || table == NULL){
+		fprintf(stderr, "Null id or table. sym_tbl_find_entry failed\n");
+		return NULL;
+	}
+	ret = find_hash_entry_id(id, table->tbl);
+	return ret;
 }
 
 /*
@@ -372,14 +397,13 @@ int print_hash_tbl(hash_tbl * tbl, FILE * file){
 				\n______________________________________________________________________________________n");
 	for(int i = 0; i < tbl->max_size; i++){
 		for(int j = 0; j < tbl->entry_list_size[i]; j++){
-			fprintf(file, "[ ID: %s | Line: %d ]", tbl->hash_system[i][j].id, tbl->hash_system[i][j].line_num);
-			print_type(tbl->hash_system[i][j].type_info, file);
-			fprintf(file, "\n");
+			fprintf(file, "[ ID: %s | Line: %d | ", tbl->hash_system[i][j].id, tbl->hash_system[i][j].line_num);
+			print_type_to_file(tbl->hash_system[i][j].type_info, file);
+			fprintf(file, "]\n");
 		}
 	}
 	return 0;
 }
-
 
 
 
