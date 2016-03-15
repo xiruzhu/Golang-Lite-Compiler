@@ -81,6 +81,7 @@ tbl_entry * find_hash_entry_node(nodeAST * node, hash_tbl * table);
 tbl_entry * find_hash_entry_id(char * id, hash_tbl * table);
 int add_child_sym_tbl(sym_tbl * child, sym_tbl * parent);
 tbl_entry * sym_tbl_find_entry(char * id, sym_tbl * table);
+tbl_entry * sym_tbl_find_entry_scoped(char * id, sym_tbl * table);
 int sym_tbl_add_entry(tbl_entry * entry, sym_tbl * table);
 int print_sym_tbl_init(sym_tbl * table, char * file_path);
 int print_sym_tbl(sym_tbl * table, FILE * file);
@@ -311,6 +312,20 @@ tbl_entry * sym_tbl_find_entry(char * id, sym_tbl * table){
 		}
 	}
 	return NULL;
+}
+/*
+* Find tbl_entry given an id in current scope only
+* Will return address to entry on success
+* Will return NULL for failure
+*/
+tbl_entry * sym_tbl_find_entry_scoped(char * id, sym_tbl * table){
+	tbl_entry * ret;
+	if(id == NULL || table == NULL){
+		fprintf(stderr, "Null id or table. sym_tbl_find_entry failed\n");
+		return NULL;
+	}
+	ret = find_hash_entry_id(id, table->tbl);
+	return ret;
 }
 
 /*

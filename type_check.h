@@ -93,6 +93,16 @@ type * type_check_expr_gt(nodeAST * node, sym_tbl * scope);
 type * type_check_expr_lteq(nodeAST * node, sym_tbl * scope);
 type * type_check_expr_gteq(nodeAST * node, sym_tbl * scope);
 type * type_check_expr_append(nodeAST * node, sym_tbl * scope);
+int type_check_stmt(nodeAST * node, sym_tbl * scope);
+int type_check_print_stmt(nodeAST * node, sym_tbl * scope);
+int type_check_ret_stmt(nodeAST * node, sym_tbl * scope);
+int type_check_if_stmt(nodeAST * node, sym_tbl * scope);
+int type_check_if_cond(nodeAST * node, sym_tbl * scope);
+int type_check_if_else_stmt(nodeAST * node, sym_tbl * scope);
+int type_check_simple_stmt(nodeAST * node, sym_tbl * scope);
+int type_check_switch_stmt(nodeAST * node, sym_tbl * scope);
+int type_check_for_stmt(nodeAST * node, sym_tbl * scope);
+int type_check_short_decl(nodeAST * node, sym_tbl * scope);
 
 msg_list * prepare_id_list(nodeAST * node);
 /*
@@ -273,7 +283,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 		int type_iterator = 0;
 		for(nodeAST * i = node->nodeValue.varDeclare.idList; i != NULL; i = i->nodeValue.identifierList.next){
 			if(i != NULL){
-			tbl_entry * current_entry = sym_tbl_find_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, scope);
+			tbl_entry * current_entry = sym_tbl_find_entry_scoped(i->nodeValue.identifierList.identifier->nodeValue.identifier, scope);
 			if(current_entry != NULL){ //Redeclaration in the same scope
 				sprintf(err_buf, "Redeclaration of %s when declaring id at line %zd. \nPrevious declaration at line %zd", i->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber, current_entry->line_num);
 				add_msg_line(err_buf, current, node->lineNumber);
@@ -287,11 +297,13 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 		}
 	}
 	else if(node->nodeValue.varDeclare.initExpr == NULL){
+
 		type * type_decl = type_check_type(node->nodeValue.varDeclare.type, scope);
 		int type_iterator = 0;
+
 		for(nodeAST * i = node->nodeValue.varDeclare.idList; i != NULL; i = i->nodeValue.identifierList.next){
 			if(i != NULL){
-			tbl_entry * current_entry = sym_tbl_find_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, scope);
+			tbl_entry * current_entry = sym_tbl_find_entry_scoped(i->nodeValue.identifierList.identifier->nodeValue.identifier, scope);
 			if(current_entry != NULL){ //Redeclaration in the same scope
 				sprintf(err_buf, "Redeclaration of %s when declaring id at line %zd. \nPrevious declaration at line %zd", i->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber, current_entry->line_num);
 				add_msg_line(err_buf, current, node->lineNumber);
@@ -310,19 +322,14 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 		int type_iterator = 0;
 		for(nodeAST * i = node->nodeValue.varDeclare.idList; i != NULL; i = i->nodeValue.identifierList.next){
 			if(i != NULL){
-			if(compare_type(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) != 0){
-				if((type_decl->type == LITERAL_INT || type_decl->type == LITERAL_FLOAT) && (expr_decl->spec_type.list_type.type_list[type_iterator]->type == LITERAL_INT || expr_decl->spec_type.list_type.type_list[type_iterator]->type == LITERAL_FLOAT)) {
-
-				}
-				else{
-    							print_type_to_string(type_decl, type_buf);
-    							print_type_to_string(expr_decl, type_buf_extra);
-            					sprintf(err_buf, "Declared is %s and Expression is %s. They do not match at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            					add_msg_line(err_buf, current, node->lineNumber);
-					break;
-				}
+			if(compare_type(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1 && valid_type_conversion(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1){
+    					print_type_to_string(type_decl, type_buf);
+    					print_type_to_string(expr_decl->spec_type.list_type.type_list[type_iterator], type_buf_extra);
+            			sprintf(err_buf, "Declared is %s and Expression is %s. They do not match at line %zd", type_buf, type_buf_extra, node->lineNumber);
+            			add_msg_line(err_buf, current, node->lineNumber);
+            			break;
 			}
-			tbl_entry * current_entry = sym_tbl_find_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, scope);
+			tbl_entry * current_entry = sym_tbl_find_entry_scoped(i->nodeValue.identifierList.identifier->nodeValue.identifier, scope);
 			if(current_entry != NULL){ //Redeclaration in the same scope
 				sprintf(err_buf, "Redeclaration of %s when declaring id at line %zd. \nPrevious declaration at line %zd", i->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber, current_entry->line_num);
 				add_msg_line(err_buf, current, node->lineNumber);
@@ -346,27 +353,31 @@ int type_check_func(nodeAST * node, sym_tbl * scope){
     returnNode->nodeValue.function.type = _type;
     returnNode->nodeValue.function.block = _block;
 	*/
+
 	tbl_entry * current_entry = sym_tbl_find_entry(node->nodeValue.function.identifier->nodeValue.identifier, scope);
 	if(current_entry != NULL){ //Redeclaration in the same scope
 		sprintf(err_buf, "Redeclaration of %s when declaring function at line %zd. \nPrevious declaration at line %zd", node->nodeValue.function.identifier->nodeValue.identifier, node->lineNumber, current_entry->line_num);
 		add_msg_line(err_buf, current, node->lineNumber);
 		return 0;
 	}
-	type * function = alloc(1, sizeof(type));
+	type * function = new_func_type();
 	type * return_type = NULL;
 	//add it to the new scope immediately to allow for recursion
 	sym_tbl_add_entry(new_tbl_entry(node->nodeValue.function.identifier->nodeValue.identifier, node->lineNumber, node, function), scope);
+
 	sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
+	printf("%p %p\n", new_scope, scope);
 	if(node->nodeValue.function.type != NULL)
 		return_type = type_check_type(node->nodeValue.function.type, new_scope);
 	type * param_type = type_check_params_list(node->nodeValue.function.pramList, new_scope);
-
+	//This should be a list
 	function->spec_type.func_type.params_type = param_type;
 	function->spec_type.func_type.return_type = return_type;
 	//Now we actually need to add the return type to the new scope
 	sym_tbl_add_entry(new_tbl_entry("return", node->lineNumber, node, return_type), new_scope);
 
 	type_check_block(node->nodeValue.function.block, new_scope);
+
 	return 0;
 }
 
@@ -384,13 +395,17 @@ type * type_check_params_list(nodeAST * node, sym_tbl * scope){
     returnNode->nodeValue.pramDeclare.type = _type;
 	*/
 	type * param_list = new_list_type(); //Initializes thew new empty list_type
+
     for(nodeAST * i = node; i != NULL; i = i->nodeValue.pramDeclareList.next){
     	if(i != NULL){
-    	type * id_list_type = type_check_type(i->nodeValue.pramDeclareList.pram->nodeValue.pramDeclare.type, scope);
+
+    		type * id_list_type = type_check_type(i->nodeValue.pramDeclareList.pram->nodeValue.pramDeclare.type, scope);
     	//Get the type of the id_list type
-    	for(nodeAST * j = i->nodeValue.pramDeclare.idList; j != NULL; j = j->nodeValue.identifierList.next){
-    		sym_tbl_add_entry(new_tbl_entry(j->nodeValue.identifierList.identifier->nodeValue.identifier, j->nodeValue.identifierList.identifier->lineNumber, j->nodeValue.identifierList.identifier, id_list_type), scope);
-    	}
+
+    		for(nodeAST * j = i->nodeValue.pramDeclareList.pram->nodeValue.pramDeclare.idList; j != NULL; j = j->nodeValue.identifierList.next){
+    			if(j != NULL)
+    				sym_tbl_add_entry(new_tbl_entry(j->nodeValue.identifierList.identifier->nodeValue.identifier, j->nodeValue.identifierList.identifier->lineNumber, j->nodeValue.identifierList.identifier, id_list_type), scope);
+    		}
     	}
     }
 
@@ -408,12 +423,19 @@ int type_check_type_decl_list(nodeAST * node, sym_tbl * scope){
     returnNode->nodeValue.typeDeclare.type = _type;
 	*/
 	type * alias_type;
+	tbl_entry * name;
     for(nodeAST * i = node; i != NULL; i = i->nodeValue.typeDeclareList.next){
     	if(i != NULL){
-    	alias_type = new_alias_type();
-    	alias_type->spec_type.alias_type.a_type = type_check_type(i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.type, scope);
-    	alias_type->spec_type.alias_type.id = i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.identifier->nodeValue.identifier;
-    	sym_tbl_add_entry(new_tbl_entry(alias_type->spec_type.alias_type.id, i->nodeValue.typeDeclareList.typeDeclare->lineNumber, i->nodeValue.typeDeclareList.typeDeclare, alias_type), scope);
+    		alias_type = new_alias_type();
+    		alias_type->spec_type.alias_type.a_type = type_check_type(i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.type, scope);
+    		alias_type->spec_type.alias_type.id = i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.identifier->nodeValue.identifier;
+    		name = sym_tbl_find_entry_scoped(alias_type->spec_type.alias_type.id, scope);
+    		if(name != NULL){
+				sprintf(err_buf, "Redeclaration of %s when declaring type at line %zd. \nPrevious declaration at line %zd", alias_type->spec_type.alias_type.id, i->lineNumber, name->line_num);
+				add_msg_line(err_buf, current, i->lineNumber);
+				return 0;
+    		}
+    		sym_tbl_add_entry(new_tbl_entry(alias_type->spec_type.alias_type.id, i->nodeValue.typeDeclareList.typeDeclare->lineNumber, i->nodeValue.typeDeclareList.typeDeclare, alias_type), scope);
     	}
     }
     return 0;
@@ -624,7 +646,6 @@ type * type_check_expr_index(nodeAST * node, sym_tbl * scope){
     								return new_invalid_type();
             					}
             					type * entry = type_check_expr(node->nodeValue.index.entry, scope);
-            					printf("%d, %d\n", entry->type, ARRAY_TYPE);
             					if(entry->type != LITERAL_INT){
             						print_type_to_string(entry, type_buf);
             					    sprintf(err_buf, "Expression inside brackets is of %s. It must be of INT type at line %zd",  type_buf, node->lineNumber);
@@ -687,11 +708,7 @@ type * type_check_expr_mul(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.mul.left, scope);
     						type * right = type_check_expr(node->nodeValue.mul.right, scope);
 
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) && ((right->type == LITERAL_INT || right->type == LITERAL_FLOAT)) ){
-    							if(left->type == LITERAL_FLOAT)
-    								return left;
-    							else if(right->type == LITERAL_FLOAT)
-    								return right;
+    						if(valid_type_conversion(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE)){
     							return left;
     						}
     						else{
@@ -711,12 +728,8 @@ type * type_check_expr_mul(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_div(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.div.left, scope);
     						type * right = type_check_expr(node->nodeValue.div.right, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) && ((right->type == LITERAL_INT || right->type == LITERAL_FLOAT)) ){
-    							if(left->type == LITERAL_FLOAT)
-    								return left;
-    							else if(right->type == LITERAL_FLOAT)
-    								return right;
-    							return left;
+    						if(valid_type_conversion(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE)){
+    						    return left;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -734,11 +747,7 @@ type * type_check_expr_div(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_mod(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.mod.left, scope);
     						type * right = type_check_expr(node->nodeValue.mod.right, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) && ((right->type == LITERAL_INT || right->type == LITERAL_FLOAT)) ){
-    							if(left->type == LITERAL_FLOAT)
-    								return left;
-    							else if(right->type == LITERAL_FLOAT)
-    								return right;
+    						if(valid_type_conversion(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE)){
     							return left;
     						}
     						else{
@@ -759,11 +768,7 @@ type * type_check_expr_mod(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_sub(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.sub.left, scope);
     						type * right = type_check_expr(node->nodeValue.sub.right, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) && ((right->type == LITERAL_INT || right->type == LITERAL_FLOAT)) ){
-    							if(left->type == LITERAL_FLOAT)
-    								return left;
-    							else if(right->type == LITERAL_FLOAT)
-    								return right;
+    						if(valid_type_conversion(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE)){
     							return left;
     						}
     						else{
@@ -785,13 +790,7 @@ type * type_check_expr_add(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.add.left, scope);
     						type * right = type_check_expr(node->nodeValue.add.right, scope);
 
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) && ((right->type == LITERAL_INT || right->type == LITERAL_FLOAT)) ){
-    							if(left->type == LITERAL_FLOAT)
-    								return left;
-    							else if(right->type == LITERAL_FLOAT)
-    								return right;
-    							return left;
-    						}else if( left->type == LITERAL_STRING && right->type == LITERAL_STRING){
+    						if(valid_type_conversion(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE)){
     							return left;
     						}
     						else{
@@ -851,7 +850,7 @@ type * type_check_expr_or(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_xor(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.bitXor.left, scope);
     						type * right = type_check_expr(node->nodeValue.bitXor.right, scope);
-    						if( (left->type == LITERAL_INT || right->type == LITERAL_INT) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
     							return left;
     						}
     						else{
@@ -871,7 +870,7 @@ type * type_check_expr_xor(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_bitOr(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.bitOr.left, scope);
     						type * right = type_check_expr(node->nodeValue.bitOr.right, scope);
-    						if( (left->type == LITERAL_INT || right->type == LITERAL_INT) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
     							return left;
     						}
     						else{
@@ -891,7 +890,7 @@ type * type_check_expr_bitOr(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_lshift(nodeAST * node, sym_tbl * scope) {
     						type * left = type_check_expr(node->nodeValue.shiftLeft.left, scope);
     						type * right = type_check_expr(node->nodeValue.shiftLeft.right, scope);
-    						if( (left->type == LITERAL_INT || right->type == LITERAL_INT) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
     							return left;
     						}
     						else{
@@ -911,7 +910,7 @@ type * type_check_expr_lshift(nodeAST * node, sym_tbl * scope) {
 type * type_check_expr_rshift(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.shiftRight.left, scope);
     						type * right = type_check_expr(node->nodeValue.shiftRight.right, scope);
-    						if( (left->type == LITERAL_INT || right->type == LITERAL_INT) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
     							return left;
     						}
     						else{
@@ -930,7 +929,7 @@ type * type_check_expr_rshift(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_bitAnd(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.bitAnd.left, scope);
     						type * right = type_check_expr(node->nodeValue.bitAnd.right, scope);
-    						if( (left->type == LITERAL_INT || right->type == LITERAL_INT) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
     							return left;
     						}
     						else{
@@ -950,7 +949,7 @@ type * type_check_expr_bitAnd(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_bitAndNot(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.shiftRight.left, scope);
     						type * right = type_check_expr(node->nodeValue.shiftRight.right, scope);
-    						if( (left->type == LITERAL_INT || right->type == LITERAL_INT) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
     							return left;
     						}
     						else{
@@ -970,7 +969,7 @@ type * type_check_expr_bitAndNot(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_unary_pos(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.pos.expr, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE) ){
     							return left;
     						}
     						else{
@@ -990,7 +989,7 @@ type * type_check_expr_unary_pos(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_unary_neg(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.neg.expr, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE) ){
     							return left;
     						}
     						else{
@@ -1010,7 +1009,7 @@ type * type_check_expr_unary_neg(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_bitNot(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.bitNot.expr, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE) ){
     							return left;
     						}
     						else{
@@ -1029,7 +1028,7 @@ type * type_check_expr_bitNot(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_not(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.logicNot.expr, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) ){
+    						if( left->type == LITERAL_BOOL ){
     							return left;
     						}
     						else{
@@ -1047,12 +1046,12 @@ type * type_check_expr_not(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_eq(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.equal.left, scope);
     						type * right = type_check_expr(node->nodeValue.equal.right, scope);
-    						if(compare_type(left, right) == -1){
-    							print_type_to_string(left, type_buf);
-    							print_type_to_string(right, type_buf_extra);
-            					sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
-								add_msg_line(err_buf, current, node->lineNumber);
-    							return new_invalid_type();
+    						if(compare_type(left, right) == -1 && valid_type_comparison(left, right) == -1){
+    								print_type_to_string(left, type_buf);
+    								print_type_to_string(right, type_buf_extra);
+            						sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
+									add_msg_line(err_buf, current, node->lineNumber);
+    								return new_invalid_type();
     						}
 
     						return new_bool_type();
@@ -1066,7 +1065,7 @@ type * type_check_expr_eq(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_neq(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.nequal.left, scope);
     						type * right = type_check_expr(node->nodeValue.nequal.right, scope);
-    						if(compare_type(left, right) == -1){
+    						if(compare_type(left, right) == -1 && valid_type_comparison(left, right) == -1){
     							print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
             					sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
@@ -1084,7 +1083,7 @@ type * type_check_expr_neq(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_lt(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.less.left, scope);
     						type * right = type_check_expr(node->nodeValue.less.right, scope);
-    						if(compare_type(left, right) == -1){
+    						if(compare_type(left, right) == -1 && valid_type_comparison(left, right) == -1){
     							print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
             					sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
@@ -1108,7 +1107,7 @@ type * type_check_expr_lt(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_gt(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.great.left, scope);
     						type * right = type_check_expr(node->nodeValue.great.right, scope);
-    						if(compare_type(left, right) == -1){
+    						if(compare_type(left, right) == -1 && valid_type_comparison(left, right) == -1){
     							print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
             					sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
@@ -1134,7 +1133,7 @@ type * type_check_expr_gt(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_lteq(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.less.left, scope);
     						type * right = type_check_expr(node->nodeValue.less.right, scope);
-    						if(compare_type(left, right) == -1){
+    						if(compare_type(left, right) == -1 && valid_type_comparison(left, right) == -1){
     							print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
             					sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
@@ -1159,7 +1158,7 @@ type * type_check_expr_lteq(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_gteq(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.greatEqual.left, scope);
     						type * right = type_check_expr(node->nodeValue.greatEqual.right, scope);
-    						if(compare_type(left, right) == -1){
+    						if(compare_type(left, right) == -1 && valid_type_comparison(left, right) == -1){
     							print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
             					sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
@@ -1296,7 +1295,6 @@ type * type_check_expr_append(nodeAST * node, sym_tbl * scope){
 	return target;
 }
 type * type_check_expr(nodeAST * node, sym_tbl * scope){
-	    	printf("WAS HERE at line %zd type: %d %d\n", node->lineNumber, node->nodeType, IDENTIFIER);
 	    	switch(node->nodeType){
     		case IDENTIFIER:
     						return type_check_expr_id(node, scope);
@@ -1368,8 +1366,467 @@ type * type_check_expr(nodeAST * node, sym_tbl * scope){
     		default: return new_invalid_type();
     	}
 }
+int type_check_block(nodeAST * node, sym_tbl * scope){  //Also known as stmt_list
+	/*
+	stmt_list           : stmt  stmt_list                             {$$ = newStateList($1, $2, _treeNodeAllocator);}
+                    	|                                             {$$ = NULL;}
+    returnNode->nodeType = STATE_UTILITY_STATELIST;
+    returnNode->nodeValue.stateList.state = _state;
+    returnNode->nodeValue.stateList.next = _next;
+	*/
+    for(nodeAST * i = node; i != NULL; i = i->nodeValue.stateList.next){
+    	if(i != NULL){
+    		type_check_stmt(i->nodeValue.stateList.state, scope);
+    	}
+    }
+	return 0;
+}
 
-int type_check_block(nodeAST * node, sym_tbl * scope){
+int type_check_print_stmt(nodeAST * node, sym_tbl * scope){
+	/*
+print_stmt          : print_ '(' expr_list ')' ';'                {$$ = newPrint($3, _treeNodeAllocator);}
+                    | print_ '(' ')' ';'                          {$$ = newPrint(NULL, _treeNodeAllocator);}
+    returnNode->nodeType = STATE_PRINT;
+    returnNode->nodeValue.print.expr = _expr;
+	*/
+    if(node->nodeValue.print.expr != NULL){
+    	type * list = type_check_expr_list(node->nodeValue.print.expr, scope);
+    	for(int i = 0; i < list->spec_type.list_type.list_size; i ++){
+    		if(list->spec_type.list_type.type_list[i]->type == INVALID_TYPE){
+       		sprintf(err_buf, "Invalid expression inside print stmt line %zd", node->lineNumber);
+			add_msg_line(err_buf, current, node->lineNumber);
+    		}
+    	}
+    }
+
+	return 0;
+}
+
+int type_check_ret_stmt(nodeAST * node, sym_tbl * scope){
+	/*
+    returnNode->nodeType = STATE_RETURN;
+    returnNode->nodeValue.ret.expr = _expr;
+	*/
+	//We need to check if the return stmt is equivalent to the function return
+	type * act_ret = type_check_expr(node->nodeValue.ret.expr, scope);
+	tbl_entry * ret_type = sym_tbl_find_entry("return", scope);
+	printf("STSFDSDSD %p %p\n", act_ret, ret_type);
+	if(compare_type(act_ret, ret_type->type_info) == -1){
+		if( valid_type_conversion(ret_type->type_info, act_ret) == -1){
+			print_type_to_string(act_ret, type_buf);
+			print_type_to_string(ret_type->type_info, type_buf_extra);
+       		sprintf(err_buf, "Return statement must match %s. It is currently of %s at line %zd", type_buf_extra, type_buf ,node->lineNumber);
+			add_msg_line(err_buf, current, node->lineNumber);
+		}
+	}
+	return 0;
+}
+
+int type_check_if_cond(nodeAST * node, sym_tbl * scope){
+	/*
+
+if_cond             : expr                                        {$$ = newIfCondition(NULL, $1, _treeNodeAllocator);}
+                    | simple_stmt expr                            {$$ = newIfCondition($1, $2, _treeNodeAllocator);}
+    returnNode->nodeType = STATE_IF_CONDITION;
+    returnNode->nodeValue.ifCondition.state = _state;
+    returnNode->nodeValue.ifCondition.expr = _expr;
+	*/
+	type * if_expr = type_check_expr(node->nodeValue.ifCondition.expr, scope);
+	if(if_expr->type != LITERAL_BOOL){
+			print_type_to_string(if_expr, type_buf);
+       		sprintf(err_buf, "If statement expression must be Boolean. It is currently of %s at line %zd",type_buf ,node->lineNumber);
+			add_msg_line(err_buf, current, node->lineNumber);
+	}else if(node->nodeValue.ifCondition.state != NULL){
+		type_check_simple_stmt(node->nodeValue.ifCondition.state, scope);
+	}
+	return 0;
+}
+
+int type_check_if_stmt(nodeAST * node, sym_tbl * scope){
+	/*
+    returnNode->nodeType = STATE_IF;
+    returnNode->nodeValue.ifBlock.condition = _condition;
+    returnNode->nodeValue.ifBlock.block_true = _block_true;
+if_stmt             : if_ if_cond block                           {$$ = newIfBlock($2, $3, _treeNodeAllocator);}
+	*/
+
+	sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
+	type_check_if_cond(node->nodeValue.ifBlock.condition, new_scope);
+	type_check_block(node->nodeValue.ifBlock.block_true, new_scope);
+	return 0;
+}
+
+int type_check_if_else_stmt(nodeAST * node, sym_tbl * scope){
+	/*
+    returnNode->nodeType = STATE_IF_ELSE;
+    returnNode->nodeValue.ifElseBlock.condition = _condition;
+    returnNode->nodeValue.ifElseBlock.block_true = _block_ture;
+    returnNode->nodeValue.ifElseBlock.block_false = _block_false;
+    | if_ if_cond '{' stmt_list '}' else_ else_block          {$$ = newIfElseBlock($2, $4, $7, _treeNodeAllocator);} //CHECK HERE
+	else_block          : block                                       {$$ = $1;}
+                    | if_stmt                                     {$$ = $1;}
+	*/
+	sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
+	type_check_if_cond(node->nodeValue.ifElseBlock.condition, new_scope);
+	type_check_block(node->nodeValue.ifElseBlock.block_true, new_scope);
+
+	if(node->nodeValue.ifElseBlock.block_false == NULL){ //Must be block
+    	return 0;
+    }
+    type_check_stmt(node->nodeValue.ifElseBlock.block_false, scope);
+    return 0;
+
+}
+
+int type_check_short_decl(nodeAST * node, sym_tbl * scope){
+									/*
+      								type * left = type_check_expr_list(node->nodeValue.shortDeclare.left, scope);
+      								type * right = type_check_expr_list(node->nodeValue.shortDeclare.right, scope);
+      								if(left->spec_type.list_type.list_size != left->spec_type.list_type.list_size){
+										sprintf(err_buf, "Expression list size does not match at line %zd" ,node->lineNumber);
+										add_msg_line(err_buf, current, node->lineNumber);
+      								}else{
+      									for(int i = 0; i < left->spec_type.list_type.list_size; i++){
+      										if(compare_type(left, right) == -1 && valid_type_conversion(left, right) == -1)
+      											print_type_to_string(left, type_buf);
+      											print_type_to_string(right, type_buf_extra);
+												sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+												add_msg_line(err_buf, current, node->lineNumber);
+      										}
+      										//Otherwise we need to add it
+      								tbl_entry * current_entry = sym_tbl_find_entry_scoped(i->nodeValue.identifierList.identifier->nodeValue.identifier, scope);
+									if(current_entry != NULL){ //Redeclaration in the same scope
+										sprintf(err_buf, "Redeclaration of %s when declaring id at line %zd. \nPrevious declaration at line %zd", i->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber, current_entry->line_num);
+										add_msg_line(err_buf, current, node->lineNumber);
+										break;
+									}else{//Everything is good
+									//We need to add these things to the symbol table
+										sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, type_decl), scope);
+										}
+      								}
+      								Needs to be fixed
+      								*/
+      								return 0;
+}
+
+
+int type_check_simple_stmt(nodeAST * node, sym_tbl * scope){
+/*
+simple_stmt_v       : expr                                        {$$ = $1;}
+                    | expr incre_                                 {$$ = newInc($1, _treeNodeAllocator);}
+                    | expr decre_                                 {$$ = newDec($1, _treeNodeAllocator);}
+                    | assign_stmt                                 {$$ = $1;}
+                    | short_decl                                  {$$ = $1;}
+                    |                                             {$$ = NULL;}
+    returnNode->nodeType = STATE_INC;
+    returnNode->nodeValue.inc.expr = _expr;
+*/
+    				if(node == NULL)
+    					return 0;
+                    switch(node->nodeType){
+                    	case STATE_INC:
+                    					{
+                    						type * inc_type = type_check_expr(node->nodeValue.inc.expr, scope);
+                    						if(inc_type->type != LITERAL_INT || inc_type->type != LITERAL_FLOAT || inc_type->type != LITERAL_RUNE){
+                    							print_type_to_string(inc_type, type_buf);
+       											sprintf(err_buf, "Cannot convert 1 to %s at line %zd",type_buf ,node->lineNumber);
+												add_msg_line(err_buf, current, node->lineNumber);
+                    						}
+                    						break;
+                    					}
+                    	case STATE_DEC:{
+                    						type * dec_type = type_check_expr(node->nodeValue.dec.expr, scope);
+                    						if(dec_type->type != LITERAL_INT || dec_type->type != LITERAL_FLOAT || dec_type->type != LITERAL_RUNE){
+                    							print_type_to_string(dec_type, type_buf);
+       											sprintf(err_buf, "Cannot convert 1 to %s at line %zd",type_buf ,node->lineNumber);
+												add_msg_line(err_buf, current, node->lineNumber);
+                    						}
+                    						break;
+                    					}
+//short_decl          : expr_list decla_ expr_list                  {$$ = newShortDeclare($1, $3, _treeNodeAllocator);}
+/*
+    returnNode->nodeType = STATE_SHORT_DECLARE;
+    returnNode->nodeValue.shortDeclare.left = _left;
+    returnNode->nodeValue.shortDeclare.right = _right;
+*/
+    /*
+assign_stmt         : expr_list '=' expr_list                     {$$ = newAssign($1, $3, _treeNodeAllocator);}
+                    | expr add_eq_ expr                           {$$ = newAssignAdd($1, $3, _treeNodeAllocator);}
+                    | expr minus_eq_ expr                         {$$ = newAssignSub($1, $3, _treeNodeAllocator);}
+                    | expr mult_eq_ expr                          {$$ = newAssignMul($1, $3, _treeNodeAllocator);}
+                    | expr div_eq_ expr                           {$$ = newAssignDiv($1, $3, _treeNodeAllocator);}
+                    | expr mod_eq_ expr                           {$$ = newAssignMod($1, $3, _treeNodeAllocator);}
+                    | expr amp_eq_ expr                           {$$ = newAssignAnd($1, $3, _treeNodeAllocator);}
+                    | expr vb_eq_ expr                            {$$ = newAssignOr($1, $3, _treeNodeAllocator);}
+                    | expr caret_eq_ expr                         {$$ = newAssignXor($1, $3, _treeNodeAllocator);}
+                    | expr ls_eq_ expr                            {$$ = newAssignShiftLeft($1, $3, _treeNodeAllocator);}
+                    | expr rs_eq_ expr                            {$$ = newAssignShiftRight($1, $3, _treeNodeAllocator);}
+                    | expr unknown_eq_ expr                       {$$ = newAssignAndNot($1, $3, _treeNodeAllocator);}
+*/
+                    	case STATE_SHORT_DECLARE: type_check_short_decl(node, scope); break;
+                    	case STATE_ASSIGN:  {
+                    						type * left = type_check_expr_list(node->nodeValue.shortDeclare.left, scope);
+      										type * right = type_check_expr_list(node->nodeValue.shortDeclare.right, scope);
+      										if(left->spec_type.list_type.list_size != left->spec_type.list_type.list_size){
+												sprintf(err_buf, "Expression list size does not match at line %zd" ,node->lineNumber);
+												add_msg_line(err_buf, current, node->lineNumber);
+      										}else{
+      										for(int i = 0; i < left->spec_type.list_type.list_size; i++){
+      											if(compare_type(left, right) == -1 && valid_type_conversion(left, right) == -1)
+      												print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+      											}
+      										}
+      										break;
+      										}
+                    	case STATE_ASSIGN_ADD: {
+                    							type * left = type_check_expr(node->nodeValue.assignAdd.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignAdd.right, scope);
+                    							if(compare_type(left, right) == -1 && valid_type_conversion(left, right) == -1){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	case STATE_ASSIGN_SUB: {
+                    							type * left = type_check_expr(node->nodeValue.assignSub.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignSub.right, scope);
+                    							if(compare_type(left, right) == -1 && valid_type_conversion(left, right) == -1){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	case STATE_ASSIGN_MUL: {
+                    							type * left = type_check_expr(node->nodeValue.assignMul.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignMul.right, scope);
+                    							if(compare_type(left, right) == -1 && valid_type_conversion(left, right) == -1){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	case STATE_ASSIGN_DIV: {
+                    							type * left = type_check_expr(node->nodeValue.assignDiv.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignDiv.right, scope);
+                    							if(compare_type(left, right) == -1 && valid_type_conversion(left, right) == -1){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	case STATE_ASSIGN_MOD: {
+                    							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
+                    							if(compare_type(left, right) == -1 && valid_type_conversion(left, right) == -1){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	case STATE_ASSIGN_AND: {
+                    							type * left = type_check_expr(node->nodeValue.assignAnd.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignAnd.right, scope);
+    											if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	case STATE_ASSIGN_OR:	   {
+                    							type * left = type_check_expr(node->nodeValue.assignOr.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignOr.right, scope);
+    											if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	case STATE_ASSIGN_XOR: {
+                    							type * left = type_check_expr(node->nodeValue.assignXor.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignXor.right, scope);
+    											if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	case STATE_ASSIGN_SHIFTLEFT: {
+                    							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
+    											if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	case STATE_ASSIGN_SHIFTRIGHT: {
+                    							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
+    											if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	case STATE_ASSIGN_ANDNOT: {
+                    							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
+                    							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
+    											if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT) ){
+                    								print_type_to_string(left, type_buf);
+      												print_type_to_string(right, type_buf_extra);
+													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+                    							}
+                    							break;
+                    						   }
+                    	default: type_check_expr(node, scope); break;
+                    }
+                    return 0;
+}
+
+int type_check_switch_stmt(nodeAST * node, sym_tbl * scope){
+/*
+    returnNode->nodeType = STATE_SWITCH;
+    returnNode->nodeValue.switchBlock.condition = _condition;
+    returnNode->nodeValue.switchBlock.block = _block;
+switch_stmt         : switch_ switch_cond '{' case_clause_list '}'{$$ = newSwitchBlock($2, $4, _treeNodeAllocator);}
+
+switch_cond         : simple_stmt  expr                           {$$ = newSwitchCondition($1, $2, _treeNodeAllocator);}
+                    | simple_stmt                                 {$$ = newSwitchCondition($1, NULL, _treeNodeAllocator);}
+                    | expr                                        {$$ = newSwitchCondition(NULL, $1, _treeNodeAllocator);}
+                    |                                             {$$ = newSwitchCondition(NULL, NULL, _treeNodeAllocator);}
+    returnNode->nodeValue.switchCondition.state = _state;
+    returnNode->nodeValue.switchCondition.expr = _expr;
+case_clause_list    : case_clause case_clause_list                {$$ = newCaseList($1, $2, _treeNodeAllocator);}
+                    |                                             {$$ = NULL;}
+    returnNode->nodeValue.caseList.state = _state;
+    returnNode->nodeValue.caseList.next = _next;
+case_clause         : case_ expr_list ':' stmt_list               {$$ = newCaseClause($2, $4, _treeNodeAllocator);}
+			        | default_ ':' stmt_list                      {$$ = newCaseClause(NULL, $3, _treeNodeAllocator);}
+	returnNode->nodeValue.caseClause.expr = _expr;
+    returnNode->nodeValue.caseClause.state = _state;
+*/
+    type * switch_expr = NULL;
+	sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
+	nodeAST * switch_cond = node->nodeValue.forBlock.condition;
+	if(switch_cond->nodeValue.switchCondition.state != NULL){
+		type_check_simple_stmt(node->nodeValue.switchCondition.state, new_scope);
+	}
+	if(switch_cond->nodeValue.switchCondition.expr != NULL){
+		switch_expr = type_check_expr(node->nodeValue.switchCondition.expr, new_scope);
+	}
+
+	if(node->nodeValue.switchBlock.block != NULL){
+		nodeAST * switch_block = node->nodeValue.switchBlock.block;
+		for(nodeAST * i = switch_block; i != NULL; i = i->nodeValue.caseList.next){
+			if(i != NULL){
+				nodeAST * case_cls = i->nodeValue.caseList.next;
+				type_check_block(case_cls->nodeValue.caseClause.state, new_scope);
+				if(case_cls->nodeValue.caseClause.expr != NULL){
+					type * case_type = type_check_expr(case_cls->nodeValue.caseClause.expr, new_scope);
+					if(switch_expr != NULL){
+						//Compare the type
+						if( valid_type_conversion( switch_expr, case_type) == -1){
+							print_type_to_string(switch_expr, type_buf);
+							print_type_to_string(case_type, type_buf_extra);
+       						sprintf(err_buf, "Return statement must match %s. It is currently of %s at line %zd", type_buf, type_buf_extra ,case_cls->nodeValue.caseClause.expr->lineNumber);
+							add_msg_line(err_buf, current, node->lineNumber);
+						}
+					}
+				}
+
+			}
+		}
+	}
+	return 0;
+}
+
+int type_check_for_stmt(nodeAST * node, sym_tbl * scope){
+/*
+    returnNode->nodeType = STATE_FOR;
+    returnNode->nodeValue.forBlock.condition = _condition;
+    returnNode->nodeValue.forBlock.block = _block;
+
+    returnNode->nodeType = STATE_UTILITY_FOR_CLAUSE;
+    returnNode->nodeValue.forClause.init = _init;
+    returnNode->nodeValue.forClause.condition = _condition;
+    returnNode->nodeValue.forClause.step = _step;
+for_stmt_clause     : simple_stmt_v ';' condition ';' simple_stmt_v {$$ = newForCluase($1, $3, $5, _treeNodeAllocator);}
+for_stmt            : for_ for_clause block                       {$$ = newForBlock($2, $3, _treeNodeAllocator);}
+
+*/
+	sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
+
+	nodeAST * for_cond = node->nodeValue.forBlock.condition;
+	type_check_block(for_cond->nodeValue.forClause.init, new_scope);
+	type_check_simple_stmt(for_cond->nodeValue.forClause.init, new_scope);
+	if(for_cond->nodeValue.forClause.condition != NULL){
+		type * cond = type_check_expr(for_cond->nodeValue.forClause.condition, new_scope);
+		if(cond->type != LITERAL_BOOL){
+			print_type_to_string(cond, type_buf);
+       		sprintf(err_buf, "For statement expression must be Boolean. It is currently of %s at line %zd",type_buf ,for_cond->lineNumber);
+			add_msg_line(err_buf, current, node->lineNumber);
+		}
+	}
+	type_check_block(for_cond->nodeValue.forClause.step, new_scope);
+	type_check_block(node->nodeValue.forBlock.block, new_scope);
+	return 0;
+}
+
+int type_check_stmt(nodeAST * node, sym_tbl * scope){
+	/*
+stmt                : var_decl                                    {$$ = $1;}
+                    | type_decl                                   {$$ = $1;}
+                    | block                                       {$$ = $1;}
+                    | print_stmt                                  {$$ = $1;}
+                    | println_stmt                                {$$ = $1;}
+                    | return_stmt                                 {$$ = $1;}
+                    | if_stmt                                     {$$ = $1;}
+                    | simple_stmt                                 {$$ = $1;}
+                    | switch_stmt                                 {$$ = $1;}
+                    | for_stmt                                    {$$ = $1;}
+                    | break_ ';'                                  {$$ = newControlBreak(_treeNodeAllocator);}
+                    | continue_ ';'                               {$$ = newControlContinue(_treeNodeAllocator);}
+	*/
+   	switch(node->nodeType){
+   		case PROG_DECLARE_VAR_LIST: type_check_var_decl_list(node, scope); break;
+   		case PROG_DECLARE_TYPE_LIST: type_check_type_decl_list(node, scope); break;
+   		case STATE_UTILITY_STATELIST: type_check_block(node, scope); break;
+   		case STATE_PRINT: type_check_print_stmt(node, scope); break;
+   		case STATE_PRINTLN: type_check_print_stmt(node, scope); break;
+   		case STATE_RETURN: type_check_ret_stmt(node, scope); break;
+   		case STATE_IF: type_check_if_stmt(node, scope); break;
+   		case STATE_IF_ELSE: type_check_if_stmt(node, scope); break;
+   		case STATE_SWITCH: type_check_switch_stmt(node, scope); break;
+   		case STATE_FOR: type_check_for_stmt(node, scope); break;
+   		case STATE_CONTROL_BREAK: break;
+   		case STATE_CONTROL_CONTINUE: break;
+   		default: type_check_simple_stmt(node, scope); break;
+   	}
+
 	return 0;
 }
 

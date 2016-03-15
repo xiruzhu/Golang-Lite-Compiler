@@ -70,6 +70,8 @@ type * get_typedef_type(nodeAST * node);
 int compare_type(type * arg0, type * arg1);
 int print_type_to_file(type * to_print, FILE * file);
 int print_type_to_string(type * to_print, char * buf);
+int valid_type_conversion(type * t1, type* t2);
+int valid_type_comparison(type * t1, type* t2);
 
 /*
 * -----------------------------------------------------------------------------------------------------------
@@ -163,7 +165,7 @@ type * new_struct_type(){
 
 type * new_alias_type(){
 	type * ret = alloc(1, sizeof(struct type));
-	ret->type = ARRAY_TYPE;
+	ret->type = ALIAS_TYPE;
 	ret->spec_type.alias_type.a_type = NULL;
 	ret->spec_type.alias_type.id = NULL;
 	ret->spec_type.alias_type.alias_id = id_generator++;
@@ -301,6 +303,115 @@ int print_type_to_string(type * to_print, char * buf){
 		default: break;
 	}
 	return 0;
+}
+
+/*
+* Returns 0 if the two types are interchangeable
+* Returns -1 if not
+* Ordering does matter, since i am assuming t1 = t2
+*/
+int valid_type_conversion(type * t1, type * t2){
+	switch(t1->type){
+		case LITERAL_INT:
+				switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_BOOL: return -1;
+						case LITERAL_FLOAT: return -1;
+						case LITERAL_STRING: return -1;
+						case LITERAL_RUNE: return 0;
+						}
+		case LITERAL_BOOL:
+				switch(t2->type){
+						case LITERAL_INT: return -1;
+						case LITERAL_BOOL: return 0;
+						case LITERAL_FLOAT: return -1;
+						case LITERAL_STRING: return -1;
+						case LITERAL_RUNE: return -1;
+						}
+		case LITERAL_FLOAT:
+				switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_BOOL: return -1;
+						case LITERAL_FLOAT: return 0;
+						case LITERAL_STRING: return -1;
+						case LITERAL_RUNE: return 0;
+						}
+		case LITERAL_STRING:
+				switch(t2->type){
+						case LITERAL_INT: return -1;
+						case LITERAL_BOOL: return -1;
+						case LITERAL_FLOAT: return -1;
+						case LITERAL_STRING: return 0;
+						case LITERAL_RUNE: return -1;
+						}
+		case LITERAL_RUNE:
+				switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_BOOL: return -1;
+						case LITERAL_FLOAT: return -1;
+						case LITERAL_STRING: return -1;
+						case LITERAL_RUNE: return 0;
+						}
+		default: return -1;
+	}
+}
+
+int valid_type_comparison(type * t1, type* t2){
+	switch(t1->type){
+		case LITERAL_INT:
+				switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_BOOL: return -1;
+						case LITERAL_FLOAT: return 0;
+						case LITERAL_STRING: return -1;
+						case LITERAL_RUNE: return 0;
+						}
+		case LITERAL_BOOL:
+				switch(t2->type){
+						case LITERAL_INT: return -1;
+						case LITERAL_BOOL: return 0;
+						case LITERAL_FLOAT: return -1;
+						case LITERAL_STRING: return -1;
+						case LITERAL_RUNE: return -1;
+						}
+		case LITERAL_FLOAT:
+				switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_BOOL: return -1;
+						case LITERAL_FLOAT: return 0;
+						case LITERAL_STRING: return -1;
+						case LITERAL_RUNE: return 0;
+						}
+		case LITERAL_STRING:
+				switch(t2->type){
+						case LITERAL_INT: return -1;
+						case LITERAL_BOOL: return -1;
+						case LITERAL_FLOAT: return -1;
+						case LITERAL_STRING: return 0;
+						case LITERAL_RUNE: return -1;
+						}
+		case LITERAL_RUNE:
+				switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_BOOL: return -1;
+						case LITERAL_FLOAT: return 0;
+						case LITERAL_STRING: return -1;
+						case LITERAL_RUNE: return 0;
+						}
+		case STRUCT_TYPE:
+						if(t1->type == t2->type)
+							return 0;
+						return -1;
+		case SLICE_TYPE:
+						if(t1->type == t2->type)
+							return 0;
+						return -1;
+		case ARRAY_TYPE:
+						if(t1->type == t2->type)
+							return 0;
+						return -1;
+		default: return -1;
+	}
 }
 //var_decl
 //func_decl
