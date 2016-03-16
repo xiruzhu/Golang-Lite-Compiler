@@ -342,7 +342,7 @@ primary_expr        : operand                                     {$$ = $1;}
                     | primary_expr '.' id_                        {$$ = newSelector($1, newIdentifier($3, _treeNodeAllocator), _treeNodeAllocator);}
                     | primary_expr slice                          {$$ = newSlice($1, $2, _treeNodeAllocator);}
 
-type_cast           : basic_type '(' expr ')'                     {$$ = newCast($1, $3, _treeNodeAllocator);}
+type_cast           : basic_type '(' expr ')'                     {$$ = newCast($1, $3, _treeNodeAllocator);} //DANGER FIX SOON
 
 slice               : '[' expr ':' expr ']'                       {$$ = newAddressSlice($2, $4, _treeNodeAllocator);}
                     | '[' expr ':'  ']'                           {$$ = newAddressSlice($2, NULL, _treeNodeAllocator);}

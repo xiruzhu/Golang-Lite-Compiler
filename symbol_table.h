@@ -104,6 +104,8 @@ tbl_entry * new_tbl_entry(char * identifier, int line_num, nodeAST * node, type*
 	ret->type_info = nodeType;
 	ret->id = identifier;
 	ret->node_ptr = node;
+	if(node != NULL)
+		node->sym_tbl_ptr = node;
 	return ret;
 }
 
@@ -124,6 +126,8 @@ sym_tbl * new_sym_tbl_parent(sym_tbl * parent, int hash_tbl_size){
 	}
 	sym_tbl * ret = (sym_tbl *)alloc(1, sizeof(sym_tbl));
 	ret->parent = parent;
+	add_child_sym_tbl(ret, parent);
+
 	ret->childs = (sym_tbl **)alloc(DEFAULT_SYM_TBL_CHILD_CAP, sizeof(sym_tbl *));
 	ret->num_childs = 0;
 	ret->max_childs = DEFAULT_SYM_TBL_CHILD_CAP;
@@ -199,7 +203,7 @@ unsigned long hash_func(char *str, int max_size)
 {
   unsigned long hash = 0;
   int c;
-  while (c = *str++)
+  while ((c = *str++))
   	hash = c + (hash << 6) + (hash << 16) - hash;
   return hash % max_size;
 }

@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define MAX_SIZE 32768
+#define MAX_SIZE 32767
 
 struct memory_node ** table;
 
@@ -42,6 +42,7 @@ void free_table(){
             }
         }
     }
+    //free(table);
 }
 
 /*

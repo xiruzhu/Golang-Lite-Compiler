@@ -7,7 +7,10 @@
 #include "treeNode.h"
 #include "prettyPrint.h"
 #include "type_check.h"
+<<<<<<< Updated upstream
 #include "mem_sys.h"
+=======
+>>>>>>> Stashed changes
 
 memoryList _treeNodeAllocator = NULL;
 nodeAST* _ast;
@@ -443,4 +446,8 @@ int main(int argc, char ** argv){
 
 	prettyPrint(_ast, stream);
 	type_check_prog(_ast);
+<<<<<<< Updated upstream
 }
+=======
+}
+>>>>>>> Stashed changes

@@ -15,4 +15,3 @@ if [ "$#" -eq 4 ]; then
 else
 	cat $S | ./goCompiler
 fi
-

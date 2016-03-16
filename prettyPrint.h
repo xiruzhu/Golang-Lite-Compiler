@@ -44,7 +44,7 @@ bool isExpr (nodeAST* _AST){
         case EXPR_ADDRESS_SLICE:            return true;
         case EXPR_ADDRESS_SLICE_FULL:       return true;
         case EXPR_UTILITY_EXPRLIST:         return true;
-        
+
         case LITERAL_INT:                   return true;
         case LITERAL_FLOAT:                 return true;
         case LITERAL_RUNE:                  return true;

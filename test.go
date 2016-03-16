@@ -8,6 +8,7 @@ func main() {
     // the builtin `make`. Here we make a slice of
     // `string`s of length `3` (initially zero-valued).
     //s := make([]string, 3)
+    var _test float = 'W'
     fmt.Println("emp:'dtess\", \"", s)
 
     // We can set and get just like with arrays.
