@@ -48,6 +48,8 @@ typedef struct func_block_queue{
 	nodeAST * block;
 	struct func_block_queue * next;
 }fn_blk_que;
+
+int first_pass;
 /*
 * Method List
 * ___________________________________________________________________________________________________________
@@ -1972,33 +1974,27 @@ int type_check_if_else_stmt(nodeAST * node, sym_tbl * scope){
 }
 
 int type_check_short_decl(nodeAST * node, sym_tbl * scope){
-									/*
-      								type * left = type_check_expr_list(node->nodeValue.shortDeclare.left, scope);
-      								type * right = type_check_expr_list(node->nodeValue.shortDeclare.right, scope);
-      								if(left->spec_type.list_type.list_size != left->spec_type.list_type.list_size){
+									int counter = 0;
+									type * right = type_check_expr_list(node->nodeValue.shortDeclare.right, scope);
+      								if(right->type == INVALID_TYPE)
+      									return 0;
+
+      								//type * left = type_check_expr_list(node->nodeValue.shortDeclare.left, scope);
+      								for(nodeAST * i = node->nodeValue.shortDeclare.left; i != NULL; i = i->nodeValue.exprList.next){
+										nodeAST * id = i->nodeValue.exprList.expr;
+										if(id->nodeType != IDENTIFIER){
+											sprintf(err_buf, "Non identifier in short declaration left side at line %zd" ,node->lineNumber);
+											add_msg_line(err_buf, current, node->lineNumber);
+											return 0;
+										}else{
+											sym_tbl_add_entry(new_tbl_entry(id->nodeValue.identifier, id->lineNumber  ,id ,right), scope);
+										}
+										counter++;
+									}
+      								if(counter != right->spec_type.list_type.list_size){
 										sprintf(err_buf, "Expression list size does not match at line %zd" ,node->lineNumber);
 										add_msg_line(err_buf, current, node->lineNumber);
-      								}else{
-      									for(int i = 0; i < left->spec_type.list_type.list_size; i++){
-      										if(compare_type(left, right) == -1 && valid_type_conversion(left, right) == -1)
-      											print_type_to_string(left, type_buf);
-      											print_type_to_string(right, type_buf_extra);
-												sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
-												add_msg_line(err_buf, current, node->lineNumber);
-      										}
-      										//Otherwise we need to add it
-      								tbl_entry * current_entry = sym_tbl_find_entry_scoped(i->nodeValue.identifierList.identifier->nodeValue.identifier, scope);
-									if(current_entry != NULL){ //Redeclaration in the same scope
-										sprintf(err_buf, "Redeclaration of %s when declaring id at line %zd. \nPrevious declaration at line %zd", i->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber, current_entry->line_num);
-										add_msg_line(err_buf, current, node->lineNumber);
-										break;
-									}else{//Everything is good
-									//We need to add these things to the symbol table
-										sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, type_decl), scope);
-										}
       								}
-      								Needs to be fixed
-      								*/
       								return 0;
 }
 
