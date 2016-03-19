@@ -2303,7 +2303,7 @@ for_stmt            : for_ for_clause block                       {$$ = newForBl
 			print_type_to_string(cond, type_buf);
        		sprintf(err_buf, "For statement expression must be Boolean. It is currently of %s at line %zd",type_buf ,for_cond->lineNumber);
 			add_msg_line(err_buf, current, node->lineNumber);
-		}
+			}
 		}
 	}
 	type_check_block(node->nodeValue.forBlock.block, new_scope);
@@ -2328,6 +2328,8 @@ stmt                : var_decl                                    {$$ = $1;}
                     | break_ ';'                                  {$$ = newControlBreak(_treeNodeAllocator);}
                     | continue_ ';'                               {$$ = newControlContinue(_treeNodeAllocator);}
 	*/
+    if(stmt == NULL)
+    	return 0;
    	switch(node->nodeType){
    		case PROG_DECLARE_VAR_LIST: type_check_var_decl_list(node, scope); break;
    		case PROG_DECLARE_TYPE_LIST: type_check_type_decl_list(node, scope); break;
