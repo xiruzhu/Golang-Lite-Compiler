@@ -11,7 +11,9 @@
 #define DEFAULT_HASH_SIZE 2048
 #define DEFAULT_HASH_LIST_SIZE	4
 #define DEFAULT_SYM_TBL_CHILD_CAP 16
-
+#define WHITE_COLOR  "\033[1m\033[37m"
+#define RED_COLOR "\033[1m\033[31m"
+#define RESET_COLOR "\e[m"
 //This is the memory collector utilized.
 //Helps keep track of all allocated items
 
@@ -86,6 +88,7 @@ int sym_tbl_add_entry(tbl_entry * entry, sym_tbl * table);
 int print_sym_tbl_init(sym_tbl * table, char * file_path);
 int print_sym_tbl(sym_tbl * table, FILE * file);
 int print_hash_tbl(hash_tbl * tbl, FILE * file);
+int print_sym_tbl_scoped(sym_tbl * table, FILE * file);
 type * find_type(nodeAST * node);
 
 /*
@@ -362,7 +365,7 @@ int print_sym_tbl_init(sym_tbl * table, char * file_path){
 		return -1;
 	}
 	fprintf(file, "--------------------------------------------------------------------------------------\nSymbol Table Dump\
-				\n--------------------------------------------------------------------------------------\n");
+				\n--------------------------------------------------------------------------------------\n\n");
 	print_hash_tbl(table->tbl, file);
 	for(int i = 0; i < table->num_childs; i++){
 		print_sym_tbl(table->childs[i], file);
@@ -382,8 +385,8 @@ int print_sym_tbl(sym_tbl * table, FILE * file){
 		fprintf(stderr, "Null file stream. print_sym_tbl failed\n");
 		return -1;
 	}
-	fprintf(file, "--------------------------------------------------------------------------------------\nSymbol Table Dump\
-				\n--------------------------------------------------------------------------------------\n");
+	fprintf(file,"--------------------------------------------------------------------------------------\nSymbol Table Dump\
+				\n--------------------------------------------------------------------------------------\n\n");
 	print_hash_tbl(table->tbl, file);
 	for(int i = 0; i < table->num_childs; i++){
 		print_sym_tbl(table->childs[i], file);
@@ -392,13 +395,30 @@ int print_sym_tbl(sym_tbl * table, FILE * file){
 }
 
 /*
+* Given a table and a file stream, will attempt to output the sym_tbl to such file
+* Will return 0 on success
+* Will return -1 for failure
+*/
+int print_sym_tbl_scoped(sym_tbl * table, FILE * file){
+	if(file == NULL || table == NULL){
+		fprintf(stderr, "Null file stream. print_sym_tbl failed\n");
+		return -1;
+	}
+	fprintf(file, RED_COLOR "\n--------------------------------------------------------------------------------------\nSymbol Table Dump\
+				\n--------------------------------------------------------------------------------------\n" RESET_COLOR);
+	print_hash_tbl(table->tbl, file);
+	return 0;
+}
+
+
+/*
 * Given a table and a file stream, will attempt to output the hash_tbl to such file
 * Will return 0 on success
 * Will return -1 for failure
 */
 int print_hash_tbl(hash_tbl * tbl, FILE * file){
-	fprintf(file, "______________________________________________________________________________________\nHash Table Dump\
-				\n______________________________________________________________________________________n");
+	fprintf(file, "\n______________________________________________________________________________________\nHash Table Dump\
+				\n______________________________________________________________________________________\n\n");
 	for(int i = 0; i < tbl->max_size; i++){
 		for(int j = 0; j < tbl->entry_list_size[i]; j++){
 			fprintf(file, "[ ID: %s | Line: %d | ", tbl->hash_system[i][j].id, tbl->hash_system[i][j].line_num);
