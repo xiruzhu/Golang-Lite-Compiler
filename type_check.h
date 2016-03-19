@@ -408,7 +408,8 @@ int type_check_func(nodeAST * node, sym_tbl * scope){
 	function->spec_type.func_type.params_type = param_type;
 	function->spec_type.func_type.return_type = return_type;
 	//Now we actually need to add the return type to the new scope
-	sym_tbl_add_entry(new_tbl_entry("return", node->lineNumber, node, make_typed(return_type)), new_scope);
+	if(return_type != NULL)
+		sym_tbl_add_entry(new_tbl_entry("return", node->lineNumber, node, make_typed(return_type)), new_scope);
 
 	//We do not type check the block the first pass
 	//Instead we add it to the current_queue
@@ -2328,7 +2329,7 @@ stmt                : var_decl                                    {$$ = $1;}
                     | break_ ';'                                  {$$ = newControlBreak(_treeNodeAllocator);}
                     | continue_ ';'                               {$$ = newControlContinue(_treeNodeAllocator);}
 	*/
-    if(stmt == NULL)
+    if(node == NULL)
     	return 0;
    	switch(node->nodeType){
    		case PROG_DECLARE_VAR_LIST: type_check_var_decl_list(node, scope); break;

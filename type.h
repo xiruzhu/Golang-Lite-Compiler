@@ -360,6 +360,8 @@ int compare_type(type * arg0, type * arg1){
 }
 
 int print_type_to_file(type * to_print, FILE * file){
+	if(to_print == NULL)
+		return 0;
 	switch(to_print->type){
 	    case LITERAL_INT: fprintf(file, "Int Type"); break;
         case LITERAL_FLOAT: fprintf(file, "Float Type"); break;
