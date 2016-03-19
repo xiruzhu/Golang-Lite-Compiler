@@ -17,6 +17,10 @@
 #define TYPED_RUNE 10008
 #define TYPED_STRING 10009
 
+#define WHITE_COLOR  "\033[1m\033[37m"
+#define RED_COLOR "\033[1m\033[31m"
+#define RESET_COLOR "\e[m"
+
 int id_generator = 0;
 char err_msg[256];
 char extra_buf[256];
@@ -53,6 +57,7 @@ typedef struct type{
 	}spec_type; //Special types
 }type;
 
+type * make_typed(type * val);
 type * type_cpy(type * val);
 type * new_int_type();
 type * new_float_type();
@@ -79,6 +84,7 @@ int print_type_to_file(type * to_print, FILE * file);
 int print_type_to_string(type * to_print, char * buf);
 int valid_type_conversion(type * t1, type* t2);
 int valid_type_comparison(type * t1, type* t2);
+int valid_type_assign(type * t1, type * t2);
 
 /*
 * -----------------------------------------------------------------------------------------------------------
@@ -96,6 +102,29 @@ type * make_typed(type * val){
 		val->type = TYPED_FLOAT;
 	else if(val->type == LITERAL_STRING)
 		val->type = TYPED_STRING;
+	else if(val->type == LIST_TYPE){
+		for(int i = 0; i < val->spec_type.list_type.list_size; i++){
+			make_typed(val->spec_type.list_type.type_list[i]);
+		}
+	}
+	else if(val->type == ALIAS_TYPE){
+		make_typed(val->spec_type.alias_type.a_type);
+	}
+	else if(val->type == ARRAY_TYPE){
+		make_typed(val->spec_type.array_type.a_type);
+	}
+	else if(val->type == SLICE_TYPE){
+		make_typed(val->spec_type.slice_type.s_type);
+	}
+	else if(val->type == STRUCT_TYPE){
+		for(int i = 0; i < val->spec_type.struct_type.list_size; i++){
+			make_typed(val->spec_type.struct_type.type_list[i]);
+		}
+	}
+	else if(val->type == FUNC_TYPE){
+		make_typed(val->spec_type.func_type.params_type);
+		make_typed(val->spec_type.func_type.return_type);
+	}
 	return val;
 }
 
@@ -261,28 +290,28 @@ int compare_type(type * arg0, type * arg1){
 	if(arg0->type == arg1->type)
 		return 0;
 	switch(arg0->type){
-		case TYPED_INT:   if(arg1->type == LITERAL_RUNE || arg1->type == LITERAL_INT || arg1->type == LITERAL_FLOAT)
+		case TYPED_INT:   if(arg1->type == LITERAL_RUNE || arg1->type == LITERAL_INT || arg1->type == LITERAL_FLOAT || arg1->type == TYPED_INT)
 								return 0;
 							return -1;
-		case TYPED_RUNE:	if(arg1->type == LITERAL_RUNE || arg1->type == LITERAL_INT || arg1->type == LITERAL_FLOAT)
+		case TYPED_RUNE:	if(arg1->type == LITERAL_RUNE || arg1->type == LITERAL_INT || arg1->type == LITERAL_FLOAT || arg1->type == TYPED_RUNE)
 								return 0;
 							return -1;
-		case TYPED_STRING:if(arg1->type == LITERAL_INT)
+		case TYPED_STRING:if(arg1->type == LITERAL_STRING || arg1->type == TYPED_STRING)
 								return 0;
 							return -1;
-		case TYPED_FLOAT: if(arg1->type == LITERAL_INT || arg1->type == LITERAL_FLOAT || arg1->type == LITERAL_RUNE)
+		case TYPED_FLOAT: if(arg1->type == LITERAL_INT || arg1->type == LITERAL_FLOAT || arg1->type == LITERAL_RUNE || arg1->type == TYPED_FLOAT)
 								return 0;
 							return -1;
-		case LITERAL_INT: if(arg1->type == TYPED_INT || arg1->type == TYPED_RUNE || arg1->type == TYPED_FLOAT)
+		case LITERAL_INT: if(arg1->type == TYPED_INT || arg1->type == TYPED_RUNE || arg1->type == TYPED_FLOAT || arg1->type == LITERAL_RUNE || arg1->type == LITERAL_INT || arg1->type == LITERAL_FLOAT)
 							return 0;
 						  return -1;
-		case LITERAL_RUNE: if(arg1->type == TYPED_INT || arg1->type == TYPED_RUNE || arg1->type == TYPED_FLOAT)
+		case LITERAL_RUNE: if(arg1->type == TYPED_INT || arg1->type == TYPED_RUNE || arg1->type == TYPED_FLOAT || arg1->type == LITERAL_RUNE || arg1->type == LITERAL_INT || arg1->type == LITERAL_FLOAT)
 							return 0;
 						  return -1;
-		case LITERAL_FLOAT:	if(arg1->type == TYPED_INT || arg1->type == TYPED_RUNE || arg1->type == TYPED_FLOAT)
+		case LITERAL_FLOAT:	if(arg1->type == TYPED_INT || arg1->type == TYPED_RUNE || arg1->type == TYPED_FLOAT || arg1->type == LITERAL_RUNE || arg1->type == LITERAL_INT || arg1->type == LITERAL_FLOAT)
 							return 0;
 						  return -1;
-		case LITERAL_STRING: if(arg1->type == TYPED_STRING)
+		case LITERAL_STRING: if(arg1->type == LITERAL_STRING || arg1->type == TYPED_STRING)
 								return 0;
 							return -1;
 		case ARRAY_TYPE: 	return compare_type(arg0->spec_type.array_type.a_type, arg1->spec_type.array_type.a_type);
@@ -354,7 +383,14 @@ int print_type_to_file(type * to_print, FILE * file){
 		case ALIAS_TYPE: fprintf(file, "Alias Type %s:", to_print->spec_type.alias_type.id);
 						 print_type_to_file(to_print->spec_type.alias_type.a_type, file);
 						 break;
-		case LIST_TYPE: break; //Technically List doesn't have a type
+		case LIST_TYPE: fprintf(file, "( ");
+						for(int i = 0; i < to_print->spec_type.list_type.list_size; i++){
+							print_type_to_file(to_print->spec_type.list_type.type_list[i], file);
+							if(i != to_print->spec_type.list_type.list_size -1)
+							fprintf(file, " , ");
+						}
+						fprintf(file, " )");
+						break; //Technically List doesn't have a type
 		case INVALID_TYPE: fprintf(file, "Invalid Type"); break;
 		default: break;
 	}
@@ -387,7 +423,21 @@ int print_type_to_string(type * to_print, char * buf){
 						 print_type_to_string(to_print->spec_type.alias_type.a_type, extra_buf);
 				         sprintf(buf, "Alias Type %s:%s", to_print->spec_type.alias_type.id, extra_buf);
 				         break;
-		case LIST_TYPE: break; //Technically List doesn't have a type
+		case LIST_TYPE:{
+						char buffer[256];
+						int incr;
+						incr = sprintf(buffer, "( ");
+						for(int i = 0; i < to_print->spec_type.list_type.list_size; i++){
+							print_type_to_string(to_print->spec_type.list_type.type_list[i], buf);
+							incr += sprintf(buffer + incr, "%s", buf);
+							if(i != to_print->spec_type.list_type.list_size -1)
+								incr += sprintf(buffer + incr, " , ");
+						}
+						sprintf(buffer + incr, " )");
+						sprintf(buf, "%s", buffer);
+
+						break; //Technically List doesn't have a type
+					}
 		case INVALID_TYPE: sprintf(buf, "Invalid Type"); break;
 		default: break;
 	}
@@ -492,11 +542,61 @@ int valid_type_conversion(type * t1, type * t2){
 	}
 }
 
+int valid_type_assign(type * t1, type * t2){
+	//Having untyped values on the left will result in error
+	switch(t1->type){
+		case LITERAL_INT: return -1;
+		case TYPED_INT:	switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_RUNE: return 0;
+						case TYPED_INT: return 0;
+						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						default: return -1;
+						}
+		case LITERAL_BOOL:
+				switch(t2->type){
+						case LITERAL_BOOL: return 0;
+						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						default: return -1;
+						}
+		case TYPED_FLOAT:
+						switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_FLOAT: return 0;
+						case LITERAL_RUNE: return 0;
+						case TYPED_FLOAT: return 0;
+						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						default: return -1;
+						}
+		case LITERAL_FLOAT: return -1;
+		case TYPED_STRING:
+						switch(t2->type){
+							case LITERAL_STRING: return 0;
+							case TYPED_STRING: return 0;
+							case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+							default: return -1;
+						}
+		case LITERAL_STRING:return -1;
+		case TYPED_RUNE: switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_RUNE: return 0;
+						case TYPED_FLOAT: return 0;
+						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						default: return -1;
+						}
+		case LITERAL_RUNE: return -1;
+		case ALIAS_TYPE:
+						return valid_type_conversion(t1->spec_type.alias_type.a_type, t2);
+		default: return -1;
+	}
+}
+
 int valid_type_ordered(type * t1, type* t2){
 	switch(t1->type){
 		case LITERAL_INT:
 				switch(t2->type){
 						case LITERAL_INT: return 0;
+						case LITERAL_RUNE: return 0;
 						case TYPED_INT: return 0;
 						case ALIAS_TYPE:
 							return valid_type_ordered(t1, t2->spec_type.alias_type.a_type);
@@ -504,6 +604,8 @@ int valid_type_ordered(type * t1, type* t2){
 						}
 		case LITERAL_FLOAT:
 				switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_RUNE: return 0;
 						case LITERAL_FLOAT: return 0;
 						case TYPED_FLOAT: return 0;
 						case ALIAS_TYPE:
@@ -519,13 +621,50 @@ int valid_type_ordered(type * t1, type* t2){
 						default: return -1;
 						}
 		case LITERAL_RUNE:
-				switch(t2->type){
+					switch(t2->type){
 						case LITERAL_RUNE: return 0;
+						case LITERAL_INT: return 0;
 						case TYPED_RUNE: return 0;
 						case ALIAS_TYPE:
 							return valid_type_ordered(t1, t2->spec_type.alias_type.a_type);
 						default: return -1;
 						}
+		case TYPED_INT: switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_RUNE: return 0;
+						case LITERAL_FLOAT: return 0;
+						case TYPED_FLOAT: return 0;
+						case ALIAS_TYPE:
+							return valid_type_ordered(t1, t2->spec_type.alias_type.a_type);
+						default: return -1;
+						}
+		case TYPED_STRING:
+						switch(t2->type){
+						case LITERAL_STRING: return 0;
+						case TYPED_STRING: return 0;
+						case ALIAS_TYPE:
+							return valid_type_ordered(t1, t2->spec_type.alias_type.a_type);
+						default: return -1;
+						}
+		case TYPED_FLOAT:
+						switch(t2->type){
+						case LITERAL_INT: return 0;
+						case LITERAL_RUNE: return 0;
+						case LITERAL_FLOAT: return 0;
+						case TYPED_FLOAT: return 0;
+						case ALIAS_TYPE:
+							return valid_type_ordered(t1, t2->spec_type.alias_type.a_type);
+						default: return -1;
+						}
+		case TYPED_RUNE: switch(t2->type){
+						case LITERAL_RUNE: return 0;
+						case LITERAL_INT: return 0;
+						case TYPED_RUNE: return 0;
+						case ALIAS_TYPE:
+							return valid_type_ordered(t1, t2->spec_type.alias_type.a_type);
+						default: return -1;
+						}
+
 		case ALIAS_TYPE:
 				return valid_type_ordered(t1->spec_type.alias_type.a_type, t2);
 		default: return -1;
