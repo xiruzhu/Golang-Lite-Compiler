@@ -10,8 +10,6 @@
 #include "type_check.h"
 
 =======
->>>>>>> cb2a1b6ee0c0d4b3602a2d5b51388259c3b11b11
-
 memoryList _treeNodeAllocator = NULL;
 nodeAST* _ast;
 
@@ -239,7 +237,7 @@ colon 			":"
 {lsbrac}		{prev_token = '['; return '[';}
 {rsbrac}		{prev_token = ']'; return ']';}
 {lcbrac}		{
-					prev_token = '{'; 
+					prev_token = '{';
 					return '{';
 				}
 {rcbrac}		{prev_token = '}'; return '}';}
@@ -327,9 +325,9 @@ colon 			":"
 					return string_lit_;
 				}
 
-{semi_colon}	{ 
+{semi_colon}	{
 	                counter ++;
-					prev_token = ';'; 
+					prev_token = ';';
 					return ';';
 				}
 
@@ -444,13 +442,9 @@ int main(int argc, char ** argv){
 		}
 	 }
 
-<<<<<<< HEAD
+
 	prettyPrint(_ast, stream);
 	type_check_prog(_ast, 1);
 
 }
 
-=======
-	//prettyPrint(_ast, stream);
-}
->>>>>>> cb2a1b6ee0c0d4b3602a2d5b51388259c3b11b11
