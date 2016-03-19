@@ -123,8 +123,8 @@ extern nodeAST* _ast;
 %locations
 
 %type <node_val> expr_list operand operand_name literal expr func_call primary_expr type_cast slice
-%type <node_val> stmt_list stmt simple_stmt simple_stmt_v assign_stmt short_decl print_stmt println_stmt return_stmt if_stmt switch_stmt for_stmt for_clause condition for_stmt_clause switch_cond case_clause_list case_clause if_cond else_block
-%type <node_val> block basic_type go_prog pckg_decl top_decl_list top_decl params params_list params_decl var_decl type_decl type_spec_list type_spec var_spec_list var_spec id_list type field_decl_list field_decl
+%type <node_val> stmt_list stmt simple_stmt simple_stmt_v assign_stmt short_decl print_stmt println_stmt return_stmt if_stmt switch_stmt for_stmt for_clause condition for_stmt_clause switch_cond case_clause_list case_clause if_cond else_block 
+%type <node_val> block basic_type go_prog pckg_decl top_decl_list top_decl params params_list params_decl var_decl type_decl type_spec_list type_spec var_spec_list var_spec id_list type field_decl_list field_decl basic_type_cast
 %type <rune_val>  rune_lit_
 %type <str_val> string_lit_ id_
 %type <int_val> int_lit_
@@ -182,14 +182,13 @@ type                : basic_type                                  {$$ = $1;}
                     | struct_ '{' field_decl_list '}'             {$$ = newStruct($3, _treeNodeAllocator);}
                     | '[' int_lit_ ']' type                       {$$ = newArrayType(newLiteralInt($2, _treeNodeAllocator), $4, _treeNodeAllocator);}
                     | id_                                         {$$ = newIdentifier($1, _treeNodeAllocator);}
-                    | '(' type ')'                                {$$ = $2;}
-
-
+                    | '(' type ')'                                {$$ = $2;}        
+  
 basic_type          : int_                                        {$$ = newBasicTypeInt(_treeNodeAllocator);}
                     | float_                                      {$$ = newBasicTypeFloat(_treeNodeAllocator);}
                     | string_                                     {$$ = newBasicTypeString(_treeNodeAllocator);}
                     | rune_                                       {$$ = newBasicTypeRune(_treeNodeAllocator);}
-                    | bool_                                       {$$ = newBasicTypeBool(_treeNodeAllocator);}
+                    | bool_                                       {$$ = newBasicTypeBool(_treeNodeAllocator);}      
 
 field_decl_list     : field_decl ';' field_decl_list              {$$ = newStructDecList($1, $3, _treeNodeAllocator);}
                     |                                             {$$ = NULL;}
@@ -342,7 +341,14 @@ primary_expr        : operand                                     {$$ = $1;}
                     | primary_expr '.' id_                        {$$ = newSelector($1, newIdentifier($3, _treeNodeAllocator), _treeNodeAllocator);}
                     | primary_expr slice                          {$$ = newSlice($1, $2, _treeNodeAllocator);}
 
-type_cast           : basic_type '(' expr ')'                     {$$ = newCast($1, $3, _treeNodeAllocator);} //DANGER FIX SOON
+type_cast           : basic_type_cast  '(' expr ')'               {$$ = newCast($1, $3, _treeNodeAllocator);}
+
+basic_type_cast     : int_                                        {$$ = newBasicTypeInt(_treeNodeAllocator);}
+                    | float_                                      {$$ = newBasicTypeFloat(_treeNodeAllocator);}
+                    | rune_                                       {$$ = newBasicTypeRune(_treeNodeAllocator);}
+                    | string_                                     {$$ = newBasicTypeString(_treeNodeAllocator);}
+                    | bool_                                       {$$ = newBasicTypeBool(_treeNodeAllocator);}
+                    | '(' basic_type_cast ')'                     {$$ = $2;}
 
 slice               : '[' expr ':' expr ']'                       {$$ = newAddressSlice($2, $4, _treeNodeAllocator);}
                     | '[' expr ':'  ']'                           {$$ = newAddressSlice($2, NULL, _treeNodeAllocator);}
