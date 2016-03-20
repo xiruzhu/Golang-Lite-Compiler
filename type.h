@@ -79,6 +79,7 @@ void free_type(type * garbage);
 type * get_var_type(nodeAST * AST);
 type * get_func_type(nodeAST * node);
 type * get_typedef_type(nodeAST * node);
+int valid_alias_comparison(type * t1, type * t2);
 int compare_type(type * arg0, type * arg1);
 int print_type_to_file(type * to_print, FILE * file);
 int print_type_to_string(type * to_print, char * buf);
@@ -287,8 +288,6 @@ void free_type(type * garbage){
 int compare_type(type * arg0, type * arg1){
 	if(arg0 == NULL || arg1 == NULL)
 		return -1;
-	if(arg0->type == arg1->type)
-		return 0;
 	switch(arg0->type){
 		case TYPED_INT:   if(arg1->type == LITERAL_RUNE || arg1->type == LITERAL_INT || arg1->type == LITERAL_FLOAT || arg1->type == TYPED_INT)
 								return 0;
@@ -314,6 +313,7 @@ int compare_type(type * arg0, type * arg1){
 		case LITERAL_STRING: if(arg1->type == LITERAL_STRING || arg1->type == TYPED_STRING)
 								return 0;
 							return -1;
+		case LITERAL_BOOL: return arg1->type == LITERAL_BOOL;
 		case ARRAY_TYPE: 	return compare_type(arg0->spec_type.array_type.a_type, arg1->spec_type.array_type.a_type);
 		case SLICE_TYPE: 	return compare_type(arg0->spec_type.slice_type.s_type, arg1->spec_type.slice_type.s_type);
 		case STRUCT_TYPE:
@@ -335,9 +335,7 @@ int compare_type(type * arg0, type * arg1){
 								return -1;
 							return 0;
 		case ALIAS_TYPE:
-							if(arg0->spec_type.alias_type.alias_id == arg1->spec_type.alias_type.alias_id)
-								return 0;
-							return compare_type(arg0->spec_type.alias_type.a_type, arg1->spec_type.alias_type.a_type);
+							return valid_alias_comparison(arg0, arg1);
 							/*
 							if(strcmp(arg0->spec_type.alias_type.id,arg1->spec_type.alias_type.id) != 0)
 								return -1;
@@ -461,7 +459,7 @@ int valid_type_conversion(type * t1, type * t2){
 						case TYPED_INT: return 0;
 						case TYPED_FLOAT: return 0;
 						case TYPED_RUNE: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: return valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case TYPED_INT:	switch(t2->type){
@@ -471,13 +469,13 @@ int valid_type_conversion(type * t1, type * t2){
 						case TYPED_INT: return 0;
 						case TYPED_FLOAT: return 0;
 						case TYPED_RUNE: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: return valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case LITERAL_BOOL:
 				switch(t2->type){
 						case LITERAL_BOOL: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: return valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case TYPED_FLOAT: switch(t2->type){
@@ -487,7 +485,7 @@ int valid_type_conversion(type * t1, type * t2){
 						case TYPED_INT: return 0;
 						case TYPED_FLOAT: return 0;
 						case TYPED_RUNE: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: return valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case LITERAL_FLOAT:
@@ -498,7 +496,7 @@ int valid_type_conversion(type * t1, type * t2){
 						case TYPED_INT: return 0;
 						case TYPED_FLOAT: return 0;
 						case TYPED_RUNE: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: return valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case TYPED_STRING: switch(t2->type){
@@ -508,12 +506,12 @@ int valid_type_conversion(type * t1, type * t2){
 						case TYPED_INT: return 0;
 						case TYPED_FLOAT: return 0;
 						case TYPED_RUNE: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case LITERAL_STRING:
 				switch(t2->type){
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: valid_alias_comparison(t1, t2);
 						case LITERAL_STRING: return 0;
 						default: return -1;
 						}
@@ -524,7 +522,7 @@ int valid_type_conversion(type * t1, type * t2){
 						case TYPED_INT: return 0;
 						case TYPED_FLOAT: return 0;
 						case TYPED_RUNE: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case LITERAL_RUNE:
@@ -535,13 +533,27 @@ int valid_type_conversion(type * t1, type * t2){
 						case TYPED_INT: return 0;
 						case TYPED_FLOAT: return 0;
 						case TYPED_RUNE: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case ALIAS_TYPE:
-						return valid_type_conversion(t1->spec_type.alias_type.a_type, t2);
+						return valid_alias_comparison(t1, t2);
 		default: return -1;
 	}
+}
+
+int valid_alias_comparison(type * t1, type * t2){
+	if(t1->type == ALIAS_TYPE && t2->type == ALIAS_TYPE){
+		if(t1->spec_type.alias_type.alias_id == t2->spec_type.alias_type.alias_id)
+			return 0;
+		return -1;
+	}else if(t1->type == ALIAS_TYPE){
+		return valid_type_assign(t1, t2);
+	}else if(t2->type == ALIAS_TYPE){
+		return valid_type_assign(t2, t1);
+	}
+
+	return -1;
 }
 
 int valid_type_assign(type * t1, type * t2){
@@ -552,13 +564,13 @@ int valid_type_assign(type * t1, type * t2){
 						case LITERAL_INT: return 0;
 						case LITERAL_RUNE: return 0;
 						case TYPED_INT: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case LITERAL_BOOL:
 				switch(t2->type){
 						case LITERAL_BOOL: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case TYPED_FLOAT:
@@ -567,7 +579,7 @@ int valid_type_assign(type * t1, type * t2){
 						case LITERAL_FLOAT: return 0;
 						case LITERAL_RUNE: return 0;
 						case TYPED_FLOAT: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case LITERAL_FLOAT: return -1;
@@ -575,7 +587,7 @@ int valid_type_assign(type * t1, type * t2){
 						switch(t2->type){
 							case LITERAL_STRING: return 0;
 							case TYPED_STRING: return 0;
-							case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+							case ALIAS_TYPE: valid_alias_comparison(t1, t2);
 							default: return -1;
 						}
 		case LITERAL_STRING:return -1;
@@ -583,17 +595,22 @@ int valid_type_assign(type * t1, type * t2){
 						case LITERAL_INT: return 0;
 						case LITERAL_RUNE: return 0;
 						case TYPED_FLOAT: return 0;
-						case ALIAS_TYPE: return valid_type_conversion(t1, t2->spec_type.alias_type.a_type);
+						case ALIAS_TYPE: valid_alias_comparison(t1, t2);
 						default: return -1;
 						}
 		case LITERAL_RUNE: return -1;
 		case ALIAS_TYPE:
-						return valid_type_conversion(t1->spec_type.alias_type.a_type, t2);
+						return valid_alias_comparison(t1, t2);
+		case ARRAY_TYPE: return compare_type(t1->spec_type.array_type.a_type, t2->spec_type.array_type.a_type);
+		case SLICE_TYPE: return compare_type(t1->spec_type.slice_type.s_type, t2->spec_type.slice_type.s_type);
+		case STRUCT_TYPE: return compare_type(t1, t2);
 		default: return -1;
 	}
 }
 
+
 int valid_type_ordered(type * t1, type* t2){
+	printf("%d %d\n", t1->type, t2->type);
 	switch(t1->type){
 		case LITERAL_INT:
 				switch(t2->type){
@@ -635,7 +652,7 @@ int valid_type_ordered(type * t1, type* t2){
 						case LITERAL_INT: return 0;
 						case LITERAL_RUNE: return 0;
 						case LITERAL_FLOAT: return 0;
-						case TYPED_FLOAT: return 0;
+						case TYPED_INT: return 0;
 						case ALIAS_TYPE:
 							return valid_type_ordered(t1, t2->spec_type.alias_type.a_type);
 						default: return -1;
@@ -668,6 +685,11 @@ int valid_type_ordered(type * t1, type* t2){
 						}
 
 		case ALIAS_TYPE:
+				if(t2->type == ALIAS_TYPE){
+					if(t1->spec_type.alias_type.alias_id == t2->spec_type.alias_type.alias_id)
+						return 0;
+					return -1;
+				}
 				return valid_type_ordered(t1->spec_type.alias_type.a_type, t2);
 		default: return -1;
 	}
