@@ -258,6 +258,7 @@ int type_check_prog_list(nodeAST * node, sym_tbl * scope){
     // So the problem with this is in fact, we need to process this information
     for(nodeAST * i = node; i != NULL; i = i->nodeValue.progList.next){
     	if(i != NULL){
+    		if(i->nodeValue.progList.prog != NULL){
     		switch(i->nodeValue.progList.prog->nodeType){
     			case PROG_DECLARE_VAR_LIST: type_check_var_decl_list(i->nodeValue.progList.prog, scope); break;
     			case PROG_DECLARE_TYPE_LIST: type_check_type_decl_list(i->nodeValue.progList.prog, scope); break;
@@ -265,6 +266,7 @@ int type_check_prog_list(nodeAST * node, sym_tbl * scope){
     			default:
     				sprintf(err_buf, "Error Unexpected NodeType at line %zd", node->lineNumber);
     				add_msg_line(err_buf, current, node->lineNumber); break;
+    		}
     		}
     	}
     }
