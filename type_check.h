@@ -2351,13 +2351,17 @@ for_stmt            : for_ for_clause block                       {$$ = newForBl
 	nodeAST * for_cond = node->nodeValue.forBlock.condition;
 	type * cond;
 	if(for_cond != NULL){
-		if(for_cond->nodeType == STATE_UTILITY_FOR_CLAUSE)
-		type_check_simple_stmt(for_cond->nodeValue.forClause.init, for_scope);
+		if(for_cond->nodeType == STATE_UTILITY_FOR_CLAUSE){
+			if(for_cond->nodeValue.forClause.init != NULL)
+				type_check_simple_stmt(for_cond->nodeValue.forClause.init, for_scope);
 
-		if(for_cond->nodeValue.forClause.condition != NULL){
-			cond = type_check_expr(for_cond->nodeValue.forClause.condition, for_scope);
+			if(for_cond->nodeValue.forClause.condition != NULL){
+				cond = type_check_expr(for_cond->nodeValue.forClause.condition, for_scope);
 			//printf("Type : %d %d %d\n", for_cond->nodeValue.forClause.condition->nodeType, EXPR_BINARY_OP_LESSEQUAL, node->lineNumber);
 			}
+			if(for_cond->nodeValue.forClause.step != NULL)
+				type_check_simple_stmt(for_cond->nodeValue.forClause.step, for_scope);
+		}
 		else{ //Otherwise it is just an expression
 			cond = type_check_expr(for_cond, scope);
 		}
@@ -2367,8 +2371,7 @@ for_stmt            : for_ for_clause block                       {$$ = newForBl
 			add_msg_line(err_buf, current, node->lineNumber);
 		}
 
-		if(for_cond->nodeValue.forClause.step != NULL)
-			type_check_simple_stmt(for_cond->nodeValue.forClause.step, for_scope);
+
 	}
 
 	type_check_block(node->nodeValue.forBlock.block, new_scope);
