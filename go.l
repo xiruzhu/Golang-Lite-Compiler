@@ -6,10 +6,8 @@
 #include "memory.h"
 #include "treeNode.h"
 #include "prettyPrint.h"
-<<<<<<< HEAD
 #include "type_check.h"
 
-=======
 memoryList _treeNodeAllocator = NULL;
 nodeAST* _ast;
 
@@ -443,8 +441,8 @@ int main(int argc, char ** argv){
 	 }
 
 
-	prettyPrint(_ast, stream);
-	type_check_prog(_ast, 1);
+	//prettyPrint(_ast, stream);
+	type_check_prog(_ast, 0);
 
 }
 
