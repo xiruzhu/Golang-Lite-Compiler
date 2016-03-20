@@ -631,9 +631,8 @@ type * type_check_expr_list(nodeAST * node, sym_tbl * scope){
 
 type * type_check_expr_id(nodeAST * node, sym_tbl * scope){
 	//We need to find it first in the hash_table
-			tbl_entry * boolean = sym_tbl_find_entry("false",scope);
     		tbl_entry * entry = sym_tbl_find_entry( node->nodeValue.identifier,scope);
-    			if(entry == NULL || entry->type_info->type != LITERAL_BOOL){
+    			if(entry == NULL){
 					sprintf(err_buf, "Undeclared id %s at line %zd", node->nodeValue.identifier, node->lineNumber);
 					add_msg_line(err_buf, current, node->lineNumber);
     				return new_invalid_type();
