@@ -496,7 +496,7 @@ type * type_check_alias_type(nodeAST * node, sym_tbl * scope){
 				      		add_msg_line(err_buf, current, node->lineNumber);
 						 	return new_invalid_type(); //Invalid Type
 						 }
-						return entry->type_info;
+						return type_cpy(entry->type_info);
 }
 
 type * type_check_type(nodeAST * node, sym_tbl * scope){
