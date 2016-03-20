@@ -548,9 +548,9 @@ int valid_alias_comparison(type * t1, type * t2){
 			return 0;
 		return -1;
 	}else if(t1->type == ALIAS_TYPE){
-		return valid_type_assign(t1, t2);
+		return valid_type_assign(t1->spec_type.alias_type.a_type, t2);
 	}else if(t2->type == ALIAS_TYPE){
-		return valid_type_assign(t2, t1);
+		return valid_type_assign(t2->spec_type.alias_type.a_type, t1);
 	}
 
 	return -1;
@@ -689,7 +689,6 @@ int valid_type_ordered(type * t1, type* t2){
 					return -1;
 				}
 				return valid_type_ordered(t1->spec_type.alias_type.a_type, t2);
-		case
 		default: return -1;
 	}
 }
