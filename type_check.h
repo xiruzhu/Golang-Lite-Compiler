@@ -2349,22 +2349,25 @@ for_stmt            : for_ for_clause block                       {$$ = newForBl
 	sym_tbl * for_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
 	sym_tbl * new_scope = new_sym_tbl_parent(for_scope, DEFAULT_SIZE);
 	nodeAST * for_cond = node->nodeValue.forBlock.condition;
-	type * cond;
+	type * cond = NULL;
 	if(for_cond != NULL){
 		if(for_cond->nodeType == STATE_UTILITY_FOR_CLAUSE){
 			if(for_cond->nodeValue.forClause.init != NULL)
 				type_check_simple_stmt(for_cond->nodeValue.forClause.init, for_scope);
-
-			if(for_cond->nodeValue.forClause.condition != NULL){
+			if(for_cond->nodeValue.forClause.condition != NULL)
 				cond = type_check_expr(for_cond->nodeValue.forClause.condition, for_scope);
+			else
+				cond = new_bool_type();
 			//printf("Type : %d %d %d\n", for_cond->nodeValue.forClause.condition->nodeType, EXPR_BINARY_OP_LESSEQUAL, node->lineNumber);
-			}
+
 			if(for_cond->nodeValue.forClause.step != NULL)
 				type_check_simple_stmt(for_cond->nodeValue.forClause.step, for_scope);
+
 		}
 		else{ //Otherwise it is just an expression
 			cond = type_check_expr(for_cond, scope);
 		}
+
 		if(cond->type != LITERAL_BOOL){
 			print_type_to_string(cond, type_buf);
        		sprintf(err_buf, "For statement expression must be Boolean. It is currently of %s at line %zd",type_buf ,for_cond->lineNumber);
@@ -2373,8 +2376,8 @@ for_stmt            : for_ for_clause block                       {$$ = newForBl
 
 
 	}
-
 	type_check_block(node->nodeValue.forBlock.block, new_scope);
+
     if(scope_flag == 1){
     	print_sym_tbl_scoped(for_scope, stdout);
     }
