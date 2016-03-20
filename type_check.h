@@ -359,7 +359,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 		int type_iterator = 0;
 		for(nodeAST * i = node->nodeValue.varDeclare.idList; i != NULL; i = i->nodeValue.identifierList.next){
 			if(i != NULL){
-			if(compare_type(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1 && valid_type_assign(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1){
+			if(compare_type(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1 || valid_type_assign(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1){
     					print_type_to_string(type_decl, type_buf);
     					print_type_to_string(expr_decl->spec_type.list_type.type_list[type_iterator], type_buf_extra);
             			sprintf(err_buf, "Declared is %s and Expression is %s. They do not match at line %zd", type_buf, type_buf_extra, node->lineNumber);
