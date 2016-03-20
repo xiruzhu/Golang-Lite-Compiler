@@ -1563,6 +1563,9 @@ type * type_check_expr_eq(nodeAST * node, sym_tbl * scope){
             						sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
 									add_msg_line(err_buf, current, node->lineNumber);
     								return new_invalid_type();
+    						}else if(left->type == SLICE_TYPE || right->type == SLICE_TYPE){
+            					sprintf(err_buf, "Slice type detected. Slice cannot be compared. This occured at line %zd", node->lineNumber);
+								add_msg_line(err_buf, current, node->lineNumber);
     						}
 
     						return new_bool_type();
@@ -1582,6 +1585,9 @@ type * type_check_expr_neq(nodeAST * node, sym_tbl * scope){
             					sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
     							return new_invalid_type();
+    						}else if(left->type == SLICE_TYPE || right->type == SLICE_TYPE){
+            					sprintf(err_buf, "Slice type detected. Slice cannot be compared. This occured at line %zd", node->lineNumber);
+								add_msg_line(err_buf, current, node->lineNumber);
     						}
 
     						return new_bool_type();

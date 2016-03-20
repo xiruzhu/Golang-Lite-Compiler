@@ -682,7 +682,6 @@ int valid_type_ordered(type * t1, type* t2){
 							return valid_type_ordered(t1, t2->spec_type.alias_type.a_type);
 						default: return -1;
 						}
-
 		case ALIAS_TYPE:
 				if(t2->type == ALIAS_TYPE){
 					if(t1->spec_type.alias_type.alias_id == t2->spec_type.alias_type.alias_id)
@@ -690,6 +689,7 @@ int valid_type_ordered(type * t1, type* t2){
 					return -1;
 				}
 				return valid_type_ordered(t1->spec_type.alias_type.a_type, t2);
+		case
 		default: return -1;
 	}
 }
