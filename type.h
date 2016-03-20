@@ -610,7 +610,6 @@ int valid_type_assign(type * t1, type * t2){
 
 
 int valid_type_ordered(type * t1, type* t2){
-	printf("%d %d\n", t1->type, t2->type);
 	switch(t1->type){
 		case LITERAL_INT:
 				switch(t2->type){

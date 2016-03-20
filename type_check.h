@@ -689,14 +689,14 @@ type * type_check_expr_index(nodeAST * node, sym_tbl * scope){
             				*/
             				//This would type check only when the primary_expr [ expr ]
             				// where primary_expr needs to be array or slice type and
-            					type * target = get_alias_type(type_check_expr(node->nodeValue.index.target, scope));
+            					type * target = type_check_expr(node->nodeValue.index.target, scope);
             					if(target->type != ARRAY_TYPE && target->type != SLICE_TYPE){
             						print_type_to_string(target, type_buf);
             						sprintf(err_buf, "Primary Expression is of %s is not a Array or Slice type %zd", type_buf, node->lineNumber);
 									add_msg_line(err_buf, current, node->lineNumber);
     								return new_invalid_type();
             					}
-            					type * entry = get_alias_type(type_check_expr(node->nodeValue.index.entry, scope));
+            					type * entry = type_check_expr(node->nodeValue.index.entry, scope);
             					if(entry->type != LITERAL_INT && entry->type != TYPED_INT && entry->type != LITERAL_RUNE){
             						print_type_to_string(entry, type_buf);
             					    sprintf(err_buf, "Expression inside brackets is of %s. It must be of INT type at line %zd",  type_buf, node->lineNumber);
@@ -742,7 +742,7 @@ type * type_check_expr_slice(nodeAST * node, sym_tbl * scope){
     							returnNode->nodeValue.slice.entry = _entry;
    	 						*/
     						//Okay so primary_expr slice, primary_expr must be of type slice
-    							type * current_slice = get_alias_type(type_check_expr(node->nodeValue.slice.target, scope));
+    							type * current_slice = type_check_expr(node->nodeValue.slice.target, scope);
     							if(current_slice->type != SLICE_TYPE){
             						print_type_to_string(current_slice, type_buf);
             					    sprintf(err_buf, "Slice type expected at line %zd. Found %s",  node->lineNumber, type_buf);
@@ -1789,7 +1789,7 @@ type * type_check_expr_append(nodeAST * node, sym_tbl * scope){
 }
 type * type_check_expr(nodeAST * node, sym_tbl * scope){
 	    	switch(node->nodeType){
-    		case IDENTIFIER: return type_check_expr_id(node, scope);
+    		case IDENTIFIER: return get_alias_type(type_check_expr_id(node, scope));
     		case LITERAL_INT: return new_int_type();
     						/*
    	 						returnNode->nodeType = LITERAL_INT;
@@ -1908,7 +1908,7 @@ int type_check_ret_stmt(nodeAST * node, sym_tbl * scope){
 	tbl_entry * ret_entry = sym_tbl_find_entry("return", scope);
 	type * act_ret;
 	if(node->nodeValue.ret.expr != NULL)
-		act_ret = type_check_expr(node->nodeValue.ret.expr, scope);
+		act_ret = get_alias_type(type_check_expr(node->nodeValue.ret.expr, scope));
 	else
 		act_ret = NULL;
 	if(ret_entry == NULL && act_ret != NULL){
@@ -1924,7 +1924,7 @@ int type_check_ret_stmt(nodeAST * node, sym_tbl * scope){
 	}else if(ret_entry == NULL && act_ret == NULL)
 		return 0;
 
-	type * ret_type = ret_entry->type_info;
+	type * ret_type = get_alias_type(ret_entry->type_info);
 	if(compare_type(act_ret, ret_type) == -1){
 		print_type_to_string(act_ret, type_buf);
 		print_type_to_string(ret_type, type_buf_extra);
