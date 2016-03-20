@@ -335,7 +335,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 	}
 	else if(node->nodeValue.varDeclare.initExpr == NULL){
 
-		type * type_decl = type_check_type(node->nodeValue.varDeclare.type, scope);
+		type * type_decl = make_typed(type_check_type(node->nodeValue.varDeclare.type, scope));
 		int type_iterator = 0;
 
 		for(nodeAST * i = node->nodeValue.varDeclare.idList; i != NULL; i = i->nodeValue.identifierList.next){
@@ -355,7 +355,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 	}
 	else{
 		type * expr_decl = type_check_expr_list(node->nodeValue.varDeclare.initExpr, scope);
-		type * type_decl = type_check_type(node->nodeValue.varDeclare.type, scope);
+		type * type_decl = make_typed(type_check_type(node->nodeValue.varDeclare.type, scope));
 		int type_iterator = 0;
 		for(nodeAST * i = node->nodeValue.varDeclare.idList; i != NULL; i = i->nodeValue.identifierList.next){
 			if(i != NULL){
@@ -2401,7 +2401,10 @@ stmt                : var_decl                                    {$$ = $1;}
    	switch(node->nodeType){
    		case PROG_DECLARE_VAR_LIST: type_check_var_decl_list(node, scope); break;
    		case PROG_DECLARE_TYPE_LIST: type_check_type_decl_list(node, scope); break;
-   		case STATE_UTILITY_STATELIST: type_check_block(node, scope); break;
+   		case STATE_UTILITY_STATELIST: 	{
+   										sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
+   										type_check_block(node, new_scope); break;
+   										}
    		case STATE_PRINT: type_check_print_stmt(node, scope); break;
    		case STATE_PRINTLN: type_check_print_stmt(node, scope); break;
    		case STATE_RETURN: type_check_ret_stmt(node, scope); break;
