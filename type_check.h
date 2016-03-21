@@ -10,8 +10,8 @@
 #include <string.h>
 
 #define DEFAULT_SIZE	2048
-#define MAX_ID_LENGTH	256
-#define MAX_ERR_MSG		256
+#define MAX_ID_LENGTH	512
+#define MAX_ERR_MSG		512
 #define WHITE_COLOR  "\033[1m\033[37m"
 #define RED_COLOR "\033[1m\033[31m"
 #define RESET_COLOR "\e[m"
@@ -139,6 +139,7 @@ type_check * new_type_check(int size){
 	//Now we need to add the two precompiled values, true and false
 	sym_tbl_add_entry(new_tbl_entry("true", 0, NULL, new_bool_type()), ret->current_tbl);
 	sym_tbl_add_entry(new_tbl_entry("false", 0, NULL, new_bool_type()), ret->current_tbl);
+	sym_tbl_add_entry(new_tbl_entry("_", 0, NULL, new_underscore_type()), ret->current_tbl);
 	current = &head;
 	current->msg = NULL;
 
@@ -327,7 +328,8 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 				break;
 			}else{//Everything is good
 				//We need to add these things to the symbol table
-				sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, make_typed(expr_type->spec_type.list_type.type_list[type_iterator])), scope);
+				if(strcmp(i->nodeValue.identifierList.identifier->nodeValue.identifier, "_") != 0)
+					sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, (expr_type->spec_type.list_type.type_list[type_iterator])), scope);
 			}
 			type_iterator++;
 			}
@@ -335,7 +337,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 	}
 	else if(node->nodeValue.varDeclare.initExpr == NULL){
 
-		type * type_decl = make_typed(type_check_type(node->nodeValue.varDeclare.type, scope));
+		type * type_decl = (type_check_type(node->nodeValue.varDeclare.type, scope));
 		int type_iterator = 0;
 
 		for(nodeAST * i = node->nodeValue.varDeclare.idList; i != NULL; i = i->nodeValue.identifierList.next){
@@ -347,7 +349,8 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 				break;
 			}else{//Everything is good
 				//We need to add these things to the symbol table
-				sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, make_typed(type_decl)), scope);
+				if(strcmp(i->nodeValue.identifierList.identifier->nodeValue.identifier, "_") != 0)
+					sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, (type_decl)), scope);
 			}
 			type_iterator++;
 			}
@@ -355,11 +358,15 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 	}
 	else{
 		type * expr_decl = type_check_expr_list(node->nodeValue.varDeclare.initExpr, scope);
-		type * type_decl = make_typed(type_check_type(node->nodeValue.varDeclare.type, scope));
+		type * type_decl = (type_check_type(node->nodeValue.varDeclare.type, scope));
 		int type_iterator = 0;
 		for(nodeAST * i = node->nodeValue.varDeclare.idList; i != NULL; i = i->nodeValue.identifierList.next){
 			if(i != NULL){
-			if(compare_type(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1 || valid_type_assign(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1){
+			if(strcmp(i->nodeValue.identifierList.identifier->nodeValue.identifier, "_") == 0){
+				continue;
+			}
+				printf("asdfsd %d %d\n", type_decl->type, expr_decl->spec_type.list_type.type_list[type_iterator]->type);
+			if(valid_type_comparison(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1){
     					print_type_to_string(type_decl, type_buf);
     					print_type_to_string(expr_decl->spec_type.list_type.type_list[type_iterator], type_buf_extra);
             			sprintf(err_buf, "Declared is %s and Expression is %s. They do not match at line %zd", type_buf, type_buf_extra, node->lineNumber);
@@ -373,7 +380,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 				break;
 			}else{//Everything is good
 				//We need to add these things to the symbol table
-				sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, make_typed(type_decl)), scope);
+				sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, (type_decl)), scope);
 			}
 			type_iterator++;
 			}
@@ -411,7 +418,7 @@ int type_check_func(nodeAST * node, sym_tbl * scope){
 	function->spec_type.func_type.return_type = return_type;
 	//Now we actually need to add the return type to the new scope
 	if(return_type != NULL)
-		sym_tbl_add_entry(new_tbl_entry("return", node->lineNumber, node, make_typed(return_type)), new_scope);
+		sym_tbl_add_entry(new_tbl_entry("return", node->lineNumber, node, (return_type)), new_scope);
 
 	//We do not type check the block the first pass
 	//Instead we add it to the current_queue
@@ -437,7 +444,7 @@ type * type_check_params_list(nodeAST * node, sym_tbl * scope){
 	int size = 0;
     for(nodeAST * i = node; i != NULL; i = i->nodeValue.pramDeclareList.next){
     	if(i != NULL){
-    		type * id_list_type = make_typed(type_check_type(i->nodeValue.pramDeclareList.pram->nodeValue.pramDeclare.type, scope));
+    		type * id_list_type = (type_check_type(i->nodeValue.pramDeclareList.pram->nodeValue.pramDeclare.type, scope));
     	//Get the type of the id_list type
 
     		for(nodeAST * j = i->nodeValue.pramDeclareList.pram->nodeValue.pramDeclare.idList; j != NULL; j = j->nodeValue.identifierList.next){
@@ -473,7 +480,7 @@ int type_check_type_decl_list(nodeAST * node, sym_tbl * scope){
     	if(i != NULL){
     		alias_type = new_alias_type();
     		alias_type->spec_type.alias_type.id = i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.identifier->nodeValue.identifier;
-    		alias_type->spec_type.alias_type.a_type = make_typed(type_check_type(i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.type, scope));
+    		alias_type->spec_type.alias_type.a_type = (type_check_type(i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.type, scope));
     		name = sym_tbl_find_entry_scoped(alias_type->spec_type.alias_type.id, scope);
     		if(name != NULL){
 				sprintf(err_buf, "Redeclaration of %s when declaring type at line %zd. \nPrevious declaration at line %zd", alias_type->spec_type.alias_type.id, i->lineNumber, name->line_num);
@@ -498,7 +505,7 @@ type * type_check_alias_type(nodeAST * node, sym_tbl * scope){
 				      		add_msg_line(err_buf, current, node->lineNumber);
 						 	return new_invalid_type(); //Invalid Type
 						 }
-						return type_cpy(entry->type_info);
+						return (entry->type_info);
 }
 
 type * type_check_type(nodeAST * node, sym_tbl * scope){
@@ -547,13 +554,16 @@ type                : basic_type                                  {$$ = $1;}
 								for(nodeAST * j = field_decl->nodeValue.structTypeDec.identifierList; j != NULL; j = j->nodeValue.identifierList.next){
 									if(j != NULL){
 									char * id = j->nodeValue.identifierList.identifier->nodeValue.identifier;
-									for(int k = 0; k < ret->spec_type.struct_type.list_size; k++){
-										if(strcmp(ret->spec_type.struct_type.id_list[k], id) == 0){
-											sprintf(err_buf, "Redeclaration of id %s when declaring struct fields at line %zd.", id, j->lineNumber);
-											add_msg_line(err_buf, current, node->lineNumber);
-											return new_invalid_type();
+									if(strcmp("_", id) != 0){
+										for(int k = 0; k < ret->spec_type.struct_type.list_size; k++){
+											if(strcmp(ret->spec_type.struct_type.id_list[k], id) == 0){
+												sprintf(err_buf, "Redeclaration of id %s when declaring struct fields at line %zd.", id, j->lineNumber);
+												add_msg_line(err_buf, current, node->lineNumber);
+												return new_invalid_type();
+											}
 										}
-									}
+									}else
+										field_decl_type = new_underscore_type();
 									if(ret->spec_type.struct_type.list_size == ret->spec_type.struct_type.list_cap){
 										ret->spec_type.struct_type.type_list = ralloc(ret->spec_type.struct_type.type_list, sizeof(type *) * ret->spec_type.struct_type.list_size * 2);
 										ret->spec_type.struct_type.list_cap *= 2;
@@ -637,7 +647,7 @@ type * type_check_expr_id(nodeAST * node, sym_tbl * scope){
 					add_msg_line(err_buf, current, node->lineNumber);
     				return new_invalid_type();
     			}
-    			return type_cpy(entry->type_info);
+    			return (entry->type_info);
     		}
 
 type * type_check_expr_func(nodeAST * node, sym_tbl * scope){
@@ -667,7 +677,7 @@ type * type_check_expr_func(nodeAST * node, sym_tbl * scope){
     							return new_invalid_type();
     						}
     						for(int i = 0; i < input->spec_type.list_type.list_size; i++){
-    							if(compare_type(input->spec_type.list_type.type_list[i], params->spec_type.list_type.type_list[i]) == -1){
+    							if(valid_type_comparison(input->spec_type.list_type.type_list[i], params->spec_type.list_type.type_list[i]) == -1 && valid_type_comparison(input->spec_type.list_type.type_list[i], get_alias_type(params->spec_type.list_type.type_list[i])) && valid_type_comparison(get_alias_type(input->spec_type.list_type.type_list[i]), params->spec_type.list_type.type_list[i])){
 									sprintf(err_buf, "Argument type does not match function argument type at line %zd",  node->lineNumber);
 									add_msg_line(err_buf, current, node->lineNumber);
     								return new_invalid_type();
@@ -677,7 +687,7 @@ type * type_check_expr_func(nodeAST * node, sym_tbl * scope){
     					if(entry->type_info->spec_type.func_type.return_type == NULL)
     						return new_invalid_type();
     					else
-    						return type_cpy(entry->type_info->spec_type.func_type.return_type);
+    						return (entry->type_info->spec_type.func_type.return_type);
     					//The type of a function call is its return type
     				}
 }
@@ -690,15 +700,16 @@ type * type_check_expr_index(nodeAST * node, sym_tbl * scope){
             				*/
             				//This would type check only when the primary_expr [ expr ]
             				// where primary_expr needs to be array or slice type and
-            					type * target = type_check_expr(node->nodeValue.index.target, scope);
+            					type * ret = type_check_expr(node->nodeValue.index.target, scope);
+            					type * target = get_alias_type(ret);
             					if(target->type != ARRAY_TYPE && target->type != SLICE_TYPE){
             						print_type_to_string(target, type_buf);
             						sprintf(err_buf, "Primary Expression is of %s is not a Array or Slice type %zd", type_buf, node->lineNumber);
 									add_msg_line(err_buf, current, node->lineNumber);
     								return new_invalid_type();
             					}
-            					type * entry = type_check_expr(node->nodeValue.index.entry, scope);
-            					if(entry->type != LITERAL_INT && entry->type != TYPED_INT && entry->type != LITERAL_RUNE){
+            					type * entry = get_alias_type(type_check_expr(node->nodeValue.index.entry, scope));
+            					if(entry->type != LITERAL_INT && entry->type != LITERAL_RUNE){
             						print_type_to_string(entry, type_buf);
             					    sprintf(err_buf, "Expression inside brackets is of %s. It must be of INT type at line %zd",  type_buf, node->lineNumber);
 									add_msg_line(err_buf, current, node->lineNumber);
@@ -706,8 +717,8 @@ type * type_check_expr_index(nodeAST * node, sym_tbl * scope){
             					}
             					//So everything is valid so this returns the type of the slice/array
             					if(target->type == ARRAY_TYPE)
-            						return type_cpy(target->spec_type.array_type.a_type);
-            					return type_cpy(target->spec_type.slice_type.s_type);
+            						return (ret->spec_type.array_type.a_type);
+            					return (ret->spec_type.slice_type.s_type);
 }
 
 type * type_check_expr_select(nodeAST * node, sym_tbl * scope){
@@ -728,7 +739,7 @@ type * type_check_expr_select(nodeAST * node, sym_tbl * scope){
    	 							//Next we need to scan all the members of the struct id_list to get that specific id type if found
    	 							for(int i = 0; i < current_struct->spec_type.struct_type.list_size; i++){
    	 								if(strcmp(id, current_struct->spec_type.struct_type.id_list[i]) == 0){//Found the id
-   	 									return type_cpy(current_struct->spec_type.struct_type.type_list[i]);
+   	 										return (current_struct->spec_type.struct_type.type_list[i]);
    	 								}
    	 							}
             					sprintf(err_buf, "ID %s not found in the struct at line %zd", id,  node->lineNumber);
@@ -743,7 +754,8 @@ type * type_check_expr_slice(nodeAST * node, sym_tbl * scope){
     							returnNode->nodeValue.slice.entry = _entry;
    	 						*/
     						//Okay so primary_expr slice, primary_expr must be of type slice
-    							type * current_slice = type_check_expr(node->nodeValue.slice.target, scope);
+    							type * ret = type_check_expr(node->nodeValue.slice.target, scope);
+    							type * current_slice = get_alias_type(ret);
     							if(current_slice->type != SLICE_TYPE){
             						print_type_to_string(current_slice, type_buf);
             					    sprintf(err_buf, "Slice type expected at line %zd. Found %s",  node->lineNumber, type_buf);
@@ -752,7 +764,7 @@ type * type_check_expr_slice(nodeAST * node, sym_tbl * scope){
     							}
     							type_check_slice_expr(node->nodeValue.slice.entry, scope); //IF invalid type_checking, err_msg will be added inside
     							//This returns the type of the slice
-    							return type_cpy(current_slice);
+    							return (ret);
 
 }
 
@@ -760,103 +772,8 @@ type * type_check_expr_mul(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.mul.left, scope);
     						type * right = type_check_expr(node->nodeValue.mul.right, scope);
 
-    						if(valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
-    							switch(left->type){
-    								case TYPED_FLOAT: switch(right->type){
-    													case TYPED_FLOAT:
-    														return new_typed_float_type();
-    												    case LITERAL_FLOAT:
-    														return new_typed_float_type();
-    													case LITERAL_INT:
-    														return new_typed_float_type();
-    													case LITERAL_RUNE:
-    														return new_typed_float_type();
-    												  	default:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												}
-    								case TYPED_INT: switch(right->type){
-    													case TYPED_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case LITERAL_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case TYPED_RUNE:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													default: return new_typed_int_type();
-    												}
-    								case TYPED_RUNE: switch(right->type){
-    													case TYPED_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case TYPED_INT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case LITERAL_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													default: return new_typed_rune_type();
-    												}
-    								case LITERAL_INT:
-    												 switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT: return new_typed_int_type();
-    												 	case TYPED_RUNE: return new_typed_rune_type();
-    												 	case LITERAL_FLOAT: return new_float_type();
-    												 	case LITERAL_INT: return new_int_type();
-    												 	default: return new_int_type();
-    												 }
-    								case LITERAL_RUNE:
-													switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT: return new_typed_int_type();
-    												 	case TYPED_RUNE: return new_typed_rune_type();
-    												 	case LITERAL_FLOAT: return new_float_type();
-    												 	case LITERAL_INT: return new_int_type();
-    												 	default: return new_rune_type();
-    												 }
-    								case LITERAL_FLOAT:
-													switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												 	case TYPED_RUNE:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												 	default: return new_float_type();
-    												 }
-    								default: return new_invalid_type();
-    							}
+    						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
+    							return left;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -865,467 +782,66 @@ type * type_check_expr_mul(nodeAST * node, sym_tbl * scope){
 								add_msg_line(err_buf, current, node->lineNumber);
     							return new_invalid_type();
     						}
-    						/*
-    						returnNode->nodeType = EXPR_BINARY_OP_MUL;
-    						returnNode->nodeValue.mul.left = _left;
-    						returnNode->nodeValue.mul.right = _right;
-    						*/
 }
 
 type * type_check_expr_div(nodeAST * node, sym_tbl * scope){
-    						type * left = type_check_expr(node->nodeValue.div.left, scope);
-    						type * right = type_check_expr(node->nodeValue.div.right, scope);
-    						if(valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
-    							switch(left->type){
-    								case TYPED_FLOAT: switch(right->type){
-    													case TYPED_FLOAT:
-    														return new_typed_float_type();
-    												    case LITERAL_FLOAT:
-    														return new_typed_float_type();
-     													case LITERAL_INT:
-    														return new_typed_float_type();
-    													case LITERAL_RUNE:
-    														return new_typed_float_type();
-    												  	default:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												}
-    								case TYPED_INT: switch(right->type){
-    													case TYPED_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case LITERAL_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case TYPED_RUNE:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													default: return new_typed_int_type();
-    												}
-    								case TYPED_RUNE: switch(right->type){
-    													case TYPED_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case TYPED_INT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case LITERAL_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													default: return new_typed_rune_type();
-    												}
-    								case LITERAL_INT:
-    												 switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT: return new_typed_int_type();
-    												 	case TYPED_RUNE: return new_typed_rune_type();
-    												 	case LITERAL_FLOAT: return new_float_type();
-    												 	case LITERAL_INT: return new_int_type();
-    												 	default: return new_int_type();
-    												 }
-    								case LITERAL_RUNE:
-													switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT: return new_typed_int_type();
-    												 	case TYPED_RUNE: return new_typed_rune_type();
-    												 	case LITERAL_FLOAT: return new_float_type();
-    												 	case LITERAL_INT: return new_int_type();
-    												 	default: return new_rune_type();
-    												 }
-    								case LITERAL_FLOAT:
-													switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												 	case TYPED_RUNE:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												 	default: return new_float_type();
-    												 }
-    								default: return new_invalid_type();
-    							}
+    						type * left = type_check_expr(node->nodeValue.mul.left, scope);
+    						type * right = type_check_expr(node->nodeValue.mul.right, scope);
+
+    						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
+    							return left;
     						}
     						else{
     							print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
-            					sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);								add_msg_line(err_buf, current, node->lineNumber);
+            					sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
+								add_msg_line(err_buf, current, node->lineNumber);
     							return new_invalid_type();
     						}
-    						/*
-    						returnNode->nodeType = EXPR_BINARY_OP_MUL;
-    						returnNode->nodeValue.div.left = _left;
-    						returnNode->nodeValue.div.right = _right;
-    						*/
 }
 
 type * type_check_expr_mod(nodeAST * node, sym_tbl * scope){
-    						type * left = type_check_expr(node->nodeValue.mod.left, scope);
-    						type * right = type_check_expr(node->nodeValue.mod.right, scope);
-    						if(valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
-    							switch(left->type){
-    								case TYPED_FLOAT: switch(right->type){
-    													case TYPED_FLOAT:
-    														return new_typed_float_type();
-    												    case LITERAL_FLOAT:
-    														return new_typed_float_type();
-    													case LITERAL_INT:
-    														return new_typed_float_type();
-    													case LITERAL_RUNE:
-    														return new_typed_float_type();
-    												  	default:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												}
-    								case TYPED_INT: switch(right->type){
-    													case TYPED_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case LITERAL_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case TYPED_RUNE:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													default: return new_typed_int_type();
-    												}
-    								case TYPED_RUNE: switch(right->type){
-    													case TYPED_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case TYPED_INT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case LITERAL_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													default: return new_typed_rune_type();
-    												}
-    								case LITERAL_INT:
-    												 switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT: return new_typed_int_type();
-    												 	case TYPED_RUNE: return new_typed_rune_type();
-    												 	case LITERAL_FLOAT: return new_float_type();
-    												 	case LITERAL_INT: return new_int_type();
-    												 	default: return new_int_type();
-    												 }
-    								case LITERAL_RUNE:
-													switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT: return new_typed_int_type();
-    												 	case TYPED_RUNE: return new_typed_rune_type();
-    												 	case LITERAL_FLOAT: return new_float_type();
-    												 	case LITERAL_INT: return new_int_type();
-    												 	default: return new_rune_type();
-    												 }
-    								case LITERAL_FLOAT:
-													switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												 	case TYPED_RUNE:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												 	default: return new_float_type();
-    												 }
-    								default: return new_invalid_type();
-    							}
+    						type * left = type_check_expr(node->nodeValue.mul.left, scope);
+    						type * right = type_check_expr(node->nodeValue.mul.right, scope);
+
+    						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
+    							return left;
     						}
     						else{
     							print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
             					sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            					add_msg_line(err_buf, current, node->lineNumber);
+								add_msg_line(err_buf, current, node->lineNumber);
     							return new_invalid_type();
     						}
-
-    						/*
-    						returnNode->nodeType = EXPR_BINARY_OP_MOD;
-    						returnNode->nodeValue.mod.left = _left;
-    						returnNode->nodeValue.mod.right = _right;
-    						*/
 }
 
 type * type_check_expr_sub(nodeAST * node, sym_tbl * scope){
-    						type * left = type_check_expr(node->nodeValue.sub.left, scope);
-    						type * right = type_check_expr(node->nodeValue.sub.right, scope);
-    						printf("%d %d\n", left->type, right->type);
-    						if(valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
-    							switch(left->type){
-    								case TYPED_FLOAT: switch(right->type){
-    													case TYPED_FLOAT:
-    														return new_typed_float_type();
-    												    case LITERAL_FLOAT:
-    														return new_typed_float_type();
-    													case LITERAL_INT:
-    														return new_typed_float_type();
-    													case LITERAL_RUNE:
-    														return new_typed_float_type();
-    												  	default:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												}
-    								case TYPED_INT: switch(right->type){
-    													case TYPED_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case LITERAL_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case TYPED_RUNE:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													default: return new_typed_int_type();
-    												}
-    								case TYPED_RUNE: switch(right->type){
-    													case TYPED_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case TYPED_INT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case LITERAL_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													default: return new_typed_rune_type();
-    												}
-    								case LITERAL_INT:
-    												 switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT: return new_typed_int_type();
-    												 	case TYPED_RUNE: return new_typed_rune_type();
-    												 	case LITERAL_FLOAT: return new_float_type();
-    												 	case LITERAL_INT: return new_int_type();
-    												 	default: return new_int_type();
-    												 }
-    								case LITERAL_RUNE:
-													switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT: return new_typed_int_type();
-    												 	case TYPED_RUNE: return new_typed_rune_type();
-    												 	case LITERAL_FLOAT: return new_float_type();
-    												 	case LITERAL_INT: return new_int_type();
-    												 	default: return new_rune_type();
-    												 }
-    								case LITERAL_FLOAT:
-													switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												 	case TYPED_RUNE:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												 	default: return new_float_type();
-    												 }
-    								default: return new_invalid_type();
-    							}
+    						type * left = type_check_expr(node->nodeValue.mul.left, scope);
+    						type * right = type_check_expr(node->nodeValue.mul.right, scope);
+
+    						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
+    							return left;
     						}
     						else{
     							print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
             					sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            					add_msg_line(err_buf, current, node->lineNumber);
+								add_msg_line(err_buf, current, node->lineNumber);
     							return new_invalid_type();
     						}
-
-    						/*
-    						returnNode->nodeType = EXPR_BINARY_OP_SUB;
-    						returnNode->nodeValue.sub.left = _left;
-    						returnNode->nodeValue.sub.right = _right;
-    						*/
 }
 
 type * type_check_expr_add(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.add.left, scope);
     						type * right = type_check_expr(node->nodeValue.add.right, scope);
-    						if(valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
-    							switch(left->type){
-    								case TYPED_FLOAT: switch(right->type){
-    													case TYPED_FLOAT:
-    														return new_typed_float_type();
-    												    case LITERAL_FLOAT:
-    														return new_typed_float_type();
-    													case LITERAL_INT:
-    														return new_typed_float_type();
-    													case LITERAL_RUNE:
-    														return new_typed_float_type();
-    												  	default:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												}
-    								case TYPED_INT: switch(right->type){
-    													case TYPED_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case LITERAL_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case TYPED_RUNE:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													default: return new_typed_int_type();
-    												}
-    								case TYPED_RUNE: switch(right->type){
-    													case TYPED_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case TYPED_INT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													case LITERAL_FLOAT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    													default: return new_typed_rune_type();
-    												}
-    								case LITERAL_INT:
-    												 switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT: return new_typed_int_type();
-    												 	case TYPED_RUNE: return new_typed_rune_type();
-    												 	case LITERAL_FLOAT: return new_float_type();
-    												 	case LITERAL_INT: return new_int_type();
-    												 	default: return new_int_type();
-    												 }
-    								case LITERAL_RUNE:
-													switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT: return new_typed_int_type();
-    												 	case TYPED_RUNE: return new_typed_rune_type();
-    												 	case LITERAL_FLOAT: return new_float_type();
-    												 	case LITERAL_INT: return new_int_type();
-    												 	default: return new_rune_type();
-    												 }
-    								case LITERAL_FLOAT:
-													switch(right->type){
-    												 	case TYPED_FLOAT: return new_typed_float_type();
-    												 	case TYPED_INT:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												 	case TYPED_RUNE:
-    														print_type_to_string(left, type_buf);
-    														print_type_to_string(right, type_buf_extra);
-            												sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
-            												add_msg_line(err_buf, current, node->lineNumber);
-    														return new_invalid_type();//You can't have this
-    												 	default: return new_float_type();
-    												 }
-    								default: return new_invalid_type();
-    							}
-    						}else if( (left->type == TYPED_STRING || left->type == LITERAL_STRING) && (right->type == TYPED_STRING || right->type == LITERAL_STRING) ){
-    							if(left->type == TYPED_STRING || right->type == TYPED_STRING)
-    								return new_typed_string_type();
-    							else
-    								return new_string_type();
+
+    						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
+    							return left;
     						}
-    						else{
+    						else if( left->type == LITERAL_STRING && right->type == LITERAL_STRING ){
+    							return left;
+    						}else{
     							print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
             					sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);								add_msg_line(err_buf, current, node->lineNumber);
@@ -1383,7 +899,7 @@ type * type_check_expr_or(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_xor(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.bitXor.left, scope);
     						type * right = type_check_expr(node->nodeValue.bitXor.right, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE || left->type == TYPED_INT || left->type == TYPED_RUNE ) && (right->type == LITERAL_INT || right->type == LITERAL_RUNE || right->type == TYPED_INT || right->type == TYPED_RUNE ) ){
+    						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
     							return new_int_type();
     						}
     						else{
@@ -1403,7 +919,7 @@ type * type_check_expr_xor(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_bitOr(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.bitOr.left, scope);
     						type * right = type_check_expr(node->nodeValue.bitOr.right, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE || left->type == TYPED_INT || left->type == TYPED_RUNE ) && (right->type == LITERAL_INT || right->type == LITERAL_RUNE || right->type == TYPED_INT || right->type == TYPED_RUNE ) ){
+    						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
     							return new_int_type();
     						}
     						else{
@@ -1423,7 +939,7 @@ type * type_check_expr_bitOr(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_lshift(nodeAST * node, sym_tbl * scope) {
     						type * left = type_check_expr(node->nodeValue.shiftLeft.left, scope);
     						type * right = type_check_expr(node->nodeValue.shiftLeft.right, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE || left->type == TYPED_INT || left->type == TYPED_RUNE ) && (right->type == LITERAL_INT || right->type == TYPED_INT ) ){
+    						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
     							return new_int_type();
     						}
     						else{
@@ -1443,7 +959,7 @@ type * type_check_expr_lshift(nodeAST * node, sym_tbl * scope) {
 type * type_check_expr_rshift(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.shiftRight.left, scope);
     						type * right = type_check_expr(node->nodeValue.shiftRight.right, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE || left->type == TYPED_INT || left->type == TYPED_RUNE ) && (right->type == LITERAL_INT || right->type == LITERAL_RUNE || right->type == TYPED_INT || right->type == TYPED_RUNE ) ){
+    						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
     							return new_int_type();
     						}
     						else{
@@ -1462,7 +978,7 @@ type * type_check_expr_rshift(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_bitAnd(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.bitAnd.left, scope);
     						type * right = type_check_expr(node->nodeValue.bitAnd.right, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE || left->type == TYPED_INT || left->type == TYPED_RUNE ) && (right->type == LITERAL_INT || right->type == LITERAL_RUNE || right->type == TYPED_INT || right->type == TYPED_RUNE ) ){
+    						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
     							return new_int_type();
     						}
     						else{
@@ -1482,7 +998,7 @@ type * type_check_expr_bitAnd(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_bitAndNot(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.shiftRight.left, scope);
     						type * right = type_check_expr(node->nodeValue.shiftRight.right, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE || left->type == TYPED_INT || left->type == TYPED_RUNE ) && (right->type == LITERAL_INT || right->type == LITERAL_RUNE || right->type == TYPED_INT || right->type == TYPED_RUNE ) ){
+    						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
     							return new_int_type();
     						}
     						else{
@@ -1502,8 +1018,8 @@ type * type_check_expr_bitAndNot(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_unary_pos(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.pos.expr, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE || left->type == TYPED_INT || left->type == TYPED_FLOAT || left->type == TYPED_RUNE) ){
-    							return type_cpy(left);
+    						if( left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE ){
+    							return (left);
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -1522,8 +1038,8 @@ type * type_check_expr_unary_pos(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_unary_neg(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.neg.expr, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE || left->type == TYPED_INT || left->type == TYPED_FLOAT || left->type == TYPED_RUNE) ){
-    							return type_cpy(left);
+    						if( left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE ){
+    							return (left);
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -1542,7 +1058,7 @@ type * type_check_expr_unary_neg(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_bitNot(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.bitNot.expr, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == TYPED_INT || left->type == TYPED_RUNE) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) ){
     							return new_int_type();
     						}
     						else{
@@ -1579,7 +1095,7 @@ type * type_check_expr_not(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_eq(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.equal.left, scope);
     						type * right = type_check_expr(node->nodeValue.equal.right, scope);
-    						if(compare_type(left, right) == -1){
+    						if(valid_type_comparison(left, right) == -1){
     								print_type_to_string(left, type_buf);
     								print_type_to_string(right, type_buf_extra);
             						sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
@@ -1601,7 +1117,7 @@ type * type_check_expr_eq(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_neq(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.nequal.left, scope);
     						type * right = type_check_expr(node->nodeValue.nequal.right, scope);
-    						if(compare_type(left, right) == -1){
+    						if(valid_type_comparison(left, right) == -1){
     							print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
             					sprintf(err_buf, "Left is %s and Right is %s and they cannot be compared at line %zd", type_buf, type_buf_extra, node->lineNumber);
@@ -1713,16 +1229,16 @@ slice               : '[' expr ':' expr ']'                       {$$ = newAddre
     				type * value;
     				if( node->nodeType == EXPR_ADDRESS_SLICE ){
     					if(node->nodeValue.addressSlice.start != NULL){
-    						value = type_check_expr(node->nodeValue.addressSlice.start, scope);
-    						if(value->type != LITERAL_INT || value->type != TYPED_INT){
+    						value = get_alias_type(type_check_expr(node->nodeValue.addressSlice.start, scope));
+    						if(value->type != LITERAL_INT){
             					sprintf(err_buf, "Expecting a int type for slice indexing at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
     							return -1;
     						}
     					}
     					if(node->nodeValue.addressSlice.end != NULL){
-    						value = type_check_expr(node->nodeValue.addressSlice.end, scope);
-    						if(value->type != LITERAL_INT || value->type != TYPED_INT){
+    						value = get_alias_type(type_check_expr(node->nodeValue.addressSlice.start, scope));
+    						if(value->type != LITERAL_INT){
             					sprintf(err_buf, "Expecting a int type for slice indexing at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
     							return -1;
@@ -1731,24 +1247,24 @@ slice               : '[' expr ':' expr ']'                       {$$ = newAddre
     					return 0;
     				}else{
     					if(node->nodeValue.addressSliceFull.start != NULL){
-    						value = type_check_expr(node->nodeValue.addressSliceFull.start, scope);
-    						if(value->type != LITERAL_INT || value->type != TYPED_INT){
+    						value = get_alias_type(type_check_expr(node->nodeValue.addressSlice.start, scope));
+    						if(value->type != LITERAL_INT){
             					sprintf(err_buf, "Expecting a int type for slice indexing at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
     							return -1;
     						}
     					}
     					if(node->nodeValue.addressSliceFull.end != NULL){
-    						value = type_check_expr(node->nodeValue.addressSliceFull.end, scope);
-    						if(value->type != LITERAL_INT || value->type != TYPED_INT){
+    						value = get_alias_type(type_check_expr(node->nodeValue.addressSlice.start, scope));
+    						if(value->type != LITERAL_INT){
             					sprintf(err_buf, "Expecting a int type for slice indexing at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
     							return -1;
     						}
     					}
     					if(node->nodeValue.addressSliceFull.max != NULL){
-    						value = type_check_expr(node->nodeValue.addressSliceFull.max, scope);
-    						if(value->type != LITERAL_INT || value->type != TYPED_INT){
+    						value = get_alias_type(type_check_expr(node->nodeValue.addressSlice.start, scope));
+    						if(value->type != LITERAL_INT){
             					sprintf(err_buf, "Expecting a int type for slice indexing at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
     							return -1;
@@ -1775,7 +1291,7 @@ returnNode->nodeValue.cast.expr = _expr;
        return new_invalid_type();
     }
     //
-    return type_cpy(left);
+    return (left);
 }
 
 type * type_check_expr_append(nodeAST * node, sym_tbl * scope){
@@ -1789,7 +1305,8 @@ type * type_check_expr_append(nodeAST * node, sym_tbl * scope){
     | append_ '(' primary_expr ',' expr_list ')' slice
 					        {$$ = newSlice(newAppend($3, $5, _treeNodeAllocator), $7, _treeNodeAllocator);}
 */
-	type * target = type_check_expr(node->nodeValue.append.target, scope);
+	type * ret = type_check_expr(node->nodeValue.append.target, scope);
+	type * target = get_alias_type(type_check_expr(node->nodeValue.append.target, scope));
 	type * expr;
 	if(target->type != SLICE_TYPE){
 		print_type_to_string(target, type_buf);
@@ -1805,19 +1322,19 @@ type * type_check_expr_append(nodeAST * node, sym_tbl * scope){
 	}
 	//Here we deviate from golite to allow append(x, 1,2,3,4,4,5)
 	for(int i = 0; i < expr->spec_type.list_type.list_size; i++){
-		if(compare_type(expr->spec_type.list_type.type_list[i], target->spec_type.slice_type.s_type) == -1){
-			print_type_to_string(target->spec_type.slice_type.s_type, type_buf);
+		if(valid_type_comparison(expr->spec_type.list_type.type_list[i], get_alias_type(target->spec_type.slice_type.s_type)) == -1 && valid_type_comparison(expr->spec_type.list_type.type_list[i], (target->spec_type.slice_type.s_type)) == -1){
+			print_type_to_string(get_alias_type(target->spec_type.slice_type.s_type), type_buf);
 			print_type_to_string(expr->spec_type.list_type.type_list[i], type_buf_extra);
        		sprintf(err_buf, "Subsequent arguments must match %s. It is currently of %s at line %zd", type_buf, type_buf_extra ,node->lineNumber);
 			add_msg_line(err_buf, current, node->lineNumber);
     		return new_invalid_type();
 		}
 	}
-	return type_cpy(target);
+	return (ret);
 }
 type * type_check_expr(nodeAST * node, sym_tbl * scope){
 	    	switch(node->nodeType){
-    		case IDENTIFIER: return get_alias_type(type_check_expr_id(node, scope));
+    		case IDENTIFIER: return type_check_expr_id(node, scope);
     		case LITERAL_INT: return new_int_type();
     						/*
    	 						returnNode->nodeType = LITERAL_INT;
@@ -1936,7 +1453,7 @@ int type_check_ret_stmt(nodeAST * node, sym_tbl * scope){
 	tbl_entry * ret_entry = sym_tbl_find_entry("return", scope);
 	type * act_ret;
 	if(node->nodeValue.ret.expr != NULL)
-		act_ret = get_alias_type(type_check_expr(node->nodeValue.ret.expr, scope));
+		act_ret = (type_check_expr(node->nodeValue.ret.expr, scope));
 	else
 		act_ret = NULL;
 	if(ret_entry == NULL && act_ret != NULL){
@@ -1951,9 +1468,8 @@ int type_check_ret_stmt(nodeAST * node, sym_tbl * scope){
 		return 0;
 	}else if(ret_entry == NULL && act_ret == NULL)
 		return 0;
-
-	type * ret_type = get_alias_type(ret_entry->type_info);
-	if(compare_type(act_ret, ret_type) == -1){
+	type * ret_type = (ret_entry->type_info);
+	if(valid_type_comparison(act_ret, ret_type) == -1 && valid_type_comparison(get_alias_type(act_ret), ret_type) == -1 && valid_type_comparison(act_ret, get_alias_type(ret_type)) == -1){
 		print_type_to_string(act_ret, type_buf);
 		print_type_to_string(ret_type, type_buf_extra);
        	sprintf(err_buf, "Return statement must match %s. It is currently of %s at line %zd", type_buf_extra, type_buf ,node->lineNumber);
@@ -2043,17 +1559,22 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 										}else{
 											tbl_entry * entry = sym_tbl_find_entry_scoped(id->nodeValue.identifier, scope);
 											if(entry == NULL){
-												make_typed(right->spec_type.list_type.type_list[counter]);
 												sym_tbl_add_entry(new_tbl_entry(id->nodeValue.identifier, id->lineNumber  ,id , right->spec_type.list_type.type_list[counter]), scope);
 												num_added++;
+											}else{
+												if(valid_type_comparison(entry->type_info, right->spec_type.list_type.type_list[counter]) == -1){ //Need to check that type with type_check_expr_list
+													print_type_to_string(entry->type_info, type_buf);
+													print_type_to_string(right->spec_type.list_type.type_list[counter], type_buf_extra);
+													sprintf(err_buf, "ID %s was previous declared with type %s. Assigned type is %s at line %zd" ,id->nodeValue.identifier,  type_buf, type_buf_extra ,node->lineNumber);
+													add_msg_line(err_buf, current, node->lineNumber);
+												return 0;
+												}
 											}
+
 										}
 										counter++;
 									}
-      								if(counter != right->spec_type.list_type.list_size){
-										sprintf(err_buf, "Expression list size does not match at line %zd" ,node->lineNumber);
-										add_msg_line(err_buf, current, node->lineNumber);
-      								}else if(num_added == 0){
+      								if(num_added == 0){
 										sprintf(err_buf, "No new names on left hand side of := at line %zd" ,node->lineNumber);
 										add_msg_line(err_buf, current, node->lineNumber);
       								}
@@ -2077,7 +1598,7 @@ simple_stmt_v       : expr                                        {$$ = $1;}
                     	case STATE_INC:
                     					{
                     						type * inc_type = type_check_expr(node->nodeValue.inc.expr, scope);
-                    						if(inc_type->type != LITERAL_INT && inc_type->type != LITERAL_FLOAT && inc_type->type != LITERAL_RUNE && inc_type->type != TYPED_INT && inc_type->type != TYPED_FLOAT && inc_type->type != TYPED_RUNE){
+                    						if(inc_type->type != LITERAL_INT && inc_type->type != LITERAL_FLOAT && inc_type->type != LITERAL_RUNE){
                     							print_type_to_string(inc_type, type_buf);
        											sprintf(err_buf, "Cannot convert 1 to %s at line %zd",type_buf ,node->lineNumber);
 												add_msg_line(err_buf, current, node->lineNumber);
@@ -2086,7 +1607,7 @@ simple_stmt_v       : expr                                        {$$ = $1;}
                     					}
                     	case STATE_DEC:{
                     						type * dec_type = type_check_expr(node->nodeValue.dec.expr, scope);
-                    						if(dec_type->type != LITERAL_INT && dec_type->type != LITERAL_FLOAT && dec_type->type != LITERAL_RUNE && dec_type->type != TYPED_INT && dec_type->type != TYPED_FLOAT && dec_type->type != TYPED_RUNE){
+                    						if(dec_type->type != LITERAL_INT && dec_type->type != LITERAL_FLOAT && dec_type->type != LITERAL_RUNE){
                     							print_type_to_string(dec_type, type_buf);
        											sprintf(err_buf, "Cannot convert 1 to %s at line %zd",type_buf ,node->lineNumber);
 												add_msg_line(err_buf, current, node->lineNumber);
@@ -2123,7 +1644,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
 												add_msg_line(err_buf, current, node->lineNumber);
       										}else{
       										for(int i = 0; i < left->spec_type.list_type.list_size; i++){
-      											if(compare_type(left->spec_type.list_type.type_list[i], right->spec_type.list_type.type_list[i]) == -1 || valid_type_assign(left->spec_type.list_type.type_list[i], right->spec_type.list_type.type_list[i]) == -1){
+      											if(valid_type_comparison(left->spec_type.list_type.type_list[i], right->spec_type.list_type.type_list[i]) == -1){
       												print_type_to_string(left->spec_type.list_type.type_list[i], type_buf);
       												print_type_to_string(right->spec_type.list_type.type_list[i], type_buf_extra);
 													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2137,7 +1658,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_ADD: {
                     							type * left = type_check_expr(node->nodeValue.assignAdd.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignAdd.right, scope);
-                    							if(compare_type(left, right) == -1 || valid_type_assign(left, right) == -1){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2148,7 +1669,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_SUB: {
                     							type * left = type_check_expr(node->nodeValue.assignSub.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignSub.right, scope);
-                    							if(compare_type(left, right) == -1 || valid_type_assign(left, right) == -1){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2160,7 +1681,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     							type * left = type_check_expr(node->nodeValue.assignMul.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignMul.right, scope);
                     							//printf("%d %d %d\n", left->type, node->nodeValue.assignMul.right->nodeType, EXPR_BINARY_OP_ADD);
-                    							if(compare_type(left, right) == -1 || valid_type_assign(left, right) == -1){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2171,7 +1692,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_DIV: {
                     							type * left = type_check_expr(node->nodeValue.assignDiv.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignDiv.right, scope);
-                    							if(compare_type(left, right) == -1 || valid_type_assign(left, right) == -1){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2182,7 +1703,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_MOD: {
                     							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
-                    							if(compare_type(left, right) == -1 || valid_type_assign(left, right) == -1){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2193,7 +1714,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_AND: {
                     							type * left = type_check_expr(node->nodeValue.assignAnd.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignAnd.right, scope);
-    											if( (left->type == LITERAL_INT || right->type == TYPED_INT || right->type == TYPED_RUNE || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT || right->type == TYPED_INT || right->type == TYPED_RUNE) ){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2204,7 +1725,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_OR:	   {
                     							type * left = type_check_expr(node->nodeValue.assignOr.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignOr.right, scope);
-    											if( (left->type == LITERAL_INT || right->type == TYPED_INT || right->type == TYPED_RUNE || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT || right->type == TYPED_INT || right->type == TYPED_RUNE) ){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2215,7 +1736,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_XOR: {
                     							type * left = type_check_expr(node->nodeValue.assignXor.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignXor.right, scope);
-    											if( (left->type == LITERAL_INT || right->type == TYPED_INT || right->type == TYPED_RUNE || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT || right->type == TYPED_INT || right->type == TYPED_RUNE) ){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2226,7 +1747,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_SHIFTLEFT: {
                     							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
-    											if( !((left->type == LITERAL_INT || right->type == TYPED_INT || right->type == TYPED_RUNE || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT || right->type == TYPED_INT)) ){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be of int type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2237,8 +1758,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_SHIFTRIGHT: {
                     							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
-                    							printf("%d %d \n", left->type, right->type);
-    											if( !((left->type == LITERAL_INT || right->type == TYPED_INT || right->type == TYPED_RUNE || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT || right->type == TYPED_INT)) ){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be int type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2249,7 +1769,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_ANDNOT: {
                     							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
-    											if( (left->type == LITERAL_INT || right->type == TYPED_INT || right->type == TYPED_RUNE || left->type == LITERAL_RUNE) && (right->type == LITERAL_RUNE || right->type == LITERAL_INT || right->type == TYPED_INT || right->type == TYPED_RUNE) ){
+                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -2310,7 +1830,8 @@ case_clause         : case_ expr_list ':' stmt_list               {$$ = newCaseC
 					for(int j = 0; j < case_type_list->spec_type.list_type.list_size; j++){
 						if(switch_expr != NULL){
 						//Compare the type
-							if( valid_type_assign( switch_expr, case_type_list->spec_type.list_type.type_list[j]) == -1){
+							if( valid_type_comparison( switch_expr, case_type_list->spec_type.list_type.type_list[j]) == -1){
+								printf("afdsafsd %d %d\n", switch_expr->type, case_type_list->spec_type.list_type.type_list[j]->type);
 								print_type_to_string(switch_expr, type_buf);
 								print_type_to_string(case_type_list->spec_type.list_type.type_list[j], type_buf_extra);
        							sprintf(err_buf, "Switch statment expression must match case expression %s. It is currently of %s at line %zd", type_buf, type_buf_extra ,case_cls->nodeValue.caseClause.expr->lineNumber);
