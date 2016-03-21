@@ -1058,7 +1058,7 @@ type * type_check_expr_unary_neg(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_bitNot(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.bitNot.expr, scope);
-    						if( (left->type == LITERAL_INT || left->type == LITERAL_FLOAT) ){
+    						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
     							return new_int_type();
     						}
     						else{
