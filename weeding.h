@@ -36,7 +36,7 @@ bool weedingFunctionReturned(nodeAST* _funcNode) {
 	return weedingFunctionReturned(_funcNode->nodeValue.caseClause.state);
     case STATE_UTILITY_CASE_LIST: {
 	nodeAST* ptr = _funcNode;
-	while (ptr != NULL) {
+       while (ptr != NULL) {
 	    if (!weedingFunctionReturned(ptr->nodeValue.stateList.state)) {
 		return false;
 	    }
@@ -483,37 +483,56 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     }
     case STATE_IF: {
 	nodeAST* condition = _state->nodeValue.ifBlock.condition;
-	switch (condition->nodeValue.ifCondition.state->nodeType) {
-	case STATE_CONTROL_BREAK: {
-	    yyerror("unexpected break, expecting expression");
-	    return;
-	}
-	case STATE_CONTROL_CONTINUE: {
-	    yyerror("unexpected continue, expecting expression");
-	    return;
-	}
-	default: {
+	if (condition->nodeValue.ifCondition.state != NULL) {
+	    switch (condition->nodeValue.ifCondition.state->nodeType) {
+	    case STATE_CONTROL_BREAK: {
+		yyerror("unexpected break, expecting expression");
+		return;
+	    }
+	    case STATE_CONTROL_CONTINUE: {
+		yyerror("unexpected continue, expecting expression");
+		return;
+	    }
+	    default: {
+		weedingStatement(condition->nodeValue.ifCondition.state, _env);
+		weedingExpr(condition->nodeValue.ifCondition.expr);
+		weedingEnvironment newFrame = _env;
+		newFrame.FLAG_IF = true;
+		weedingStatement(_state->nodeValue.ifBlock.block_true, newFrame);
+		return;
+	    }
+	    }
+	} else {
 	    weedingStatement(condition->nodeValue.ifCondition.state, _env);
 	    weedingExpr(condition->nodeValue.ifCondition.expr);
 	    weedingEnvironment newFrame = _env;
 	    newFrame.FLAG_IF = true;
 	    weedingStatement(_state->nodeValue.ifBlock.block_true, newFrame);
-	    return;
-	}
 	}
     }
     case STATE_IF_ELSE: {
 	nodeAST* condition = _state->nodeValue.ifElseBlock.condition;
-	switch (condition->nodeValue.ifCondition.state->nodeType) {
-	case STATE_CONTROL_BREAK: {
-	    yyerror("unexpected break, expecting expression");
-	    return;
-	}
-	case STATE_CONTROL_CONTINUE: {
-	    yyerror("unexpected continue, expecting expression");
-	    return;
-	}
-	default: {
+	if (condition->nodeValue.ifCondition.state != NULL) {
+	    switch (condition->nodeValue.ifCondition.state->nodeType) {
+	    case STATE_CONTROL_BREAK: {
+		yyerror("unexpected break, expecting expression");
+		return;
+	    }
+	    case STATE_CONTROL_CONTINUE: {
+		yyerror("unexpected continue, expecting expression");
+		return;
+	    }
+	    default: {
+		weedingStatement(condition->nodeValue.ifCondition.state, _env);
+		weedingExpr(condition->nodeValue.ifCondition.expr);
+		weedingEnvironment newFrame = _env;
+		newFrame.FLAG_IF = true;
+		weedingStatement(_state->nodeValue.ifElseBlock.block_true, newFrame);
+		weedingStatement(_state->nodeValue.ifElseBlock.block_false, newFrame);
+		return;
+	    }
+	    }
+	} else {
 	    weedingStatement(condition->nodeValue.ifCondition.state, _env);
 	    weedingExpr(condition->nodeValue.ifCondition.expr);
 	    weedingEnvironment newFrame = _env;
@@ -522,27 +541,35 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
 	    weedingStatement(_state->nodeValue.ifElseBlock.block_false, newFrame);
 	    return;
 	}
-	}
     }
     case STATE_SWITCH : {
 	nodeAST* condition = _state->nodeValue.switchBlock.condition;
-	switch (condition->nodeValue.switchBlock.condition->nodeType) {
-	case STATE_CONTROL_BREAK: {
-	    yyerror("unexpected break, expecting expression");
-	    return;
-	}
-	case STATE_CONTROL_CONTINUE: {
-	    yyerror("unexpected continue, expecting expression");
-	    return;
-	}
-	default: {
+	if (condition->nodeValue.switchBlock.condition != NULL) {
+	    switch (condition->nodeValue.switchBlock.condition->nodeType) {
+	    case STATE_CONTROL_BREAK: {
+		yyerror("unexpected break, expecting expression");
+		return;
+	    }
+	    case STATE_CONTROL_CONTINUE: {
+		yyerror("unexpected continue, expecting expression");
+		return;
+	    }
+	    default: {
+		weedingStatement(condition->nodeValue.switchCondition.state, _env);
+		weedingExpr(condition->nodeValue.switchCondition.expr);
+		weedingEnvironment newFrame = _env;
+		newFrame.FLAG_SWITCH = true;
+		weedingStatement(_state->nodeValue.switchBlock.block, newFrame);
+		return;
+	    }
+	    }
+	} else {
 	    weedingStatement(condition->nodeValue.switchCondition.state, _env);
 	    weedingExpr(condition->nodeValue.switchCondition.expr);
 	    weedingEnvironment newFrame = _env;
 	    newFrame.FLAG_SWITCH = true;
 	    weedingStatement(_state->nodeValue.switchBlock.block, newFrame);
 	    return;
-	}
 	}
     }
     case STATE_UTILITY_CASE_CLAUSE: {
@@ -569,6 +596,12 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     }
     case STATE_FOR: {
 	nodeAST* condition = _state->nodeValue.forBlock.condition;
+	if (condition == NULL) {
+	    weedingEnvironment newFrame = _env;
+	    newFrame.FLAG_FOR = true;
+	    weedingStatement(_state->nodeValue.forBlock.block, newFrame);
+	    return;
+	}
 	if (condition->nodeValue.forClause.init->nodeType == STATE_CONTROL_BREAK) {
 	    yyerror("unexpected break, expecting expression");
 	    return;
@@ -654,6 +687,18 @@ void weedingInit(nodeAST* _program) {
 	return;
     }
     case PROG_FUNCTION: {
+	if (strcmp(_program->nodeValue.function.identifier->nodeValue.identifier,
+		   "main") == 0L){
+	    if (_program->nodeValue.function.type != NULL) {
+		yyerror("function main must have no arguments and no return value");
+		return;
+	    }
+	    if (_program->nodeValue.function.pramList != NULL) {
+		yyerror("function main must have no arguments and no return value");
+	    }
+	    weedingStatement(_program->nodeValue.function.block, initEnv);
+	    return;
+	}
 	if (_program->nodeValue.function.type != NULL) {
 	    if (!weedingFunctionReturned(_program->nodeValue.function.block)) {
 		yyerror("missing return at end of function");
