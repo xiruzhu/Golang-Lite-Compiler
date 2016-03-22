@@ -448,15 +448,32 @@ type * type_check_params_list(nodeAST * node, sym_tbl * scope){
 
     		for(nodeAST * j = i->nodeValue.pramDeclareList.pram->nodeValue.pramDeclare.idList; j != NULL; j = j->nodeValue.identifierList.next){
     			if(j != NULL){
-    				sym_tbl_add_entry(new_tbl_entry(j->nodeValue.identifierList.identifier->nodeValue.identifier, j->nodeValue.identifierList.identifier->lineNumber, j->nodeValue.identifierList.identifier, id_list_type), scope);
 
-    				if(size == param_list->spec_type.list_type.list_cap){
-    					param_list->spec_type.list_type.type_list = ralloc(param_list->spec_type.list_type.type_list, size *2);
-    					param_list->spec_type.list_type.list_cap *= 2;
+    				if(strcmp(j->nodeValue.identifierList.identifier->nodeValue.identifier, "_") != 0){
+    					tbl_entry * value = sym_tbl_find_entry_scoped(j->nodeValue.identifierList.identifier->nodeValue.identifier, scope);
+    					if(value != NULL){
+							sprintf(err_buf, "Redeclaration of %s when declaring id at line %zd. \nPrevious declaration at line %zd", j->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber, value->line_num);
+							add_msg_line(err_buf, current, node->lineNumber);
+    					}else{
+    						value = new_tbl_entry(j->nodeValue.identifierList.identifier->nodeValue.identifier, j->nodeValue.identifierList.identifier->lineNumber, j->nodeValue.identifierList.identifier, id_list_type);
+    					}
+    					sym_tbl_add_entry(value, scope);
+
+    					if(size == param_list->spec_type.list_type.list_cap){
+    						param_list->spec_type.list_type.type_list = ralloc(param_list->spec_type.list_type.type_list, size *2);
+    						param_list->spec_type.list_type.list_cap *= 2;
+    					}
+    					param_list->spec_type.list_type.type_list[size++] = id_list_type;
+    				}else{
+    					if(size == param_list->spec_type.list_type.list_cap){
+    						param_list->spec_type.list_type.type_list = ralloc(param_list->spec_type.list_type.type_list, size *2);
+    						param_list->spec_type.list_type.list_cap *= 2;
+    					}
+    					param_list->spec_type.list_type.type_list[size++] = new_underscore_type();
+
+    					}
     				}
-    				param_list->spec_type.list_type.type_list[size++] = id_list_type;
     			}
-    		}
     	}
     }
     param_list->spec_type.list_type.list_size = size;
@@ -665,7 +682,6 @@ type * type_check_expr_func(nodeAST * node, sym_tbl * scope){
     					return new_invalid_type();
     				}
     				else{
-
     					//Check the params type to see if it matches
     					type * params = entry->type_info->spec_type.func_type.params_type;
     					if(node->nodeValue.funcCall.expr != NULL){
@@ -676,12 +692,18 @@ type * type_check_expr_func(nodeAST * node, sym_tbl * scope){
     							return new_invalid_type();
     						}
     						for(int i = 0; i < input->spec_type.list_type.list_size; i++){
-    							if(valid_type_comparison(input->spec_type.list_type.type_list[i], params->spec_type.list_type.type_list[i]) == -1 && valid_type_comparison(input->spec_type.list_type.type_list[i], get_alias_type(params->spec_type.list_type.type_list[i])) && valid_type_comparison(get_alias_type(input->spec_type.list_type.type_list[i]), params->spec_type.list_type.type_list[i])){
+    							if(params->spec_type.list_type.type_list[i]->type == TYPE_UNDERSCORE && input->spec_type.list_type.type_list[i]->type != INVALID_TYPE && input->spec_type.list_type.type_list[i]->type != TYPE_UNDERSCORE){
+    								//It's valid so do nothing
+    							}else if(valid_type_comparison(input->spec_type.list_type.type_list[i], params->spec_type.list_type.type_list[i]) == -1 && valid_type_comparison(input->spec_type.list_type.type_list[i], get_alias_type(params->spec_type.list_type.type_list[i])) && valid_type_comparison(get_alias_type(input->spec_type.list_type.type_list[i]), params->spec_type.list_type.type_list[i])){
 									sprintf(err_buf, "Argument type does not match function argument type at line %zd",  node->lineNumber);
 									add_msg_line(err_buf, current, node->lineNumber);
     								return new_invalid_type();
     							}
     						}
+    					}else if(params->spec_type.list_type.list_size != 0){
+							sprintf(err_buf, "Argument number does not match function requirements at line %zd",  node->lineNumber);
+							add_msg_line(err_buf, current, node->lineNumber);
+    						return new_invalid_type();
     					}
     					if(entry->type_info->spec_type.func_type.return_type == NULL)
     						return new_invalid_type();
