@@ -7,6 +7,7 @@
 #include "treeNode.h"
 #include "prettyPrint.h"
 #include "type_check.h"
+#include "weeding.h"
 
 memoryList _treeNodeAllocator = NULL;
 nodeAST* _ast;
@@ -45,7 +46,7 @@ float_lit		{decimal}"."{decimal}|{decimal}"."|{decimal}"."{exponent}|{decimal}".
 string_lit		{interpreted_string_lit}|{raw_string_lit}
 raw_string_lit	\`[^`]*\`
 interpreted_string_lit	\"([^\\\"\n]|\\.)*\"
-rune_lit		(\'.\')|(\'\\.\')
+rune_lit		(\'[^'\\]\')|(\'\\[abfnrtv\\’]\')
 
 ID				[a-zA-Z_][a-zA-Z0-9_]*
 semi_colon		";"
@@ -440,8 +441,9 @@ int main(int argc, char ** argv){
 		}
 	 }
 
-
-	//prettyPrint(_ast, stream);
+	// prettyPrint(_ast, stdout);
+	weedingInit(_ast);
+	
 	type_check_prog(_ast, 0);
 
 }
