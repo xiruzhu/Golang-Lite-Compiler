@@ -596,6 +596,15 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     }
     case STATE_FOR: {
 	nodeAST* condition = _state->nodeValue.forBlock.condition;
+	if (condition == NULL) {
+	    weedingStatement(condition->nodeValue.forClause.init, _env);
+	    weedingExpr(condition->nodeValue.forClause.condition);
+	    weedingStatement(condition->nodeValue.forClause.step, _env);
+	    weedingEnvironment newFrame = _env;
+	    newFrame.FLAG_FOR = true;
+	    weedingStatement(_state->nodeValue.forBlock.block, newFrame);
+	    return;
+	}
 	if (condition->nodeValue.forClause.init->nodeType == STATE_CONTROL_BREAK) {
 	    yyerror("unexpected break, expecting expression");
 	    return;
@@ -681,6 +690,18 @@ void weedingInit(nodeAST* _program) {
 	return;
     }
     case PROG_FUNCTION: {
+	if (strcmp(_program->nodeValue.function.identifier->nodeValue.identifier,
+		   "main") == 0L){
+	    if (_program->nodeValue.function.type != NULL) {
+		yyerror("function main must have no arguments and no return value");
+		return;
+	    }
+	    if (_program->nodeValue.function.pramList != NULL) {
+		yyerror("function main must have no arguments and no return value");
+	    }
+	    weedingStatement(_program->nodeValue.function.block, initEnv);
+	    return;
+	}
 	if (_program->nodeValue.function.type != NULL) {
 	    if (!weedingFunctionReturned(_program->nodeValue.function.block)) {
 		yyerror("missing return at end of function");
