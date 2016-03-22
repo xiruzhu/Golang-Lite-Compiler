@@ -446,6 +446,7 @@ int valid_type_numeric(type * arg0){
 		case LITERAL_RUNE: return 0;
 		case LITERAL_INT: return 0;
 		case LITERAL_FLOAT: return 0;
+		case ALIAS_TYPE: return valid_type_numeric(get_alias_type(arg0));
 		default: return -1;
 	}
 }

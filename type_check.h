@@ -20,6 +20,7 @@
 extern nodeAST* _ast;
 
 int scope_flag;
+int iteration = 0;
 
 char err_buf[MAX_ERR_MSG];
 char type_buf[MAX_ERR_MSG];
@@ -881,7 +882,6 @@ type * type_check_expr_sub(nodeAST * node, sym_tbl * scope){
 type * type_check_expr_add(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.add.left, scope);
     						type * right = type_check_expr(node->nodeValue.add.right, scope);
-
     						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
     							return left;
     						}
@@ -1686,7 +1686,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN:  {
                     						type * left = type_check_expr_list(node->nodeValue.assign.left, scope);
       										type * right = type_check_expr_list(node->nodeValue.assign.right, scope);
-      										if(left->spec_type.list_type.list_size != left->spec_type.list_type.list_size){
+      										if(left->spec_type.list_type.list_size != right->spec_type.list_type.list_size){
 												sprintf(err_buf, "Expression list size does not match at line %zd" ,node->lineNumber);
 												add_msg_line(err_buf, current, node->lineNumber);
       										}else{
