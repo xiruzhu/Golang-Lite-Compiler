@@ -626,7 +626,7 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
 	}
 	nodeAST* ptr = _state->nodeValue.shortDeclare.left;
 	while (ptr != NULL) {
-	    if (ptr->nodeType != IDENTIFIER) {
+	    if (ptr->nodeValue.exprList.expr->nodeType != IDENTIFIER) {
 		yyerror("non-name on left side of :=");
 		return;
 	    }
