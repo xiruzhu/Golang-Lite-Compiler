@@ -406,7 +406,8 @@ int type_check_func(nodeAST * node, sym_tbl * scope){
 	type * function = new_func_type();
 	type * return_type = NULL;
 	//add it to the new scope immediately to allow for recursion
-	sym_tbl_add_entry(new_tbl_entry(node->nodeValue.function.identifier->nodeValue.identifier, node->lineNumber, node, function), scope);
+	if(strcmp(node->nodeValue.function.identifier->nodeValue.identifier, "_") != 0){
+		sym_tbl_add_entry(new_tbl_entry(node->nodeValue.function.identifier->nodeValue.identifier, node->lineNumber, node, function), scope);
 
 	sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
 	if(node->nodeValue.function.type != NULL)
@@ -423,6 +424,7 @@ int type_check_func(nodeAST * node, sym_tbl * scope){
 	//Instead we add it to the current_queue
 	type_check_block(node->nodeValue.function.block, new_scope);
 	//add_to_queue(node->nodeValue.function.block, new_scope);
+	}
 	return 0;
 }
 
@@ -1556,6 +1558,7 @@ int type_check_if_else_stmt(nodeAST * node, sym_tbl * scope){
 	if(node->nodeValue.ifElseBlock.block_false == NULL){ //Must be block
     	return 0;
     }
+    printf("TESssssting\n");
     type_check_stmt(node->nodeValue.ifElseBlock.block_false, scope);
     return 0;
 
@@ -1958,7 +1961,7 @@ stmt                : var_decl                                    {$$ = $1;}
    		case STATE_PRINTLN: type_check_print_stmt(node, scope); break;
    		case STATE_RETURN: type_check_ret_stmt(node, scope); break;
    		case STATE_IF: type_check_if_stmt(node, scope); break;
-   		case STATE_IF_ELSE: type_check_if_stmt(node, scope); break;
+   		case STATE_IF_ELSE: type_check_if_else_stmt(node, scope); break;
    		case STATE_SWITCH: type_check_switch_stmt(node, scope); break;
    		case STATE_FOR: type_check_for_stmt(node, scope); break;
    		case STATE_CONTROL_BREAK: break;
