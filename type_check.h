@@ -406,7 +406,7 @@ int type_check_func(nodeAST * node, sym_tbl * scope){
 	type * function = new_func_type();
 	type * return_type = NULL;
 	//add it to the new scope immediately to allow for recursion
-	if(strcmp(node->nodeValue.function.identifier->nodeValue.identifier, "_") != 0){
+	if(strcmp(node->nodeValue.function.identifier->nodeValue.identifier, "_") != 0)
 		sym_tbl_add_entry(new_tbl_entry(node->nodeValue.function.identifier->nodeValue.identifier, node->lineNumber, node, function), scope);
 
 	sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
@@ -424,7 +424,7 @@ int type_check_func(nodeAST * node, sym_tbl * scope){
 	//Instead we add it to the current_queue
 	type_check_block(node->nodeValue.function.block, new_scope);
 	//add_to_queue(node->nodeValue.function.block, new_scope);
-	}
+
 	return 0;
 }
 
@@ -676,9 +676,31 @@ type * type_check_expr_func(nodeAST * node, sym_tbl * scope){
 				func_call           : id_ '(' expr_list ')'                       {$$ = newFuncCall(newIdentifier($1, _treeNodeAllocator), $3, _treeNodeAllocator);}
                  				    | id_ '(' ')'
     			*/
+
                  	    //Since it's a function call, check if the function exists!
                  	tbl_entry * entry = sym_tbl_find_entry( node->nodeValue.funcCall.target->nodeValue.identifier,scope);
-    				if(entry == NULL || entry->type_info->type != FUNC_TYPE){
+    				if(entry == NULL){
+						sprintf(err_buf, "Undeclared function %s at line %zd", node->nodeValue.funcCall.target->nodeValue.identifier, node->lineNumber);
+						add_msg_line(err_buf, current, node->lineNumber);
+    					return new_invalid_type();
+    				}else if(entry->type_info->type == ALIAS_TYPE){
+    					if(node->nodeValue.funcCall.expr == NULL){
+							sprintf(err_buf, "Invalid type conversion from void to type alias at line %zd", node->lineNumber);
+							add_msg_line(err_buf, current, node->lineNumber);
+							return new_invalid_type();
+    					}
+    					type * input = type_check_expr_list(node->nodeValue.funcCall.expr, scope);
+    					type * entry_type = get_alias_type(entry->type_info);
+    					if(valid_type_conversion(entry_type, input->spec_type.list_type.type_list[0]) == 0 && input->spec_type.list_type.list_size == 1){
+    						return entry->type_info;
+    					}else{
+    						print_type_to_string(input, type_buf);
+    						print_type_to_string(entry->type_info, type_buf_extra);
+							sprintf(err_buf, "Invalid type conversion %s from %s to %s at line %zd", node->nodeValue.funcCall.target->nodeValue.identifier, type_buf, type_buf_extra, node->lineNumber);
+							add_msg_line(err_buf, current, node->lineNumber);
+    						return new_invalid_type();
+    					}
+    				}else if(entry->type_info->type != FUNC_TYPE){
 						sprintf(err_buf, "Undeclared function %s at line %zd", node->nodeValue.funcCall.target->nodeValue.identifier, node->lineNumber);
 						add_msg_line(err_buf, current, node->lineNumber);
     					return new_invalid_type();
@@ -1578,7 +1600,7 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 											add_msg_line(err_buf, current, node->lineNumber);
 											return 0;
 										}else if(right->spec_type.list_type.list_size == counter){
-											sprintf(err_buf, "id list and expression list size do not match at line %zd" ,node->lineNumber);
+											sprintf(err_buf, "ID list and expression list size do not match at line %zd" ,node->lineNumber);
 											add_msg_line(err_buf, current, node->lineNumber);
 											return 0;
 										}else{
