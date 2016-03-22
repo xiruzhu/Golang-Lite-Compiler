@@ -469,7 +469,7 @@ type * type_check_params_list(nodeAST * node, sym_tbl * scope){
     						param_list->spec_type.list_type.type_list = ralloc(param_list->spec_type.list_type.type_list, size *2);
     						param_list->spec_type.list_type.list_cap *= 2;
     					}
-    					param_list->spec_type.list_type.type_list[size++] = new_underscore_type();
+    					param_list->spec_type.list_type.type_list[size++] = id_list_type;
 
     					}
     				}
@@ -692,9 +692,7 @@ type * type_check_expr_func(nodeAST * node, sym_tbl * scope){
     							return new_invalid_type();
     						}
     						for(int i = 0; i < input->spec_type.list_type.list_size; i++){
-    							if(params->spec_type.list_type.type_list[i]->type == TYPE_UNDERSCORE && input->spec_type.list_type.type_list[i]->type != INVALID_TYPE && input->spec_type.list_type.type_list[i]->type != TYPE_UNDERSCORE){
-    								//It's valid so do nothing
-    							}else if(valid_type_comparison(input->spec_type.list_type.type_list[i], params->spec_type.list_type.type_list[i]) == -1 && valid_type_comparison(input->spec_type.list_type.type_list[i], get_alias_type(params->spec_type.list_type.type_list[i])) && valid_type_comparison(get_alias_type(input->spec_type.list_type.type_list[i]), params->spec_type.list_type.type_list[i])){
+    							if(valid_type_comparison(input->spec_type.list_type.type_list[i], params->spec_type.list_type.type_list[i]) == -1 && valid_type_comparison(input->spec_type.list_type.type_list[i], get_alias_type(params->spec_type.list_type.type_list[i])) && valid_type_comparison(get_alias_type(input->spec_type.list_type.type_list[i]), params->spec_type.list_type.type_list[i])){
 									sprintf(err_buf, "Argument type does not match function argument type at line %zd",  node->lineNumber);
 									add_msg_line(err_buf, current, node->lineNumber);
     								return new_invalid_type();
