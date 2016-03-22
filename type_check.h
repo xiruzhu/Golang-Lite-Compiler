@@ -1558,7 +1558,6 @@ int type_check_if_else_stmt(nodeAST * node, sym_tbl * scope){
 	if(node->nodeValue.ifElseBlock.block_false == NULL){ //Must be block
     	return 0;
     }
-    printf("TESssssting\n");
     type_check_stmt(node->nodeValue.ifElseBlock.block_false, scope);
     return 0;
 
