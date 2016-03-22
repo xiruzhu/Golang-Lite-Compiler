@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include "treeNode.h"
+#include "prettyPrint.h"
 
 extern void yyerror(const char*);
 
@@ -602,22 +603,11 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
 	    weedingStatement(_state->nodeValue.forBlock.block, newFrame);
 	    return;
 	}
-	if (condition->nodeValue.forClause.init->nodeType == STATE_CONTROL_BREAK) {
-	    yyerror("unexpected break, expecting expression");
-	    return;
-	}
-	if (condition->nodeValue.forClause.step->nodeType == STATE_CONTROL_BREAK) {
-	    yyerror("unexpected break, expecting expression");
-	    return;
-	}
-	if (condition->nodeValue.forClause.init->nodeType ==
-	    STATE_CONTROL_CONTINUE) {
-	    yyerror("unexpected continue, expecting expression");
-	    return;
-	}
-	if (condition->nodeValue.forClause.step->nodeType ==
-	    STATE_CONTROL_CONTINUE) {
-	    yyerror("unexpected continue, expecting expression");
+	if (isExpr(condition)) {
+	    weedingExpr(condition);
+	    weedingEnvironment newFrame = _env;
+	    newFrame.FLAG_FOR = true;
+	    weedingStatement(_state->nodeValue.forBlock.block, newFrame);
 	    return;
 	}
 	weedingStatement(condition->nodeValue.forClause.init, _env);
