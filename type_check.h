@@ -365,8 +365,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 			if(strcmp(i->nodeValue.identifierList.identifier->nodeValue.identifier, "_") == 0){
 				continue;
 			}
-				printf("asdfsd %d %d\n", type_decl->type, expr_decl->spec_type.list_type.type_list[type_iterator]->type);
-			if(valid_type_comparison(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1){
+			if(valid_type_comparison(get_alias_type(type_decl), expr_decl->spec_type.list_type.type_list[type_iterator]) == -1 && valid_type_comparison(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1){
     					print_type_to_string(type_decl, type_buf);
     					print_type_to_string(expr_decl->spec_type.list_type.type_list[type_iterator], type_buf_extra);
             			sprintf(err_buf, "Declared is %s and Expression is %s. They do not match at line %zd", type_buf, type_buf_extra, node->lineNumber);
@@ -804,15 +803,18 @@ type * type_check_expr_mod(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.mul.left, scope);
     						type * right = type_check_expr(node->nodeValue.mul.right, scope);
 
-    						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
-    							return left;
-    						}
-    						else{
-    							print_type_to_string(left, type_buf);
+    						if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && right->type != LITERAL_RUNE) ){
+								print_type_to_string(left, type_buf);
     							print_type_to_string(right, type_buf_extra);
-            					sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
+    							if(left->type == LITERAL_FLOAT || right->type == LITERAL_FLOAT)
+            						sprintf(err_buf, "Cannot mod with a float. Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
+    							else
+            						sprintf(err_buf, "Left is %s, Right is %s . They do not match or are invalid at line %zd", type_buf, type_buf_extra, node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
     							return new_invalid_type();
+    						}
+    						else{
+    							return left;
     						}
 }
 
@@ -1056,7 +1058,7 @@ type * type_check_expr_unary_neg(nodeAST * node, sym_tbl * scope){
 }
 
 type * type_check_expr_bitNot(nodeAST * node, sym_tbl * scope){
-    						//Characters are not allowed as part of unary expression
+    						//Floats are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.bitNot.expr, scope);
     						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
     							return new_int_type();
@@ -1490,7 +1492,8 @@ if_cond             : expr                                        {$$ = newIfCon
 	if(node->nodeValue.ifCondition.state != NULL){
 		type_check_simple_stmt(node->nodeValue.ifCondition.state, scope);
 	}
-	type * if_expr = type_check_expr(node->nodeValue.ifCondition.expr, scope);
+
+	type * if_expr = get_alias_type(type_check_expr(node->nodeValue.ifCondition.expr, scope));
 	if(if_expr->type != LITERAL_BOOL){
 			print_type_to_string(if_expr, type_buf);
        		sprintf(err_buf, "If statement expression must be Boolean. It is currently of %s at line %zd",type_buf ,node->lineNumber);
@@ -1597,7 +1600,7 @@ simple_stmt_v       : expr                                        {$$ = $1;}
                     switch(node->nodeType){
                     	case STATE_INC:
                     					{
-                    						type * inc_type = type_check_expr(node->nodeValue.inc.expr, scope);
+                    						type * inc_type = get_alias_type(type_check_expr(node->nodeValue.inc.expr, scope));
                     						if(inc_type->type != LITERAL_INT && inc_type->type != LITERAL_FLOAT && inc_type->type != LITERAL_RUNE){
                     							print_type_to_string(inc_type, type_buf);
        											sprintf(err_buf, "Cannot convert 1 to %s at line %zd",type_buf ,node->lineNumber);
@@ -1606,7 +1609,7 @@ simple_stmt_v       : expr                                        {$$ = $1;}
                     						break;
                     					}
                     	case STATE_DEC:{
-                    						type * dec_type = type_check_expr(node->nodeValue.dec.expr, scope);
+                    						type * dec_type = get_alias_type(type_check_expr(node->nodeValue.dec.expr, scope));
                     						if(dec_type->type != LITERAL_INT && dec_type->type != LITERAL_FLOAT && dec_type->type != LITERAL_RUNE){
                     							print_type_to_string(dec_type, type_buf);
        											sprintf(err_buf, "Cannot convert 1 to %s at line %zd",type_buf ,node->lineNumber);
@@ -1658,7 +1661,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_ADD: {
                     							type * left = type_check_expr(node->nodeValue.assignAdd.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignAdd.right, scope);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT)){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -1669,7 +1672,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_SUB: {
                     							type * left = type_check_expr(node->nodeValue.assignSub.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignSub.right, scope);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT)){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -1681,7 +1684,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     							type * left = type_check_expr(node->nodeValue.assignMul.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignMul.right, scope);
                     							//printf("%d %d %d\n", left->type, node->nodeValue.assignMul.right->nodeType, EXPR_BINARY_OP_ADD);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT)){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -1692,7 +1695,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_DIV: {
                     							type * left = type_check_expr(node->nodeValue.assignDiv.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignDiv.right, scope);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT)){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -1703,10 +1706,13 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_MOD: {
                     							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE && left->type != LITERAL_FLOAT){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE)){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
-													sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													if(left->type != LITERAL_FLOAT)
+														sprintf(err_buf, "Invalid type. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
+													else
+														sprintf(err_buf, "Mod cannot be used by floats. Left Argument is of %s. Right is currently of %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
 													add_msg_line(err_buf, current, node->lineNumber);
                     							}
                     							break;
@@ -1714,7 +1720,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_AND: {
                     							type * left = type_check_expr(node->nodeValue.assignAnd.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignAnd.right, scope);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE)){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -1725,7 +1731,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_OR:	   {
                     							type * left = type_check_expr(node->nodeValue.assignOr.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignOr.right, scope);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE) ){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -1736,7 +1742,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_XOR: {
                     							type * left = type_check_expr(node->nodeValue.assignXor.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignXor.right, scope);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE) ){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -1747,7 +1753,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_SHIFTLEFT: {
                     							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE) ){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be of int type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -1758,7 +1764,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_SHIFTRIGHT: {
                     							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE)){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be int type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -1769,7 +1775,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
                     	case STATE_ASSIGN_ANDNOT: {
                     							type * left = type_check_expr(node->nodeValue.assignMod.left, scope);
                     							type * right = type_check_expr(node->nodeValue.assignMod.right, scope);
-                    							if(valid_type_comparison(left, right) == -1 && left->type != LITERAL_INT && left->type != LITERAL_RUNE){
+                    							if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && left->type != LITERAL_RUNE) ){
                     								print_type_to_string(left, type_buf);
       												print_type_to_string(right, type_buf_extra);
 													sprintf(err_buf, "Must be boolean type. Left Argument is of %s. Right is %s at line %zd",type_buf , type_buf_extra,node->lineNumber);
@@ -1830,8 +1836,7 @@ case_clause         : case_ expr_list ':' stmt_list               {$$ = newCaseC
 					for(int j = 0; j < case_type_list->spec_type.list_type.list_size; j++){
 						if(switch_expr != NULL){
 						//Compare the type
-							if( valid_type_comparison( switch_expr, case_type_list->spec_type.list_type.type_list[j]) == -1){
-								printf("afdsafsd %d %d\n", switch_expr->type, case_type_list->spec_type.list_type.type_list[j]->type);
+							if( valid_type_comparison( switch_expr, case_type_list->spec_type.list_type.type_list[j]) == -1 && valid_type_comparison(get_alias_type(switch_expr), case_type_list->spec_type.list_type.type_list[j]) == -1 && valid_type_comparison( switch_expr, get_alias_type(case_type_list->spec_type.list_type.type_list[j])) == -1){
 								print_type_to_string(switch_expr, type_buf);
 								print_type_to_string(case_type_list->spec_type.list_type.type_list[j], type_buf_extra);
        							sprintf(err_buf, "Switch statment expression must match case expression %s. It is currently of %s at line %zd", type_buf, type_buf_extra ,case_cls->nodeValue.caseClause.expr->lineNumber);
@@ -1886,7 +1891,7 @@ for_stmt            : for_ for_clause block                       {$$ = newForBl
 
 		}
 		else{ //Otherwise it is just an expression
-			cond = type_check_expr(for_cond, scope);
+			cond = get_alias_type(type_check_expr(for_cond, scope));
 		}
 
 		if(cond->type != LITERAL_BOOL){
