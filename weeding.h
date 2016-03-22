@@ -597,9 +597,6 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     case STATE_FOR: {
 	nodeAST* condition = _state->nodeValue.forBlock.condition;
 	if (condition == NULL) {
-	    weedingStatement(condition->nodeValue.forClause.init, _env);
-	    weedingExpr(condition->nodeValue.forClause.condition);
-	    weedingStatement(condition->nodeValue.forClause.step, _env);
 	    weedingEnvironment newFrame = _env;
 	    newFrame.FLAG_FOR = true;
 	    weedingStatement(_state->nodeValue.forBlock.block, newFrame);
