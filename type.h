@@ -367,9 +367,15 @@ int valid_type_comparison(type * arg0, type * arg1){
 							if(arg0->type == arg1->type)
 								return 0;
 							return -1;
-		case ARRAY_TYPE: 	return valid_type_comparison(arg0->spec_type.array_type.a_type, arg1->spec_type.array_type.a_type);
-		case SLICE_TYPE: 	return valid_type_comparison(arg0->spec_type.slice_type.s_type, arg1->spec_type.slice_type.s_type);
+		case ARRAY_TYPE: 	if(arg0->type != arg1->type)
+								return -1;
+							return valid_type_comparison(arg0->spec_type.array_type.a_type, arg1->spec_type.array_type.a_type);
+		case SLICE_TYPE: 	if(arg0->type != arg1->type)
+								return -1;
+							return valid_type_comparison(arg0->spec_type.slice_type.s_type, arg1->spec_type.slice_type.s_type);
 		case STRUCT_TYPE:
+							if(arg0->type != arg1->type)
+								return -1;
 						 //Comparing the type of struct
 						 //We need to test if all the ids are the same
 							if(arg0->spec_type.struct_type.list_size != arg1->spec_type.struct_type.list_size)
@@ -382,6 +388,8 @@ int valid_type_comparison(type * arg0, type * arg1){
 							}
 							return 0;
 		case FUNC_TYPE:
+							if(arg0->type != arg1->type)
+								return -1;
 							if(valid_type_comparison(arg0->spec_type.func_type.params_type, arg1->spec_type.func_type.params_type) == -1)
 								return -1;
 							if(valid_type_comparison(arg0->spec_type.func_type.return_type, arg1->spec_type.func_type.return_type) == -1)
