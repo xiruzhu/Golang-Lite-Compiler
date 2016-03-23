@@ -31,22 +31,22 @@ int prev_token = 0;
 
 decimal_digits	[0-9]
 octal_digits	[0-7]
-hex_digits		[0-9|A-F|a-f]
-letter			[a-b|A-Z]|_
+hex_digits		[0-9A-Fa-f]
+letter			[a-bA-Z]|_
 
 decimal_lit		[1-9][0-9]*
-octal_lit		"0"[0-7]*
-hex_lit			"0"["x"|"X"][0-9|A-F|a-f]+
+octal_lit		0[0-7]*
+hex_lit			0[xX][0-9A-Fa-f]+
 int_lit			{decimal_lit}|{octal_lit}|{hex_lit}
 
 decimal  		[0-9]+
-exponent		["e"|"E"]["+"|"-"]{decimal}|["e"|"E"]{decimal}
+exponent		[eE][+-]{decimal}|[eE]{decimal}
 float_lit		{decimal}"."{decimal}|{decimal}"."|{decimal}"."{exponent}|{decimal}"."{decimal}{exponent}|{decimal}{exponent}|"."{decimal}{exponent}|"."{decimal}
 
 string_lit		{interpreted_string_lit}|{raw_string_lit}
 raw_string_lit	\`[^`]*\`
 interpreted_string_lit	\"([^\\\"\n]|\\.)*\"
-rune_lit		(\'[^'\\]\')|(\'\\[abfnrtv\\’]\')
+rune_lit		(\'[^'\\\n]\')|(\'\\[abfnrtv\\’]\')
 
 ID				[a-zA-Z_][a-zA-Z0-9_]*
 semi_colon		";"
