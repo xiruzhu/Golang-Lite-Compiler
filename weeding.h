@@ -604,7 +604,8 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
 	    weedingStatement(_state->nodeValue.forBlock.block, newFrame);
 	    return;
 	}
-	if (condition->nodeValue.forClause.step->nodeType == STATE_SHORT_DECLARE) {
+	if (condition->nodeValue.forClause.step != NULL &&
+	    condition->nodeValue.forClause.step->nodeType == STATE_SHORT_DECLARE) {
 	    dumpErrorMsg("cannot declare in the for-increment", condition->lineNumber);
 	    return;
 	}
