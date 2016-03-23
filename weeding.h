@@ -450,6 +450,7 @@ typedef struct weedingEnvironment{
 } weedingEnvironment;
 void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     if (_state == NULL) return;
+	if (isExpr(_state)) weedingExpr(_state);
     switch (_state->nodeType) {
     case STATE_INC:     {
 	if (!weedingAssignableExpr(_state->nodeValue.inc.expr)) {
