@@ -1,0 +1,12 @@
+package main
+
+type usedHaskell boolean
+type huehuehue usedHaskell
+type fact huehuehue;
+
+type compile_time struct{
+	bad_language usedHaskell;
+	fast_compile huehuehue
+	worship_c fact
+	int time;
+}
