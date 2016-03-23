@@ -32,6 +32,7 @@ void init_table(){
 }
 
 void free_table(){
+    if(table != NULL){
     for(int i = 0; i < MAX_SIZE; i++){
         for(mem_node * j = table[i]; j != NULL;){
             if(j != NULL){
@@ -42,7 +43,8 @@ void free_table(){
             }
         }
     }
-    //free(table);
+    }
+    free(table);
 }
 
 /*
