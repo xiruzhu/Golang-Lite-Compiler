@@ -581,12 +581,13 @@ type                : basic_type                                  {$$ = $1;}
 												return new_invalid_type();
 											}
 										}
-									}else
-										field_decl_type = new_underscore_type();
+									}
+
 									if(ret->spec_type.struct_type.list_size == ret->spec_type.struct_type.list_cap){
 										ret->spec_type.struct_type.type_list = ralloc(ret->spec_type.struct_type.type_list, sizeof(type *) * ret->spec_type.struct_type.list_size * 2);
 										ret->spec_type.struct_type.list_cap *= 2;
 									}
+									//printf("Decl type %d\n", field_decl_type->type);
 									ret->spec_type.struct_type.type_list[ret->spec_type.struct_type.list_size] = field_decl_type;
 									ret->spec_type.struct_type.id_list[ret->spec_type.struct_type.list_size++] = id;
 
@@ -779,6 +780,10 @@ type * type_check_expr_select(nodeAST * node, sym_tbl * scope){
             					    sprintf(err_buf, "Expecting a struct type at line %zd. Found %s",  node->lineNumber, type_buf);
 									add_msg_line(err_buf, current, node->lineNumber);
     								return new_invalid_type();
+   	 							}
+   	 							if(strcmp(id, "_") == 0){
+            					    sprintf(err_buf, "Trying to access an underscore id at line %zd",  node->lineNumber);
+									add_msg_line(err_buf, current, node->lineNumber);
    	 							}
    	 							//Next we need to scan all the members of the struct id_list to get that specific id type if found
    	 							for(int i = 0; i < current_struct->spec_type.struct_type.list_size; i++){
@@ -1605,7 +1610,10 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 											return 0;
 										}else{
 											tbl_entry * entry = sym_tbl_find_entry_scoped(id->nodeValue.identifier, scope);
-											if(entry == NULL){
+											if(strcmp(id->nodeValue.identifier, "_") == 0){
+
+											}
+											else if(entry == NULL){
 												sym_tbl_add_entry(new_tbl_entry(id->nodeValue.identifier, id->lineNumber  ,id , right->spec_type.list_type.type_list[counter]), scope);
 												num_added++;
 											}else{
@@ -1621,6 +1629,7 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 										}
 										counter++;
 									}
+									printf("num_added %d\n", num_added);
       								if(num_added == 0){
 										sprintf(err_buf, "No new names on left hand side of := at line %zd" ,node->lineNumber);
 										add_msg_line(err_buf, current, node->lineNumber);
@@ -1690,7 +1699,9 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
 												sprintf(err_buf, "Expression list size does not match at line %zd" ,node->lineNumber);
 												add_msg_line(err_buf, current, node->lineNumber);
       										}else{
+
       										for(int i = 0; i < left->spec_type.list_type.list_size; i++){
+    											if(left->spec_type.list_type.type_list[i]->type != TYPE_UNDERSCORE){
       											if(valid_type_comparison(left->spec_type.list_type.type_list[i], right->spec_type.list_type.type_list[i]) == -1){
       												print_type_to_string(left->spec_type.list_type.type_list[i], type_buf);
       												print_type_to_string(right->spec_type.list_type.type_list[i], type_buf_extra);
@@ -1698,6 +1709,7 @@ assign_stmt         : expr_list '=' expr_list                     {$$ = newAssig
 													add_msg_line(err_buf, current, node->lineNumber);
 													return 0;
       												}
+      											}
       											}
       										}
       										break;

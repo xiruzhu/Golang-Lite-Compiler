@@ -55,7 +55,7 @@ typedef struct symbol_table{
 * That array will be searched linearly
 */
 typedef struct hash_table{
-	tbl_entry ** hash_system;
+	tbl_entry *** hash_system;
 
 	unsigned int max_size; //As in how big we want it. For example 1024, would lead to 1024 mappings
 	int * entry_list_size;
@@ -140,9 +140,9 @@ sym_tbl * new_sym_tbl_parent(sym_tbl * parent, int hash_tbl_size){
 
 hash_tbl * new_hash_tbl(){
 	hash_tbl * ret = (hash_tbl *)alloc(1, sizeof(sym_tbl));
-	ret->hash_system = (tbl_entry **)alloc(DEFAULT_HASH_SIZE, sizeof(tbl_entry *));
+	ret->hash_system = (tbl_entry ***)alloc(DEFAULT_HASH_SIZE, sizeof(tbl_entry **));
 	for(int i = 0; i < DEFAULT_HASH_SIZE; i++)
-		ret->hash_system[i] = (tbl_entry *)alloc(DEFAULT_HASH_LIST_SIZE, sizeof(tbl_entry));
+		ret->hash_system[i] = (tbl_entry **)alloc(DEFAULT_HASH_LIST_SIZE, sizeof(tbl_entry *));
 	ret->max_size = DEFAULT_HASH_SIZE;
 	ret->entry_list_size = (int *)alloc(DEFAULT_HASH_SIZE,sizeof(int));
 	ret->entry_list_size_cap = (int *)alloc(DEFAULT_HASH_SIZE, sizeof(int));
@@ -155,9 +155,9 @@ hash_tbl * new_hash_tbl(){
 
 hash_tbl * new_hash_tbl_size(int size){
 	hash_tbl * ret = (hash_tbl *)alloc(1, sizeof(sym_tbl));
-	ret->hash_system = (tbl_entry **)alloc(size, sizeof(tbl_entry *));
+	ret->hash_system = (tbl_entry ***)alloc(size, sizeof(tbl_entry **));
 	for(int i = 0; i < size; i++){
-		ret->hash_system[i] = (tbl_entry *)alloc(DEFAULT_HASH_LIST_SIZE, sizeof(tbl_entry));
+		ret->hash_system[i] = (tbl_entry **)alloc(DEFAULT_HASH_LIST_SIZE, sizeof(tbl_entry *));
 	}
 	ret->max_size = size;
 	ret->entry_list_size = (int *)alloc(size, sizeof(int));
@@ -231,7 +231,7 @@ int add_hash_entry(tbl_entry * entry, hash_tbl * table){
 		table->entry_list_size_cap[index] *= 2;
 	}
 	//Now we can add the entry
-	table->hash_system[index][table->entry_list_size[index]++] = *entry;
+	table->hash_system[index][table->entry_list_size[index]++] = entry;
 	return 0;
 }
 
@@ -253,8 +253,8 @@ tbl_entry * find_hash_entry_node(nodeAST * node, hash_tbl * table){
 	index = hash_func(node->nodeValue.identifier, table->max_size);
 
 	for(int i = 0; i < table->entry_list_size[index]; i++){
-		if(strcmp(table->hash_system[index][i].id, node->nodeValue.identifier) == 0)
-			return &table->hash_system[index][i];
+		if(strcmp(table->hash_system[index][i]->id, node->nodeValue.identifier) == 0)
+			return table->hash_system[index][i];
 	}
 	return NULL;
 }
@@ -267,8 +267,9 @@ tbl_entry * find_hash_entry_id(char * id, hash_tbl * table){
 	}
 	index = hash_func(id, table->max_size);
 	for(int i = 0; i < table->entry_list_size[index]; i++){
-		if(strcmp(table->hash_system[index][i].id, id) == 0)
-			return &table->hash_system[index][i];
+
+		if(strcmp(table->hash_system[index][i]->id, id) == 0)
+			return table->hash_system[index][i];
 	}
 	return NULL;
 }
@@ -421,8 +422,8 @@ int print_hash_tbl(hash_tbl * tbl, FILE * file){
 				\n______________________________________________________________________________________\n\n");
 	for(int i = 0; i < tbl->max_size; i++){
 		for(int j = 0; j < tbl->entry_list_size[i]; j++){
-			fprintf(file, "[ ID: %s | Line: %d | ", tbl->hash_system[i][j].id, tbl->hash_system[i][j].line_num);
-			print_type_to_file(tbl->hash_system[i][j].type_info, file);
+			fprintf(file, "[ ID: %s | Line: %d | ", tbl->hash_system[i][j]->id, tbl->hash_system[i][j]->line_num);
+			print_type_to_file(tbl->hash_system[i][j]->type_info, file);
 			fprintf(file, "]\n");
 		}
 	}
