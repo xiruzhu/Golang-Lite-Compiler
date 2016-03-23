@@ -242,7 +242,6 @@ int type_check_prog(nodeAST * node, int sf, FILE * s){
     //Second pass for the function blocks
     if(sf == 1)
     	print_sym_tbl_scoped(tcsystem->current_tbl, stream);
-
     print_err_msg(head);
     return 0;
 }
@@ -1963,7 +1962,7 @@ for_stmt            : for_ for_clause block                       {$$ = newForBl
 	type_check_block(node->nodeValue.forBlock.block, new_scope);
 
     if(scope_flag == 1){
-    	print_sym_tbl_scoped(for_scope, stdout);
+    	print_sym_tbl_scoped(for_scope, stream);
     }
 	return 0;
 }
