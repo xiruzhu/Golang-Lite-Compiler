@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "stdbool.h"
+#include <stdbool.h>
 #include "treeNode.h"
 #include "memory.h"
 
@@ -89,7 +89,7 @@ void prettyPrintExpr(nodeAST* _ASTExpr, FILE* _ostream){
             fprintf(_ostream, "%lf", _ASTExpr->nodeValue.floatValue); return;
         case LITERAL_RUNE:
             fprintf(_ostream, "'%c'", _ASTExpr->nodeValue.runeValue); return;
-        case LITERAL_STRING:        //TODO
+        case LITERAL_STRING:        
             fprintf(_ostream, "%s", _ASTExpr->nodeValue.stringValue); return;
         case IDENTIFIER:
             fprintf(_ostream, "%s", _ASTExpr->nodeValue.identifier); return;

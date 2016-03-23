@@ -6,8 +6,13 @@
 #include <assert.h>
 #include "treeNode.h"
 #include "prettyPrint.h"
+#include "memory.h"
+#include "error.h"
 
 extern void yyerror(const char*);
+extern void dumpErrorMsg(const char*, size_t);
+
+extern memoryList _treeNodeAllocator;
 
 bool weedingFunctionReturned(nodeAST* _funcNode) {
     if (_funcNode == NULL) return false;
@@ -22,8 +27,10 @@ bool weedingFunctionReturned(nodeAST* _funcNode) {
     case STATE_UTILITY_STATELIST: {
 	nodeAST* current = _funcNode->nodeValue.stateList.state;
 	nodeAST* next    = _funcNode->nodeValue.stateList.next;
-	if (current->nodeType == STATE_CONTROL_BREAK) return false;;
-	if (current->nodeType == STATE_CONTROL_CONTINUE) return false;
+	if (current != NULL && current->nodeType == STATE_CONTROL_BREAK)
+	    return false;
+	if (current != NULL && current->nodeType == STATE_CONTROL_CONTINUE)
+	    return false;
 	return weedingFunctionReturned(current) ||
 	    weedingFunctionReturned(next);
     }
@@ -37,11 +44,11 @@ bool weedingFunctionReturned(nodeAST* _funcNode) {
 	return weedingFunctionReturned(_funcNode->nodeValue.caseClause.state);
     case STATE_UTILITY_CASE_LIST: {
 	nodeAST* ptr = _funcNode;
-       while (ptr != NULL) {
-	    if (!weedingFunctionReturned(ptr->nodeValue.stateList.state)) {
+	while (ptr != NULL) {
+	    if (!weedingFunctionReturned(ptr->nodeValue.caseList.state)) {
 		return false;
 	    }
-	    ptr = ptr->nodeValue.stateList.next;
+	    ptr = ptr->nodeValue.caseList.next;
 	}
 	return true;
     }
@@ -68,7 +75,7 @@ void weedingFunction(nodeAST* _prog){
     case PROG_FUNCTION: {
 	if (_prog->nodeValue.function.type == NULL) return;
         if (!weedingFunctionReturned(_prog->nodeValue.function.block)) {
-	    yyerror("missing return at end of function");
+	    dumpErrorMsg("missing return at end of function", _prog->nodeValue.function.identifier->lineNumber);
 	    return;
 	}
 	return;
@@ -129,7 +136,9 @@ void weedingExpr(nodeAST* _ASTExpr) {
 		case 'v':          return;  // vertical tab
 		case '0':          return;  // null character
 		default: {
-		    yyerror("invalid escape character");
+		    char* errorBuffer = (char*)mallocList(sizeof(char)*256, _treeNodeAllocator);
+		    sprintf(errorBuffer, "unknown escape sequence: %c", nextChar);
+		    dumpErrorMsg(errorBuffer, _ASTExpr->lineNumber);
 		    return;
 		}
 		}
@@ -139,7 +148,7 @@ void weedingExpr(nodeAST* _ASTExpr) {
     }
     case IDENTIFIER:                {
 	if (strcmp(_ASTExpr->nodeValue.identifier, "_") == 0) {
-	    yyerror("blank identifier can not be used during evaluation");
+	    dumpErrorMsg("cannot use _ as value", _ASTExpr->lineNumber);
 	    return;
 	}
 	return;
@@ -267,7 +276,7 @@ void weedingExpr(nodeAST* _ASTExpr) {
     case EXPR_FUNC_CALL:            {
 	nodeAST* target = _ASTExpr->nodeValue.funcCall.target;
 	if (target->nodeType != IDENTIFIER) {
-	    yyerror("identifier expected, funcall failed");
+	    dumpErrorMsg("invalid usage of function call", _ASTExpr->lineNumber);
 	    return;
 	}
 	weedingExpr(_ASTExpr->nodeValue.funcCall.expr);
@@ -342,88 +351,90 @@ void weedingAssign(nodeAST* _AST) {
 	size_t lenLeftExpr  = lenExprList(_AST->nodeValue.assign.left);
 	size_t lenRightExpr = lenExprList(_AST->nodeValue.assign.right);
 	if (lenLeftExpr != lenRightExpr) {
-	    yyerror("Assign Expr, left length and right length miss matched");
+	    char* buffer = (char*)mallocList(sizeof(char)*256, _treeNodeAllocator);
+	    sprintf(buffer, "assignment count mismatch: %zu = %zu", lenLeftExpr, lenRightExpr);
+	    dumpErrorMsg(buffer, _AST->nodeValue.assign.left->lineNumber);
 	    return;
 	}
 	if (!weedingAssignableExprList(_AST->nodeValue.assign.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of =", _AST->nodeValue.assign.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_ADD:          {
 	if (!weedingAssignableExpr(_AST->nodeValue.assignAdd.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of +=", _AST->nodeValue.assignAdd.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_SUB:          {
 	if (!weedingAssignableExpr(_AST->nodeValue.assignSub.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of -=", _AST->nodeValue.assignSub.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_MUL:          {
 	if (!weedingAssignableExpr(_AST->nodeValue.assignMul.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of *=", _AST->nodeValue.assignMul.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_DIV:          {
 	if (!weedingAssignableExpr(_AST->nodeValue.assignDiv.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of /=", _AST->nodeValue.assignDiv.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_MOD:          {
     	if (!weedingAssignableExpr(_AST->nodeValue.assignMod.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of %=", _AST->nodeValue.assignMod.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_AND:          {
 	if (!weedingAssignableExpr(_AST->nodeValue.assignAnd.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of &=", _AST->nodeValue.assignAnd.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_OR:           {
     	if (!weedingAssignableExpr(_AST->nodeValue.assignOr.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of |=", _AST->nodeValue.assignOr.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_XOR:          {
 	if (!weedingAssignableExpr(_AST->nodeValue.assignXor.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of ^=", _AST->nodeValue.assignXor.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_SHIFTLEFT:    {
 	if (!weedingAssignableExpr(_AST->nodeValue.assignShiftLeft.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of <<=", _AST->nodeValue.assignShiftLeft.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_SHIFTRIGHT:   {
 	if (!weedingAssignableExpr(_AST->nodeValue.assignShiftRight.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of >>=", _AST->nodeValue.assignShiftRight.left->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_ASSIGN_ANDNOT:       {
 	if (!weedingAssignableExpr(_AST->nodeValue.assignAndNot.left)) {
-	    yyerror("Assign Expr, left part not assignable");
+	    dumpErrorMsg("non-name on left side of &^=", _AST->nodeValue.assignAndNot.left->lineNumber);
 	    return;
 	}
 	return;
@@ -439,9 +450,24 @@ typedef struct weedingEnvironment{
 } weedingEnvironment;
 void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     if (_state == NULL) return;
+	if (isExpr(_state)) weedingExpr(_state);
     switch (_state->nodeType) {
-    case STATE_INC:     weedingExpr(_state->nodeValue.inc.expr); return;
-    case STATE_DEC:     weedingExpr(_state->nodeValue.dec.expr); return;
+    case STATE_INC:     {
+	if (!weedingAssignableExpr(_state->nodeValue.inc.expr)) {
+	    dumpErrorMsg("invalid using of increment", _state->lineNumber);
+	    return;
+	}
+	weedingExpr(_state->nodeValue.inc.expr);
+	return;
+    }
+    case STATE_DEC:     {
+	if (!weedingAssignableExpr(_state->nodeValue.dec.expr)) {
+	    dumpErrorMsg("invalid using of decrement", _state->lineNumber);
+	    return;
+	}
+	weedingExpr(_state->nodeValue.dec.expr);
+	return;
+    }
     case STATE_PRINT:   weedingExpr(_state->nodeValue.print.expr); return;
     case STATE_PRINTLN: weedingExpr(_state->nodeValue.println.expr); return;
     case STATE_RETURN:  weedingExpr(_state->nodeValue.ret.expr); return;
@@ -462,14 +488,14 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     }
     case STATE_CONTROL_BREAK: {
 	if (!(_env.FLAG_FOR || _env.FLAG_SWITCH)) {
-	    yyerror("break is not in a loop");
+	    dumpErrorMsg("break is not in a loop", _state->lineNumber);
 	    return;
 	}
 	return;
     }
     case STATE_CONTROL_CONTINUE: {
 	if (!_env.FLAG_FOR) {
-	    yyerror("continue is not in a loop");
+	    dumpErrorMsg("continue is not in a loop", _state->lineNumber);
 	    return;
 	}
 	return;
@@ -477,6 +503,11 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     case STATE_UTILITY_STATELIST: {
 	nodeAST* ptr = _state;
 	while (ptr != NULL) {
+	    if (isExpr(ptr->nodeValue.stateList.state) &&
+		(ptr->nodeValue.stateList.state->nodeType != EXPR_FUNC_CALL)) {
+	        dumpErrorMsg("evaluated but not used", ptr->nodeValue.stateList.state->lineNumber);
+		return;
+	    }
 	    weedingStatement(ptr->nodeValue.stateList.state, _env);
 	    ptr = ptr->nodeValue.stateList.next;
 	}
@@ -485,24 +516,12 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     case STATE_IF: {
 	nodeAST* condition = _state->nodeValue.ifBlock.condition;
 	if (condition->nodeValue.ifCondition.state != NULL) {
-	    switch (condition->nodeValue.ifCondition.state->nodeType) {
-	    case STATE_CONTROL_BREAK: {
-		yyerror("unexpected break, expecting expression");
-		return;
-	    }
-	    case STATE_CONTROL_CONTINUE: {
-		yyerror("unexpected continue, expecting expression");
-		return;
-	    }
-	    default: {
 		weedingStatement(condition->nodeValue.ifCondition.state, _env);
 		weedingExpr(condition->nodeValue.ifCondition.expr);
 		weedingEnvironment newFrame = _env;
 		newFrame.FLAG_IF = true;
 		weedingStatement(_state->nodeValue.ifBlock.block_true, newFrame);
 		return;
-	    }
-	    }
 	} else {
 	    weedingStatement(condition->nodeValue.ifCondition.state, _env);
 	    weedingExpr(condition->nodeValue.ifCondition.expr);
@@ -514,16 +533,6 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     case STATE_IF_ELSE: {
 	nodeAST* condition = _state->nodeValue.ifElseBlock.condition;
 	if (condition->nodeValue.ifCondition.state != NULL) {
-	    switch (condition->nodeValue.ifCondition.state->nodeType) {
-	    case STATE_CONTROL_BREAK: {
-		yyerror("unexpected break, expecting expression");
-		return;
-	    }
-	    case STATE_CONTROL_CONTINUE: {
-		yyerror("unexpected continue, expecting expression");
-		return;
-	    }
-	    default: {
 		weedingStatement(condition->nodeValue.ifCondition.state, _env);
 		weedingExpr(condition->nodeValue.ifCondition.expr);
 		weedingEnvironment newFrame = _env;
@@ -531,8 +540,6 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
 		weedingStatement(_state->nodeValue.ifElseBlock.block_true, newFrame);
 		weedingStatement(_state->nodeValue.ifElseBlock.block_false, newFrame);
 		return;
-	    }
-	    }
 	} else {
 	    weedingStatement(condition->nodeValue.ifCondition.state, _env);
 	    weedingExpr(condition->nodeValue.ifCondition.expr);
@@ -546,24 +553,12 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
     case STATE_SWITCH : {
 	nodeAST* condition = _state->nodeValue.switchBlock.condition;
 	if (condition->nodeValue.switchBlock.condition != NULL) {
-	    switch (condition->nodeValue.switchBlock.condition->nodeType) {
-	    case STATE_CONTROL_BREAK: {
-		yyerror("unexpected break, expecting expression");
-		return;
-	    }
-	    case STATE_CONTROL_CONTINUE: {
-		yyerror("unexpected continue, expecting expression");
-		return;
-	    }
-	    default: {
 		weedingStatement(condition->nodeValue.switchCondition.state, _env);
 		weedingExpr(condition->nodeValue.switchCondition.expr);
 		weedingEnvironment newFrame = _env;
 		newFrame.FLAG_SWITCH = true;
 		weedingStatement(_state->nodeValue.switchBlock.block, newFrame);
 		return;
-	    }
-	    }
 	} else {
 	    weedingStatement(condition->nodeValue.switchCondition.state, _env);
 	    weedingExpr(condition->nodeValue.switchCondition.expr);
@@ -585,7 +580,7 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
 	    nodeAST* clause = ptr->nodeValue.caseList.state;
 	    if (clause->nodeValue.caseClause.expr == NULL) {
 		if (defaultExist) {
-		    yyerror("multiple defaults in switch");
+		    dumpErrorMsg("multiple defaults in switch", _state->lineNumber);
 		    return;
 		}
 		defaultExist = true;
@@ -610,6 +605,15 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
 	    weedingStatement(_state->nodeValue.forBlock.block, newFrame);
 	    return;
 	}
+	if (condition->nodeValue.forClause.step != NULL &&
+	    condition->nodeValue.forClause.step->nodeType == STATE_SHORT_DECLARE) {
+	    dumpErrorMsg("cannot declare in the for-increment", condition->lineNumber);
+	    return;
+	}
+	if (condition->nodeValue.forClause.step != NULL &&
+		isExpr(condition->nodeValue.forClause.step)){
+			dumpErrorMsg("evaluated but not used", condition->nodeValue.forClause.step->lineNumber);
+	}
 	weedingStatement(condition->nodeValue.forClause.init, _env);
 	weedingExpr(condition->nodeValue.forClause.condition);
 	weedingStatement(condition->nodeValue.forClause.step, _env);
@@ -627,7 +631,9 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
 	    exprLength = lenExprList(_state->nodeValue.varDeclare.initExpr);
 	}
 	if (idLength != exprLength) {
-	    yyerror("assignment count mismatch");
+	    char* buffer = (char*)mallocList(sizeof(char)*256, _treeNodeAllocator);
+	    sprintf(buffer, "assignment count mismatch: %zu = %zu", idLength, exprLength);
+	    dumpErrorMsg(buffer, _state->nodeValue.varDeclare.idList->lineNumber);
 	    return;
 	}
 	weedingExpr(_state->nodeValue.varDeclare.initExpr);
@@ -644,13 +650,15 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
 	size_t idLength = lenExprList(_state->nodeValue.shortDeclare.left);
 	size_t exprLength = lenExprList(_state->nodeValue.shortDeclare.right);
 	if (idLength != exprLength) {
-	    yyerror("assignment count mismatch");
+	    char* buffer = (char*)mallocList(sizeof(char)*256, _treeNodeAllocator);
+	    sprintf(buffer, "assignment count mismatch: %zu = %zu", idLength, exprLength);
+	    dumpErrorMsg(buffer, _state->nodeValue.shortDeclare.left->lineNumber);
 	    return;
 	}
 	nodeAST* ptr = _state->nodeValue.shortDeclare.left;
 	while (ptr != NULL) {
 	    if (ptr->nodeValue.exprList.expr->nodeType != IDENTIFIER) {
-		yyerror("non-name on left side of :=");
+		dumpErrorMsg("non-name on left side of :=", ptr->nodeValue.exprList.expr->lineNumber);
 		return;
 	    }
 	    ptr = ptr->nodeValue.exprList.next;
@@ -680,18 +688,19 @@ void weedingInit(nodeAST* _program) {
 	if (strcmp(_program->nodeValue.function.identifier->nodeValue.identifier,
 		   "main") == 0L){
 	    if (_program->nodeValue.function.type != NULL) {
-		yyerror("function main must have no arguments and no return value");
+		dumpErrorMsg("function main must have no arguments and no return value", _program->nodeValue.function.identifier->lineNumber);
 		return;
 	    }
 	    if (_program->nodeValue.function.pramList != NULL) {
-		yyerror("function main must have no arguments and no return value");
+		dumpErrorMsg("function main must have no arguments and no return value", _program->nodeValue.function.identifier->lineNumber);
+		return;
 	    }
 	    weedingStatement(_program->nodeValue.function.block, initEnv);
 	    return;
 	}
 	if (_program->nodeValue.function.type != NULL) {
 	    if (!weedingFunctionReturned(_program->nodeValue.function.block)) {
-		yyerror("missing return at end of function");
+		dumpErrorMsg("missing return at end of function", _program->nodeValue.function.identifier->lineNumber);
 		return;
 	    }
 	}
