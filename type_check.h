@@ -20,7 +20,7 @@
 extern nodeAST* _ast;
 
 int scope_flag;
-int iteration = 0;
+FILE * stream;
 
 char err_buf[MAX_ERR_MSG];
 char type_buf[MAX_ERR_MSG];
@@ -65,7 +65,7 @@ int add_to_queue(nodeAST * node, sym_tbl * new_scope);
 int add_msg(char * msg, msg_list *);
 int add_msg_line(char * msg, msg_list *, size_t line);
 int print_err_msg(msg_list head);
-int type_check_prog(nodeAST * node, int scoped_flag);
+int type_check_prog(nodeAST * node, int scoped_flag, FILE * stream);
 int type_check_prog_list(nodeAST * node, sym_tbl * scope);
 int type_check_func(nodeAST * node, sym_tbl * scope);
 int type_check_type_decl_list(nodeAST * node, sym_tbl * scope);
@@ -194,16 +194,16 @@ int add_msg_line(char * msg, msg_list * current_node, size_t line_num){
 */
 int print_err_msg(msg_list head){
 	int count = 0;
-	printf("%s\n-----------------------------Type Checking Error-------------------------------------\n", RED_COLOR);
+	printf("\n-----------------------------Type Checking Error-------------------------------------\n" );
 	for(msg_list * i = &head; i != NULL; i = i->next){
 		if(i != NULL){
 			if(i->msg != NULL){
-				printf(RED_COLOR "\nError"WHITE_COLOR"[%d]: ", count++);
+				printf("\nError""[%d]: ", count++);
 				printf("%s\n",i->msg);
 			}
 		}
 	}
-	printf(RED_COLOR "\n-------------------------------END-----------------------------------------------------\n\n" RESET_COLOR);
+	printf( "\n-------------------------------END-----------------------------------------------------\n\n" );
 	return 0;
 }
 
@@ -216,8 +216,9 @@ int add_to_queue(nodeAST * node, sym_tbl * new_scope){
 	return 0;
 }
 
-int type_check_prog(nodeAST * node, int sf){
+int type_check_prog(nodeAST * node, int sf, FILE * s){
 	fn_blk_que * blk_queue;
+	stream = s;
 	if(node == NULL){
 		fprintf(stderr, "Start Node Invalid\n");
 		exit(1);
@@ -240,7 +241,7 @@ int type_check_prog(nodeAST * node, int sf){
 
     //Second pass for the function blocks
     if(sf == 1)
-    	print_sym_tbl_scoped(tcsystem->current_tbl, stdout);
+    	print_sym_tbl_scoped(tcsystem->current_tbl, stream);
 
     print_err_msg(head);
     return 0;
@@ -506,7 +507,8 @@ int type_check_type_decl_list(nodeAST * node, sym_tbl * scope){
 				add_msg_line(err_buf, current, i->lineNumber);
 				return 0;
     		}
-    		sym_tbl_add_entry(new_tbl_entry(alias_type->spec_type.alias_type.id, i->nodeValue.typeDeclareList.typeDeclare->lineNumber, i->nodeValue.typeDeclareList.typeDeclare, alias_type), scope);
+    		if(strcmp(alias_type->spec_type.alias_type.id, "_") != 0)
+    			sym_tbl_add_entry(new_tbl_entry(alias_type->spec_type.alias_type.id, i->nodeValue.typeDeclareList.typeDeclare->lineNumber, i->nodeValue.typeDeclareList.typeDeclare, alias_type), scope);
     	}
     }
     return 0;
@@ -1470,7 +1472,7 @@ int type_check_block(nodeAST * node, sym_tbl * scope){  //Also known as stmt_lis
     	}
     }
     if(scope_flag == 1)
-    	print_sym_tbl_scoped(scope, stdout);
+    	print_sym_tbl_scoped(scope, stream);
 
 	return 0;
 }
@@ -1564,7 +1566,7 @@ if_stmt             : if_ if_cond block                           {$$ = newIfBlo
 
 	type_check_block(node->nodeValue.ifBlock.block_true, block_scope);
 	if(scope_flag == 1)
-    	print_sym_tbl_scoped(if_scope, stdout);
+    	print_sym_tbl_scoped(if_scope, stream);
 	return 0;
 }
 
@@ -1901,7 +1903,7 @@ case_clause         : case_ expr_list ':' stmt_list               {$$ = newCaseC
 						}
 					}
    					if(scope_flag == 1)
-    					print_sym_tbl_scoped(switch_scope, stdout);
+    					print_sym_tbl_scoped(switch_scope, stream);
 
 				}
 
@@ -1910,7 +1912,7 @@ case_clause         : case_ expr_list ':' stmt_list               {$$ = newCaseC
 	}
 
     if(scope_flag == 1)
-    	print_sym_tbl_scoped(switch_scope, stdout);
+    	print_sym_tbl_scoped(switch_scope, stream);
 	return 0;
 }
 

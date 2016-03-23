@@ -405,8 +405,8 @@ int print_sym_tbl_scoped(sym_tbl * table, FILE * file){
 		fprintf(stderr, "Null file stream. print_sym_tbl failed\n");
 		return -1;
 	}
-	fprintf(file, RED_COLOR "\n--------------------------------------------------------------------------------------\nSymbol Table Dump\
-				\n--------------------------------------------------------------------------------------\n" RESET_COLOR);
+	fprintf(file, "\n--------------------------------------------------------------------------------------\nSymbol Table Dump\
+				\n--------------------------------------------------------------------------------------\n");
 	print_hash_tbl(table->tbl, file);
 	return 0;
 }
