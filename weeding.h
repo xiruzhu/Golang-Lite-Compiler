@@ -360,6 +360,7 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of =", _AST->nodeValue.assign.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assign.right);
 	return;
     }
     case STATE_ASSIGN_ADD:          {
@@ -367,6 +368,7 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of +=", _AST->nodeValue.assignAdd.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignAdd.right);
 	return;
     }
     case STATE_ASSIGN_SUB:          {
@@ -374,6 +376,7 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of -=", _AST->nodeValue.assignSub.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignSub.right);
 	return;
     }
     case STATE_ASSIGN_MUL:          {
@@ -381,6 +384,7 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of *=", _AST->nodeValue.assignMul.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignMul.right);
 	return;
     }
     case STATE_ASSIGN_DIV:          {
@@ -388,13 +392,15 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of /=", _AST->nodeValue.assignDiv.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignDiv.right);
 	return;
     }
     case STATE_ASSIGN_MOD:          {
     	if (!weedingAssignableExpr(_AST->nodeValue.assignMod.left)) {
-	    dumpErrorMsg("non-name on left side of %=", _AST->nodeValue.assignMod.left->lineNumber);
+	    dumpErrorMsg("non-name on left side of %%=", _AST->nodeValue.assignMod.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignMod.right);
 	return;
     }
     case STATE_ASSIGN_AND:          {
@@ -402,6 +408,7 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of &=", _AST->nodeValue.assignAnd.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignAnd.right);
 	return;
     }
     case STATE_ASSIGN_OR:           {
@@ -409,6 +416,7 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of |=", _AST->nodeValue.assignOr.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignOr.right);
 	return;
     }
     case STATE_ASSIGN_XOR:          {
@@ -416,6 +424,7 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of ^=", _AST->nodeValue.assignXor.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignXor.right);
 	return;
     }
     case STATE_ASSIGN_SHIFTLEFT:    {
@@ -423,6 +432,7 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of <<=", _AST->nodeValue.assignShiftLeft.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignShiftLeft.right);
 	return;
     }
     case STATE_ASSIGN_SHIFTRIGHT:   {
@@ -430,6 +440,7 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of >>=", _AST->nodeValue.assignShiftRight.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignShiftRight.right);
 	return;
     }
     case STATE_ASSIGN_ANDNOT:       {
@@ -437,6 +448,7 @@ void weedingAssign(nodeAST* _AST) {
 	    dumpErrorMsg("non-name on left side of &^=", _AST->nodeValue.assignAndNot.left->lineNumber);
 	    return;
 	}
+	weedingExpr(_AST->nodeValue.assignAndNot.right);
 	return;
     }
     default: return;
