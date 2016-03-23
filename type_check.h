@@ -1630,7 +1630,6 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 										}
 										counter++;
 									}
-									printf("num_added %d\n", num_added);
       								if(num_added == 0){
 										sprintf(err_buf, "No new names on left hand side of := at line %zd" ,node->lineNumber);
 										add_msg_line(err_buf, current, node->lineNumber);
