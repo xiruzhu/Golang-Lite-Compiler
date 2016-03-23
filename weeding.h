@@ -609,6 +609,10 @@ void weedingStatement(nodeAST* _state, weedingEnvironment _env) {
 	    dumpErrorMsg("cannot declare in the for-increment", condition->lineNumber);
 	    return;
 	}
+	if (condition->nodeValue.forClause.step != NULL &&
+		isExpr(condition->nodeValue.forClause.step)){
+			dumpErrorMsg("evaluated but not used", condition->nodeValue.forClause.step->lineNumber);
+	}
 	weedingStatement(condition->nodeValue.forClause.init, _env);
 	weedingExpr(condition->nodeValue.forClause.condition);
 	weedingStatement(condition->nodeValue.forClause.step, _env);
