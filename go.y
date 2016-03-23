@@ -4,11 +4,12 @@
 #include <string.h>
 #include "treeNode.h"
 #include "memory.h"
+#include "error.h"
 extern char *yytext; /* string from scanner */
 extern int line_num;
 extern int char_num;
 extern memoryList _treeNodeAllocator;
-void yyerror(char const *s) {fprintf(stderr, "Error: (line %d) %s\n", line_num, s); }
+void yyerror(char const *s) {dumpErrorMsg(s,line_num); }
 int yylex(void);
 
 extern nodeAST* _ast;
