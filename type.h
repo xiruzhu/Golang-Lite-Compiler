@@ -383,7 +383,7 @@ int valid_type_comparison(type * arg0, type * arg1){
 							for(int i = 0; i < arg0->spec_type.struct_type.list_size; i++){
 								if(strcmp(arg0->spec_type.struct_type.id_list[i], arg1->spec_type.struct_type.id_list[i]) != 0)
 									return -1;
-								if(valid_type_comparison(arg0->spec_type.struct_type.type_list[i], arg1->spec_type.struct_type.type_list[i]) == -1 && strcmp(arg0->spec_type.struct_type.id_list[i], "_") != 0)
+								if(valid_type_comparison(arg0->spec_type.struct_type.type_list[i], arg1->spec_type.struct_type.type_list[i]) == -1)
 									return -1;
 							}
 							return 0;
