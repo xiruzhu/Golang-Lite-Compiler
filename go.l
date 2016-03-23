@@ -6,17 +6,13 @@
 #include "memory.h"
 #include "treeNode.h"
 #include "prettyPrint.h"
-#include "type_check.h"
+//#include "type_check.h"
 #include "weeding.h"
+#include "error.h"
 
 memoryList _treeNodeAllocator = NULL;
 nodeAST* _ast;
 
-void _func_throwError(const char * test){
-
-}
-
-size_t _AST_LineNumber = 0;
 int line_num = 1;
 int char_num = 1;
 int switchE = 0;
@@ -444,7 +440,7 @@ int main(int argc, char ** argv){
 	// prettyPrint(_ast, stdout);
 	weedingInit(_ast);
 	
-	type_check_prog(_ast, 0);
+	//type_check_prog(_ast, 0);
 
 }
 
