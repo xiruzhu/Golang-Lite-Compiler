@@ -108,7 +108,7 @@ tbl_entry * new_tbl_entry(char * identifier, int line_num, nodeAST * node, type*
 	ret->id = identifier;
 	ret->node_ptr = node;
 	if(node != NULL)
-		node->sym_tbl_ptr = node;
+		node->sym_tbl_ptr = ret;
 	return ret;
 }
 
