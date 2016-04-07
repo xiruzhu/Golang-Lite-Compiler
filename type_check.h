@@ -330,7 +330,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 			}else{//Everything is good
 				//We need to add these things to the symbol table
 				if(strcmp(i->nodeValue.identifierList.identifier->nodeValue.identifier, "_") != 0)
-					sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, (expr_type->spec_type.list_type.type_list[type_iterator])), scope);
+					sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, i->nodeValue.identifierList.identifier, (expr_type->spec_type.list_type.type_list[type_iterator])), scope);
 			}
 			type_iterator++;
 			}
@@ -351,7 +351,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 			}else{//Everything is good
 				//We need to add these things to the symbol table
 				if(strcmp(i->nodeValue.identifierList.identifier->nodeValue.identifier, "_") != 0)
-					sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, (type_decl)), scope);
+					sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, i->nodeValue.identifierList.identifier, (type_decl)), scope);
 			}
 			type_iterator++;
 			}
@@ -380,7 +380,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 				break;
 			}else{//Everything is good
 				//We need to add these things to the symbol table
-				sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, NULL, (type_decl)), scope);
+				sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, i->nodeValue.identifierList.identifier, (type_decl)), scope);
 			}
 			type_iterator++;
 			}
@@ -407,8 +407,11 @@ int type_check_func(nodeAST * node, sym_tbl * scope){
 	type * function = new_func_type();
 	type * return_type = NULL;
 	//add it to the new scope immediately to allow for recursion
-	if(strcmp(node->nodeValue.function.identifier->nodeValue.identifier, "_") != 0)
-		sym_tbl_add_entry(new_tbl_entry(node->nodeValue.function.identifier->nodeValue.identifier, node->lineNumber, node, function), scope);
+	if(strcmp(node->nodeValue.function.identifier->nodeValue.identifier, "_") != 0){
+		current_entry = new_tbl_entry(node->nodeValue.function.identifier->nodeValue.identifier, node->lineNumber, node, function);
+		node->nodeValue.function.identifier->sym_tbl_ptr = current_entry->type_info;
+		sym_tbl_add_entry(current_entry, scope);
+	}
 
 	sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
 	if(node->nodeValue.function.type != NULL)
@@ -507,7 +510,9 @@ int type_check_type_decl_list(nodeAST * node, sym_tbl * scope){
 				return 0;
     		}
     		if(strcmp(alias_type->spec_type.alias_type.id, "_") != 0)
-    			sym_tbl_add_entry(new_tbl_entry(alias_type->spec_type.alias_type.id, i->nodeValue.typeDeclareList.typeDeclare->lineNumber, i->nodeValue.typeDeclareList.typeDeclare, alias_type), scope);
+    			name = new_tbl_entry(alias_type->spec_type.alias_type.id, i->nodeValue.typeDeclareList.typeDeclare->lineNumber, i->nodeValue.typeDeclareList.typeDeclare, alias_type);
+    			i->nodeValue.typeDeclareList.typeDeclare->sym_tbl_ptr = name->type_info;
+    			sym_tbl_add_entry(name, scope);
     	}
     }
     return 0;
@@ -525,6 +530,7 @@ type * type_check_alias_type(nodeAST * node, sym_tbl * scope){
 				      		add_msg_line(err_buf, current, node->lineNumber);
 						 	return new_invalid_type(); //Invalid Type
 						 }
+						 node->sym_tbl_ptr = entry->type_info;
 						return (entry->type_info);
 }
 
@@ -537,7 +543,8 @@ type                : basic_type                                  {$$ = $1;}
                     | id_                                         {$$ = newIdentifier($1, _treeNodeAllocator);}
 */	type * ret;
 	switch(node->nodeType){
-		case BASIC_TYPE: return type_basic_type(node);
+		case BASIC_TYPE: ret = type_basic_type(node);
+						 return ret;
 		//    returnNode->nodeValue.sliceType.type = _type;
 		case SLICE_TYPE: ret = new_slice_type();
 						 ret->spec_type.slice_type.s_type = type_check_type(node->nodeValue.sliceType.type, scope);
@@ -597,7 +604,6 @@ type                : basic_type                                  {$$ = $1;}
 								}
 								}
 							}
-
 							return ret;
 						}
 		default: 	return new_invalid_type();
@@ -633,8 +639,11 @@ type * type_check_expr_list(nodeAST * node, sym_tbl * scope){
 				}
 			expr_list_type->spec_type.list_type.type_list[expr_list_type->spec_type.list_type.list_size++] = to_be_added;
     	}
+
+    	node->sym_tbl_ptr = to_be_added;
     	to_be_added = NULL;
     	}
+
     }
     return expr_list_type;
 }
@@ -668,6 +677,7 @@ type * type_check_expr_id(nodeAST * node, sym_tbl * scope){
 					add_msg_line(err_buf, current, node->lineNumber);
     				return new_invalid_type();
     			}
+    			node->sym_tbl_ptr = entry->type_info;
     			return (entry->type_info);
     		}
 
@@ -732,8 +742,10 @@ type * type_check_expr_func(nodeAST * node, sym_tbl * scope){
     					}
     					if(entry->type_info->spec_type.func_type.return_type == NULL)
     						return new_invalid_type();
-    					else
+    					else{
+    						node->sym_tbl_ptr = entry->type_info->spec_type.func_type.return_type;
     						return (entry->type_info->spec_type.func_type.return_type);
+    					}
     					//The type of a function call is its return type
     				}
 }
@@ -762,8 +774,11 @@ type * type_check_expr_index(nodeAST * node, sym_tbl * scope){
     								return new_invalid_type();
             					}
             					//So everything is valid so this returns the type of the slice/array
-            					if(target->type == ARRAY_TYPE)
+            					if(target->type == ARRAY_TYPE){
+            						node->sym_tbl_ptr = ret->spec_type.array_type.a_type;
             						return (ret->spec_type.array_type.a_type);
+            					}
+            					node->sym_tbl_ptr = (ret->spec_type.slice_type.s_type);
             					return (ret->spec_type.slice_type.s_type);
 }
 
@@ -789,6 +804,7 @@ type * type_check_expr_select(nodeAST * node, sym_tbl * scope){
    	 							//Next we need to scan all the members of the struct id_list to get that specific id type if found
    	 							for(int i = 0; i < current_struct->spec_type.struct_type.list_size; i++){
    	 								if(strcmp(id, current_struct->spec_type.struct_type.id_list[i]) == 0){//Found the id
+   	 										node->sym_tbl_ptr = current_struct->spec_type.struct_type.type_list[i];
    	 										return (current_struct->spec_type.struct_type.type_list[i]);
    	 								}
    	 							}
@@ -814,6 +830,7 @@ type * type_check_expr_slice(nodeAST * node, sym_tbl * scope){
     							}
     							type_check_slice_expr(node->nodeValue.slice.entry, scope); //IF invalid type_checking, err_msg will be added inside
     							//This returns the type of the slice
+    							node->sym_tbl_ptr = ret;
     							return (ret);
 
 }
@@ -823,6 +840,7 @@ type * type_check_expr_mul(nodeAST * node, sym_tbl * scope){
     						type * right = type_check_expr(node->nodeValue.mul.right, scope);
 
     						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
+    							node->sym_tbl_ptr = left;
     							return left;
     						}
     						else{
@@ -839,6 +857,7 @@ type * type_check_expr_div(nodeAST * node, sym_tbl * scope){
     						type * right = type_check_expr(node->nodeValue.mul.right, scope);
 
     						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
+    							node->sym_tbl_ptr = left;
     							return left;
     						}
     						else{
@@ -865,6 +884,7 @@ type * type_check_expr_mod(nodeAST * node, sym_tbl * scope){
     							return new_invalid_type();
     						}
     						else{
+    							node->sym_tbl_ptr = left;
     							return left;
     						}
 }
@@ -874,6 +894,7 @@ type * type_check_expr_sub(nodeAST * node, sym_tbl * scope){
     						type * right = type_check_expr(node->nodeValue.mul.right, scope);
 
     						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
+    							node->sym_tbl_ptr = left;
     							return left;
     						}
     						else{
@@ -889,9 +910,11 @@ type * type_check_expr_add(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.add.left, scope);
     						type * right = type_check_expr(node->nodeValue.add.right, scope);
     						if(valid_type_comparison(left, right) == 0 && valid_type_numeric(left) == 0 && valid_type_numeric(right) == 0){
+    							node->sym_tbl_ptr = left;
     							return left;
     						}
     						else if( left->type == LITERAL_STRING && right->type == LITERAL_STRING ){
+    							node->sym_tbl_ptr = left;
     							return left;
     						}else{
     							print_type_to_string(left, type_buf);
@@ -912,7 +935,8 @@ type * type_check_expr_and(nodeAST * node, sym_tbl * scope){
     						type * right = type_check_expr(node->nodeValue.logicAnd.right, scope);
     						//Both must be boolean for and
     						if( (left->type == LITERAL_BOOL && right->type == LITERAL_BOOL) ){
-    							return new_bool_type();
+    							node->sym_tbl_ptr = new_bool_type();
+    							return node->sym_tbl_ptr;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -932,7 +956,8 @@ type * type_check_expr_or(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.logicOr.left, scope);
     						type * right = type_check_expr(node->nodeValue.logicOr.right, scope);
     						if( (left->type == LITERAL_BOOL && right->type == LITERAL_BOOL) ){
-    							return new_bool_type();
+    							node->sym_tbl_ptr = new_bool_type();
+    							return node->sym_tbl_ptr;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -952,7 +977,8 @@ type * type_check_expr_xor(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.bitXor.left, scope);
     						type * right = type_check_expr(node->nodeValue.bitXor.right, scope);
     						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
-    							return new_int_type();
+    							node->sym_tbl_ptr = new_int_type();
+    							return node->sym_tbl_ptr;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -972,7 +998,8 @@ type * type_check_expr_bitOr(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.bitOr.left, scope);
     						type * right = type_check_expr(node->nodeValue.bitOr.right, scope);
     						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
-    							return new_int_type();
+    							node->sym_tbl_ptr = new_int_type();
+    							return node->sym_tbl_ptr;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -992,7 +1019,8 @@ type * type_check_expr_lshift(nodeAST * node, sym_tbl * scope) {
     						type * left = type_check_expr(node->nodeValue.shiftLeft.left, scope);
     						type * right = type_check_expr(node->nodeValue.shiftLeft.right, scope);
     						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
-    							return new_int_type();
+    							node->sym_tbl_ptr = new_int_type();
+    							return node->sym_tbl_ptr;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -1012,7 +1040,8 @@ type * type_check_expr_rshift(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.shiftRight.left, scope);
     						type * right = type_check_expr(node->nodeValue.shiftRight.right, scope);
     						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
-    							return new_int_type();
+    							node->sym_tbl_ptr = new_int_type();
+    							return node->sym_tbl_ptr;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -1031,7 +1060,8 @@ type * type_check_expr_bitAnd(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.bitAnd.left, scope);
     						type * right = type_check_expr(node->nodeValue.bitAnd.right, scope);
     						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
-    							return new_int_type();
+    							node->sym_tbl_ptr = new_int_type();
+    							return node->sym_tbl_ptr;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -1051,7 +1081,8 @@ type * type_check_expr_bitAndNot(nodeAST * node, sym_tbl * scope){
     						type * left = type_check_expr(node->nodeValue.shiftRight.left, scope);
     						type * right = type_check_expr(node->nodeValue.shiftRight.right, scope);
     						if(valid_type_comparison(left, right) == 0 && (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
-    							return new_int_type();
+    							node->sym_tbl_ptr = new_int_type();
+    							return node->sym_tbl_ptr;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -1071,6 +1102,7 @@ type * type_check_expr_unary_pos(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.pos.expr, scope);
     						if( left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE ){
+    							node->sym_tbl_ptr = left;
     							return (left);
     						}
     						else{
@@ -1091,6 +1123,7 @@ type * type_check_expr_unary_neg(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.neg.expr, scope);
     						if( left->type == LITERAL_INT || left->type == LITERAL_FLOAT || left->type == LITERAL_RUNE ){
+    							node->sym_tbl_ptr = left;
     							return (left);
     						}
     						else{
@@ -1111,7 +1144,8 @@ type * type_check_expr_bitNot(nodeAST * node, sym_tbl * scope){
     						//Floats are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.bitNot.expr, scope);
     						if( (left->type == LITERAL_INT || left->type == LITERAL_RUNE) ){
-    							return new_int_type();
+    							node->sym_tbl_ptr = new_int_type();
+    							return node->sym_tbl_ptr;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -1130,7 +1164,8 @@ type * type_check_expr_not(nodeAST * node, sym_tbl * scope){
     						//Characters are not allowed as part of unary expression
     						type * left = type_check_expr(node->nodeValue.logicNot.expr, scope);
     						if( left->type == LITERAL_BOOL ){
-    							return new_bool_type();
+    							node->sym_tbl_ptr = new_bool_type();
+    							return node->sym_tbl_ptr;
     						}
     						else{
     							print_type_to_string(left, type_buf);
@@ -1157,8 +1192,8 @@ type * type_check_expr_eq(nodeAST * node, sym_tbl * scope){
             					sprintf(err_buf, "Slice type detected. Slice cannot be compared. This occured at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
     						}
-
-    						return new_bool_type();
+    						node->sym_tbl_ptr = new_bool_type();
+    						return node->sym_tbl_ptr;
     						/*
     						    returnNode->nodeType = EXPR_BINARY_OP_EQUAL;
     							returnNode->nodeValue.equal.left = _left;
@@ -1179,8 +1214,8 @@ type * type_check_expr_neq(nodeAST * node, sym_tbl * scope){
             					sprintf(err_buf, "Slice type detected. Slice cannot be compared. This occured at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
     						}
-
-    						return new_bool_type();
+    						node->sym_tbl_ptr = new_bool_type();
+    						return node->sym_tbl_ptr;
     						/*
     						returnNode->nodeType = EXPR_BINARY_OP_NEQUAL;
     						returnNode->nodeValue.nequal.left = _left;
@@ -1196,8 +1231,8 @@ type * type_check_expr_lt(nodeAST * node, sym_tbl * scope){
             					sprintf(err_buf, "Left is %s and Right is %s and they are not ordered at line %zd", type_buf, type_buf_extra, node->lineNumber);								add_msg_line(err_buf, current, node->lineNumber);
     							return new_invalid_type();
     						}
-
-    						return new_bool_type();
+    						node->sym_tbl_ptr = new_bool_type();
+    						return node->sym_tbl_ptr;
     						/*
     						returnNode->nodeType = EXPR_BINARY_OP_LESS;
     						returnNode->nodeValue.less.left = _left;
@@ -1213,7 +1248,8 @@ type * type_check_expr_gt(nodeAST * node, sym_tbl * scope){
             					sprintf(err_buf, "Left is %s and Right is %s and they are not ordered at line %zd", type_buf, type_buf_extra, node->lineNumber);								add_msg_line(err_buf, current, node->lineNumber);
     							return new_invalid_type();
     						}
-    						return new_bool_type();
+    						node->sym_tbl_ptr = new_bool_type();
+    						return node->sym_tbl_ptr;
     						/*
     						returnNode->nodeType = EXPR_BINARY_OP_GREAT;
     						returnNode->nodeValue.great.left = _left;
@@ -1230,8 +1266,8 @@ type * type_check_expr_lteq(nodeAST * node, sym_tbl * scope){
             					sprintf(err_buf, "Left is %s and Right is %s and they are not ordered at line %zd", type_buf, type_buf_extra, node->lineNumber);								add_msg_line(err_buf, current, node->lineNumber);
     							return new_invalid_type();
     						}
-
-    						return new_bool_type();
+    						node->sym_tbl_ptr = new_bool_type();
+    						return node->sym_tbl_ptr;
     						/*
     						returnNode->nodeType = EXPR_BINARY_OP_LESSEQUAL;
     						returnNode->nodeValue.less.left = _left;
@@ -1247,8 +1283,8 @@ type * type_check_expr_gteq(nodeAST * node, sym_tbl * scope){
             					sprintf(err_buf, "Left is %s and Right is %s and they are not ordered at line %zd", type_buf, type_buf_extra, node->lineNumber);								add_msg_line(err_buf, current, node->lineNumber);
     							return new_invalid_type();
     						}
-
-    						return new_bool_type();
+    						node->sym_tbl_ptr = new_bool_type();
+    						return node->sym_tbl_ptr;
     						/*
   							returnNode->nodeType = EXPR_BINARY_OP_GREATEQUAL;
     						returnNode->nodeValue.greatEqual.left = _left;
@@ -1342,7 +1378,7 @@ returnNode->nodeValue.cast.expr = _expr;
 	   add_msg_line(err_buf, current, node->lineNumber);
        return new_invalid_type();
     }
-    //
+    node->sym_tbl_ptr = left;
     return (left);
 }
 
@@ -1382,6 +1418,7 @@ type * type_check_expr_append(nodeAST * node, sym_tbl * scope){
     		return new_invalid_type();
 		}
 	}
+	node->sym_tbl_ptr = ret;
 	return (ret);
 }
 type * type_check_expr(nodeAST * node, sym_tbl * scope){
