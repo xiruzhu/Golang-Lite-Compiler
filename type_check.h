@@ -366,7 +366,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 			if(strcmp(i->nodeValue.identifierList.identifier->nodeValue.identifier, "_") == 0){
 				continue;
 			}
-			if(valid_type_comparison(get_alias_type(type_decl), expr_decl->spec_type.list_type.type_list[type_iterator]) == -1 && valid_type_comparison(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1){
+			if(valid_type_comparison(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1 && valid_type_comparison(type_decl, expr_decl->spec_type.list_type.type_list[type_iterator]) == -1){
     					print_type_to_string(type_decl, type_buf);
     					print_type_to_string(expr_decl->spec_type.list_type.type_list[type_iterator], type_buf_extra);
             			sprintf(err_buf, "Declared is %s and Expression is %s. They do not match at line %zd", type_buf, type_buf_extra, node->lineNumber);
