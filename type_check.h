@@ -1423,75 +1423,78 @@ type * type_check_expr_append(nodeAST * node, sym_tbl * scope){
 	return (ret);
 }
 type * type_check_expr(nodeAST * node, sym_tbl * scope){
+			type * ret;
 	    	switch(node->nodeType){
-    		case IDENTIFIER: return type_check_expr_id(node, scope);
-    		case LITERAL_INT: return new_int_type();
+    		case IDENTIFIER: ret = type_check_expr_id(node, scope);
+    		case LITERAL_INT: ret = new_int_type();
     						/*
    	 						returnNode->nodeType = LITERAL_INT;
     						returnNode->nodeValue.intValue = _intValue;
 							*/
-			case LITERAL_FLOAT: return new_float_type();
-			case LITERAL_RUNE: return new_rune_type();
-			case LITERAL_STRING: return new_string_type();
-			case EXPR_FUNC_CALL: return type_check_expr_func(node, scope);
+			case LITERAL_FLOAT: ret = new_float_type(); break;
+			case LITERAL_RUNE: ret = new_rune_type(); break;
+			case LITERAL_STRING: ret = new_string_type(); break;
+			case EXPR_FUNC_CALL: ret = type_check_expr_func(node, scope); break;
             case EXPR_CAST:
-            				return type_check_expr_cast(node, scope);
+            				ret = type_check_expr_cast(node, scope); break;
             case EXPR_INDEX:
-            				return type_check_expr_index(node, scope);
+            				ret = type_check_expr_index(node, scope); break;
             case EXPR_SELECTOR:
-            				return type_check_expr_select(node, scope);
+            				ret = type_check_expr_select(node, scope); break;
    	 		case EXPR_SLICE:
-   	 						return type_check_expr_slice(node, scope);
+   	 						ret = type_check_expr_slice(node, scope); break;
     		case EXPR_BINARY_OP_MUL:
-    						return type_check_expr_mul(node, scope);
+    						ret = type_check_expr_mul(node, scope); break;
     		case EXPR_BINARY_OP_DIV:
-    						return type_check_expr_div(node, scope);
+    						ret = type_check_expr_div(node, scope); break;
     		case EXPR_BINARY_OP_MOD:
-    						return type_check_expr_mod(node, scope);
+    						ret = type_check_expr_mod(node, scope); break;
     		case EXPR_BINARY_OP_SUB:
-    						return type_check_expr_sub(node, scope);
+    						ret = type_check_expr_sub(node, scope); break;
     		case EXPR_BINARY_OP_ADD:
-    						return type_check_expr_add(node, scope);
+    						ret = type_check_expr_add(node, scope); break;
     		case EXPR_BINARY_OP_LOGIC_AND:
-    						return type_check_expr_and(node, scope);
+    						ret = type_check_expr_and(node, scope); break;
     		case EXPR_BINARY_OP_LOGIC_OR:
-    						return type_check_expr_or(node, scope);
+    						ret = type_check_expr_or(node, scope); break;
     		case EXPR_BINARY_OP_XOR:
-    						return type_check_expr_xor(node, scope);
+    						ret = type_check_expr_xor(node, scope); break;
     		case EXPR_BINARY_OP_OR:
-    						return type_check_expr_bitOr(node, scope);
+    						ret = type_check_expr_bitOr(node, scope); break;
     		case EXPR_BINARY_OP_LSHIFT:
-    						return type_check_expr_lshift(node, scope);
+    						ret = type_check_expr_lshift(node, scope); break;
     		case EXPR_BINARY_OP_RSHIFT:
-    						return type_check_expr_rshift(node, scope);
+    						ret = type_check_expr_rshift(node, scope); break;
     		case EXPR_BINARY_OP_ANDNOT:
-    						return type_check_expr_bitNot(node, scope);
+    						ret = type_check_expr_bitNot(node, scope); break;
     		case EXPR_UNIARY_OP_POS:
-    						return type_check_expr_unary_pos(node, scope);
+    						ret = type_check_expr_unary_pos(node, scope); break;
     		case EXPR_UNIARY_OP_NEG:
-    						return type_check_expr_unary_neg(node, scope);
+    						ret = type_check_expr_unary_neg(node, scope); break;
     		case EXPR_UNIARY_OP_NOT:
-    						return type_check_expr_bitNot(node, scope);
+    						ret = type_check_expr_bitNot(node, scope); break;
     		case EXPR_UNIARY_OP_LOGIC_NOT:
-    						return type_check_expr_not(node, scope);
+    						ret = type_check_expr_not(node, scope); break;
     		case EXPR_BINARY_OP_EQUAL:
-    						return type_check_expr_eq(node, scope);
+    						ret = type_check_expr_eq(node, scope); break;
     		case EXPR_BINARY_OP_NEQUAL:
-    						return type_check_expr_neq(node, scope);
+    						ret = type_check_expr_neq(node, scope); break;
     		case EXPR_BINARY_OP_LESS:
-    						return type_check_expr_lt(node, scope);
+    						ret = type_check_expr_lt(node, scope); break;
     		case EXPR_BINARY_OP_GREAT:
-    						return type_check_expr_gt(node, scope);
+    						ret = type_check_expr_gt(node, scope); break;
     		case EXPR_BINARY_OP_LESSEQUAL:
-    						return type_check_expr_lteq(node, scope);
+    						ret = type_check_expr_lteq(node, scope); break;
     		case EXPR_BINARY_OP_GREATEQUAL:
-    						return type_check_expr_gteq(node, scope);
+    						ret = type_check_expr_gteq(node, scope); break;
     		case EXPR_BINARY_OP_AND:
-    						return type_check_expr_bitAnd(node, scope);
+    						ret = type_check_expr_bitAnd(node, scope); break;
     		case EXPR_APPEND:
-    						return type_check_expr_append(node, scope);
+    						ret = type_check_expr_append(node, scope); break;
     		default: return new_invalid_type();
     	}
+    	node->sym_tbl_ptr = ret;
+    	return ret;
 }
 int type_check_block(nodeAST * node, sym_tbl * scope){  //Also known as stmt_list
 	/*
