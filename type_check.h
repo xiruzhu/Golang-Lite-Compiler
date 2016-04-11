@@ -638,9 +638,8 @@ type * type_check_expr_list(nodeAST * node, sym_tbl * scope){
 				expr_list_type->spec_type.list_type.list_cap *= 2;
 				}
 			expr_list_type->spec_type.list_type.type_list[expr_list_type->spec_type.list_type.list_size++] = to_be_added;
+			i->nodeValue.exprList.expr->sym_tbl_ptr = to_be_added;
     	}
-
-    	node->sym_tbl_ptr = to_be_added;
     	to_be_added = NULL;
     	}
 
@@ -705,7 +704,8 @@ type * type_check_expr_func(nodeAST * node, sym_tbl * scope){
     					type * input = type_check_expr_list(node->nodeValue.funcCall.expr, scope);
     					type * entry_type = get_alias_type(entry->type_info);
     					if(valid_type_conversion(entry_type, input->spec_type.list_type.type_list[0]) == 0 && input->spec_type.list_type.list_size == 1){
-    						node->sym_tbl_ptr = entry->type_info;
+    						node->nodeValue.funcCall.target->sym_tbl_ptr = entry->type_info;
+    						node->nodeType = EXPR_CAST;
     						return entry->type_info;
     					}else{
     						print_type_to_string(input, type_buf);
