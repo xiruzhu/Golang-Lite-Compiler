@@ -262,9 +262,12 @@ int print_type_to_string(type * to_print, char * buf){
 		case STRUCT_TYPE: sprintf(buf, "Struct Type"); break;
 		case FUNC_TYPE: sprintf(buf, "Function Type"); break;
 		case ALIAS_TYPE:
-						 print_type_to_string(to_print->spec_type.alias_type.a_type, extra_buf);
-				         sprintf(buf, "Alias Type %s:%s", to_print->spec_type.alias_type.id, extra_buf);
+						{
+						 char alias_buffer[256];
+						 print_type_to_string(to_print->spec_type.alias_type.a_type, alias_buffer);
+				         sprintf(buf, "Alias Type %s:%s", to_print->spec_type.alias_type.id, alias_buffer);
 				         break;
+				     	}
 		case LIST_TYPE:{
 						char buffer[256];
 						int incr;
