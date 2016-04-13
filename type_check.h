@@ -565,6 +565,8 @@ type                : basic_type                                  {$$ = $1;}
 							nodeAST * cur = node->nodeValue.structType.structDec;
 							nodeAST * field_decl;
 							type * field_decl_type;
+							if(cur == NULL)
+								return new_invalid_type();
 						/*
     					returnNode->nodeType = STRUCT_TYPE_DEC_LIST;
    		 				returnNode->nodeValue.structTypeDecList.declare = _declare;
@@ -759,6 +761,7 @@ type * type_check_expr_index(nodeAST * node, sym_tbl * scope){
             				*/
             				//This would type check only when the primary_expr [ expr ]
             				// where primary_expr needs to be array or slice type and
+            					printf("%s\n", node->nodeValue.index.target->nodeValue.identifier);
             					type * ret = type_check_expr(node->nodeValue.index.target, scope);
             					type * target = get_alias_type(ret);
             					if(target->type != ARRAY_TYPE && target->type != SLICE_TYPE){
@@ -1425,8 +1428,8 @@ type * type_check_expr_append(nodeAST * node, sym_tbl * scope){
 type * type_check_expr(nodeAST * node, sym_tbl * scope){
 			type * ret;
 	    	switch(node->nodeType){
-    		case IDENTIFIER: ret = type_check_expr_id(node, scope);
-    		case LITERAL_INT: ret = new_int_type();
+    		case IDENTIFIER: ret = type_check_expr_id(node, scope); break;
+    		case LITERAL_INT: ret = new_int_type(); break;
     						/*
    	 						returnNode->nodeType = LITERAL_INT;
     						returnNode->nodeValue.intValue = _intValue;
