@@ -464,7 +464,6 @@ type * type_check_params_list(nodeAST * node, sym_tbl * scope){
     						value = new_tbl_entry(j->nodeValue.identifierList.identifier->nodeValue.identifier, j->nodeValue.identifierList.identifier->lineNumber, j->nodeValue.identifierList.identifier, id_list_type);
     					}
     					sym_tbl_add_entry(value, scope);
-    					j->nodeValue.identifierList.identifier->sym_tbl_ptr = id_list_type;
     					if(size == param_list->spec_type.list_type.list_cap){
     						param_list->spec_type.list_type.type_list = ralloc(param_list->spec_type.list_type.type_list, size *2);
     						param_list->spec_type.list_type.list_cap *= 2;

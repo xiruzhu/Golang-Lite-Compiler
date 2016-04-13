@@ -34,6 +34,7 @@ typedef struct type{
 		}func_type;
 		struct{
 			struct type * a_type;
+			int length;
 		}array_type;
 		struct{
 			char ** id_list;
@@ -372,6 +373,9 @@ int valid_type_comparison(type * arg0, type * arg1){
 							return -1;
 		case ARRAY_TYPE: 	if(arg0->type != arg1->type)
 								return -1;
+							if(arg0->spec_type.array_type.length != arg1->spec_type.array_type.length){
+								return -1;
+							}
 							return valid_type_comparison(arg0->spec_type.array_type.a_type, arg1->spec_type.array_type.a_type);
 		case SLICE_TYPE: 	if(arg0->type != arg1->type)
 								return -1;
