@@ -51,6 +51,7 @@ typedef struct type{
 			struct type * a_type;
 			char * id;
 			int alias_id;
+			int not_value;
 		}alias_type;
 	}spec_type; //Special types
 }type;
@@ -95,6 +96,18 @@ type * type_cpy(type * val){
 	if(val == NULL)
 		new_invalid_type();
 	type * ret = alloc(1, sizeof(struct type));
+	return ret;
+}
+
+type * type_cpy_alias(type * val){
+	if(val == NULL)
+		new_invalid_type();
+	type * ret = alloc(1, sizeof(struct type));
+	ret->type = ALIAS_TYPE;
+	ret->spec_type.alias_type.a_type = val->spec_type.alias_type.a_type;
+	ret->spec_type.alias_type.id = val->spec_type.alias_type.id;
+	ret->spec_type.alias_type.not_value = val->spec_type.alias_type.not_value;
+	ret->spec_type.alias_type.alias_id = val->spec_type.alias_type.alias_id;
 	return ret;
 }
 
@@ -180,6 +193,7 @@ type * new_alias_type(){
 	ret->type = ALIAS_TYPE;
 	ret->spec_type.alias_type.a_type = NULL;
 	ret->spec_type.alias_type.id = NULL;
+	ret->spec_type.alias_type.not_value = 1;
 	ret->spec_type.alias_type.alias_id = id_generator++;
 	return ret;
 }
