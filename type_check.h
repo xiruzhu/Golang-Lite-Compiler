@@ -353,7 +353,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 				//We need to add these things to the symbol table
 				if(type_decl->type == ALIAS_TYPE){
 					if(type_decl->spec_type.alias_type.not_value != 1){
-						sprintf(err_buf, "Redeclaration of %s when declaring id at line %zd", i->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber);
+						sprintf(err_buf, "Invalid Alias type of %s when declaring type at line %zd", i->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber);
 						add_msg_line(err_buf, current, node->lineNumber);
 						return 0;
 					}else{
@@ -393,7 +393,7 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 			}else{//Everything is good
 				if(type_decl->type == ALIAS_TYPE){
 					if(type_decl->spec_type.alias_type.not_value != 1){
-						sprintf(err_buf, "Redeclaration of %s when declaring id at line %zd", i->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber);
+						sprintf(err_buf, "Invalid Alias type of %s when declaring type at line %zd", i->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber);
 						add_msg_line(err_buf, current, node->lineNumber);
 						return 0;
 					}else{
@@ -1715,7 +1715,7 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 													return 0;
 												}else if(added->type == ALIAS_TYPE){
 													if(right->spec_type.list_type.type_list[counter]->spec_type.alias_type.not_value != 1){
-														sprintf(err_buf, "Redeclaration of %s when declaring id at line %zd", i->nodeValue.identifierList.identifier->nodeValue.identifier, node->lineNumber);
+														sprintf(err_buf, "Invalid alias type of %s when declaring type at line %zd", id->nodeValue.identifier, i->lineNumber);
 														add_msg_line(err_buf, current, node->lineNumber);
 														return 0;
 													}else{
