@@ -875,8 +875,8 @@ type * type_check_expr_div(nodeAST * node, sym_tbl * scope){
 }
 
 type * type_check_expr_mod(nodeAST * node, sym_tbl * scope){
-    						type * left = type_check_expr(node->nodeValue.mul.left, scope);
-    						type * right = type_check_expr(node->nodeValue.mul.right, scope);
+    						type * left = get_alias_type(type_check_expr(node->nodeValue.mul.left, scope));
+    						type * right = get_alias_type(type_check_expr(node->nodeValue.mul.right, scope));
 
     						if(valid_type_comparison(left, right) == -1 || (left->type != LITERAL_INT && right->type != LITERAL_RUNE) ){
 								print_type_to_string(left, type_buf);
