@@ -360,6 +360,8 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 						added = type_cpy_alias(type_decl);
 						added->spec_type.alias_type.not_value = 0;
 					}
+				}else if(type_decl->type == STRUCT_TYPE){
+					added->spec_type.struct_type.current_scope = scope;
 				}
 				if(strcmp(i->nodeValue.identifierList.identifier->nodeValue.identifier, "_") != 0)
 					sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, i->nodeValue.identifierList.identifier, (added)), scope);
@@ -400,6 +402,8 @@ var_spec            : id_list '=' expr_list                       {$$ = newVarDe
 						added = type_cpy_alias(type_decl);
 						added->spec_type.alias_type.not_value = 0;
 					}
+				}else if(type_decl->type == STRUCT_TYPE){
+					added->spec_type.struct_type.current_scope = scope;
 				}
 				//We need to add these things to the symbol table
 				sym_tbl_add_entry(new_tbl_entry(i->nodeValue.identifierList.identifier->nodeValue.identifier, i->lineNumber, i->nodeValue.identifierList.identifier, (added)), scope);
@@ -530,10 +534,15 @@ int type_check_type_decl_list(nodeAST * node, sym_tbl * scope){
 				add_msg_line(err_buf, current, i->lineNumber);
 				return 0;
     		}
-    		if(strcmp(alias_type->spec_type.alias_type.id, "_") != 0)
+			if(alias_type->spec_type.alias_type.a_type->type == STRUCT_TYPE){
+					alias_type->spec_type.alias_type.a_type->spec_type.struct_type.current_scope = scope;
+			}
+    		if(strcmp(alias_type->spec_type.alias_type.id, "_") != 0){
     			name = new_tbl_entry(alias_type->spec_type.alias_type.id, i->nodeValue.typeDeclareList.typeDeclare->lineNumber, i->nodeValue.typeDeclareList.typeDeclare, alias_type);
     			i->nodeValue.typeDeclareList.typeDeclare->sym_tbl_ptr = name->type_info;
     			sym_tbl_add_entry(name, scope);
+    		}
+    		node->nodeValue.typeDeclare.identifier->sym_tbl_ptr = alias_type;
     	}
     }
     return 0;
@@ -855,7 +864,7 @@ type * type_check_expr_slice(nodeAST * node, sym_tbl * scope){
     						//Okay so primary_expr slice, primary_expr must be of type slice
     							type * ret = type_check_expr(node->nodeValue.slice.target, scope);
     							type * current_slice = get_alias_type(ret);
-    							if(current_slice->type != SLICE_TYPE){
+    							if(current_slice->type != SLICE_TYPE && current_slice->type != ARRAY_TYPE){
             						print_type_to_string(current_slice, type_buf);
             					    sprintf(err_buf, "Slice type expected at line %zd. Found %s",  node->lineNumber, type_buf);
 									add_msg_line(err_buf, current, node->lineNumber);
@@ -863,9 +872,14 @@ type * type_check_expr_slice(nodeAST * node, sym_tbl * scope){
     							}
     							type_check_slice_expr(node->nodeValue.slice.entry, scope); //IF invalid type_checking, err_msg will be added inside
     							//This returns the type of the slice
-    							node->sym_tbl_ptr = ret;
-    							return (ret);
-
+    							if(current_slice->type == SLICE_TYPE){
+    								node->sym_tbl_ptr = ret;
+    								return ret;
+    							}
+    							ret = new_slice_type();
+								ret->spec_type = current_slice->spec_type;
+								node->sym_tbl_ptr = ret;
+								return ret;
 }
 
 type * type_check_expr_mul(nodeAST * node, sym_tbl * scope){
@@ -1358,7 +1372,7 @@ slice               : '[' expr ':' expr ']'                       {$$ = newAddre
     						}
     					}
     					if(node->nodeValue.addressSlice.end != NULL){
-    						value = get_alias_type(type_check_expr(node->nodeValue.addressSlice.start, scope));
+    						value = get_alias_type(type_check_expr(node->nodeValue.addressSlice.end, scope));
     						if(value->type != LITERAL_INT){
             					sprintf(err_buf, "Expecting a int type for slice indexing at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
@@ -1368,7 +1382,7 @@ slice               : '[' expr ':' expr ']'                       {$$ = newAddre
     					return 0;
     				}else{
     					if(node->nodeValue.addressSliceFull.start != NULL){
-    						value = get_alias_type(type_check_expr(node->nodeValue.addressSlice.start, scope));
+    						value = get_alias_type(type_check_expr(node->nodeValue.addressSliceFull.start, scope));
     						if(value->type != LITERAL_INT){
             					sprintf(err_buf, "Expecting a int type for slice indexing at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
@@ -1376,7 +1390,7 @@ slice               : '[' expr ':' expr ']'                       {$$ = newAddre
     						}
     					}
     					if(node->nodeValue.addressSliceFull.end != NULL){
-    						value = get_alias_type(type_check_expr(node->nodeValue.addressSlice.start, scope));
+    						value = get_alias_type(type_check_expr(node->nodeValue.addressSliceFull.end, scope));
     						if(value->type != LITERAL_INT){
             					sprintf(err_buf, "Expecting a int type for slice indexing at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
@@ -1384,7 +1398,7 @@ slice               : '[' expr ':' expr ']'                       {$$ = newAddre
     						}
     					}
     					if(node->nodeValue.addressSliceFull.max != NULL){
-    						value = get_alias_type(type_check_expr(node->nodeValue.addressSlice.start, scope));
+    						value = get_alias_type(type_check_expr(node->nodeValue.addressSliceFull.max, scope));
     						if(value->type != LITERAL_INT){
             					sprintf(err_buf, "Expecting a int type for slice indexing at line %zd", node->lineNumber);
 								add_msg_line(err_buf, current, node->lineNumber);
@@ -2112,6 +2126,25 @@ stmt                : var_decl                                    {$$ = $1;}
    	}
 
 	return 0;
+}
+
+
+//-1 for failure
+// 0 for Success
+int struct_comparison(type * arg0, type * arg1){
+	assert(arg0->type == STRUCT_TYPE && arg1->type == STRUCT_TYPE);
+	assert(arg0->spec_type.struct_type.current_scope != NULL && arg1->spec_type.struct_type.current_scope != NULL);
+	if(valid_type_comparison(arg0, arg1) != 0)
+		return -1;
+	for(sym_tbl * i = arg0->spec_type.struct_type.current_scope; i != NULL; i = i->parent){
+		if(i == arg1->spec_type.struct_type.current_scope)
+			return 0;
+	}
+	for(sym_tbl * i = arg1->spec_type.struct_type.current_scope; i != NULL; i = i->parent){
+		if(i == arg0->spec_type.struct_type.current_scope)
+			return 0;
+	}
+	return -1;
 }
 
 

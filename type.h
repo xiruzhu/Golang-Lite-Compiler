@@ -3,6 +3,7 @@
 
 #include "mem_sys.h"
 #include "treeNode.h"
+#include "symbol_table.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +42,7 @@ typedef struct type{
 			struct type ** type_list;
 			int list_size;
 			int list_cap;
+			struct symbol_table * current_scope;
 		}struct_type;
 		struct{
 			struct type ** type_list;
@@ -52,6 +54,7 @@ typedef struct type{
 			char * id;
 			int alias_id;
 			int not_value;
+			struct symbol_table * current_scope;
 		}alias_type;
 	}spec_type; //Special types
 }type;
@@ -78,7 +81,7 @@ int print_type_to_file(type * to_print, FILE * file);
 int print_type_to_string(type * to_print, char * buf);
 int valid_type_conversion(type * t1, type* t2);
 int valid_type_comparison(type * t1, type* t2);
-int valid_type_assign(type * t1, type * t2);
+int valid_type_assign(type * t1, type * t2); //DEPRECATED
 
 /*
 * -----------------------------------------------------------------------------------------------------------
@@ -185,6 +188,7 @@ type * new_struct_type(){
 	ret->spec_type.struct_type.id_list = alloc(8, sizeof(char *));
 	ret->spec_type.struct_type.list_size = 0;
 	ret->spec_type.struct_type.list_cap = 8;
+	ret->spec_type.struct_type.current_scope = NULL;
 	return ret;
 }
 
@@ -195,6 +199,7 @@ type * new_alias_type(){
 	ret->spec_type.alias_type.id = NULL;
 	ret->spec_type.alias_type.not_value = 1;
 	ret->spec_type.alias_type.alias_id = id_generator++;
+	ret->spec_type.struct_type.current_scope = NULL;
 	return ret;
 }
 
@@ -482,5 +487,6 @@ type * get_alias_type(type * arg0){
 //var_decl
 //func_decl
 //type_decl
+
 
 #endif
