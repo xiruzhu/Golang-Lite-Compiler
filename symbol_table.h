@@ -14,6 +14,7 @@
 #define WHITE_COLOR  "\033[1m\033[37m"
 #define RED_COLOR "\033[1m\033[31m"
 #define RESET_COLOR "\e[m"
+
 //This is the memory collector utilized.
 //Helps keep track of all allocated items
 
@@ -429,7 +430,5 @@ int print_hash_tbl(hash_tbl * tbl, FILE * file){
 	}
 	return 0;
 }
-
-
 
 #endif
