@@ -542,7 +542,7 @@ int type_check_type_decl_list(nodeAST * node, sym_tbl * scope){
     			i->nodeValue.typeDeclareList.typeDeclare->sym_tbl_ptr = name->type_info;
     			sym_tbl_add_entry(name, scope);
     		}
-    		node->nodeValue.typeDeclare.identifier->sym_tbl_ptr = alias_type;
+    		i->nodeValue.typeDeclareList.typeDeclare->nodeValue.typeDeclare.identifier->sym_tbl_ptr = alias_type;
     	}
     }
     return 0;
