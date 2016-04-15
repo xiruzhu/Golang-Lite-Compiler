@@ -440,8 +440,13 @@ int type_check_func(nodeAST * node, sym_tbl * scope){
 	}
 
 	sym_tbl * new_scope = new_sym_tbl_parent(scope, DEFAULT_SIZE);
-	if(node->nodeValue.function.type != NULL)
+	if(node->nodeValue.function.type != NULL){
 		return_type = type_check_type(node->nodeValue.function.type, new_scope);
+		if(return_type->type == ALIAS_TYPE){
+			return_type = type_cpy_alias(return_type);
+			return_type->spec_type.alias_type.not_value = 0;
+		}
+	}
 	type * param_type = type_check_params_list(node->nodeValue.function.pramList, new_scope);
 	//This should be a list
 	function->spec_type.func_type.params_type = param_type;
@@ -476,6 +481,10 @@ type * type_check_params_list(nodeAST * node, sym_tbl * scope){
     for(nodeAST * i = node; i != NULL; i = i->nodeValue.pramDeclareList.next){
     	if(i != NULL){
     		type * id_list_type = (type_check_type(i->nodeValue.pramDeclareList.pram->nodeValue.pramDeclare.type, scope));
+  			if(id_list_type->type == ALIAS_TYPE){
+				id_list_type = type_cpy_alias(id_list_type);
+				id_list_type->spec_type.alias_type.not_value = 0;
+  			}
     	//Get the type of the id_list type
 
     		for(nodeAST * j = i->nodeValue.pramDeclareList.pram->nodeValue.pramDeclare.idList; j != NULL; j = j->nodeValue.identifierList.next){
@@ -800,7 +809,6 @@ type * type_check_expr_index(nodeAST * node, sym_tbl * scope){
             				*/
             				//This would type check only when the primary_expr [ expr ]
             				// where primary_expr needs to be array or slice type and
-            					printf("%s\n", node->nodeValue.index.target->nodeValue.identifier);
             					type * ret = type_check_expr(node->nodeValue.index.target, scope);
             					type * target = get_alias_type(ret);
             					if(target->type != ARRAY_TYPE && target->type != SLICE_TYPE){
