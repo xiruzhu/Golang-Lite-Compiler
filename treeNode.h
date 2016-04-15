@@ -238,7 +238,7 @@ typedef struct nodeAST {
         struct {struct nodeAST* left; struct nodeAST* right;} assignShiftRight;
         struct {struct nodeAST* left; struct nodeAST* right;} assignAndNot;
 
-        struct {struct nodeAST* left; struct nodeAST* right;} shortDeclare;
+        struct {struct nodeAST* left; struct nodeAST* right; int * new_stuff;} shortDeclare;
 
         struct {struct nodeAST* condition; struct nodeAST* block_true;} ifBlock;
         struct {
@@ -743,6 +743,7 @@ nodeAST* newShortDeclare    (nodeAST* _left, nodeAST* _right, memoryList _alloca
     returnNode->nodeType = STATE_SHORT_DECLARE;
     returnNode->nodeValue.shortDeclare.left = _left;
     returnNode->nodeValue.shortDeclare.right = _right;
+    returnNode->nodeValue.shortDeclare.new_stuff = NULL;
     return returnNode;
 }
 

@@ -1575,9 +1575,9 @@ print_stmt          : print_ '(' expr_list ')' ';'                {$$ = newPrint
     	type * list = type_check_expr_list(node->nodeValue.print.expr, scope);
     	for(int i = 0; i < list->spec_type.list_type.list_size; i++){
     		type * temp = get_alias_type(list->spec_type.list_type.type_list[i]);
-    		if(temp->type == STRUCT_TYPE || temp->type == ARRAY_TYPE || temp->type == SLICE_TYPE){
+    		if(temp->type == STRUCT_TYPE){
 				print_type_to_string(temp, type_buf);
-       			sprintf(err_buf, "Attempted to print %s at line %zd", type_buf ,node->lineNumber);
+       			sprintf(err_buf, "Attempted to print %s at line %zd.\nOne does not simply print structs\n", type_buf ,node->lineNumber);
 				add_msg_line(err_buf, current, node->lineNumber);
        			return 0;
     		}
@@ -1693,6 +1693,9 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 									int counter = 0;
 									int num_added = 0;
 									type * right = type_check_expr_list(node->nodeValue.shortDeclare.right, scope);
+									int * new_stuff = alloc(right->spec_type.list_type.list_size, sizeof(int));
+									for(int i = 0; i < right->spec_type.list_type.list_size; i++)
+										new_stuff[i] = 0;
       								if(right->type == INVALID_TYPE)
       									return 0;
       								for(nodeAST * i = node->nodeValue.shortDeclare.left; i != NULL; i = i->nodeValue.exprList.next){
@@ -1738,7 +1741,7 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 														added->spec_type.alias_type.not_value = 0;
 													}
 												}
-
+												new_stuff[counter] = 1;
 												sym_tbl_add_entry(new_tbl_entry(id->nodeValue.identifier, id->lineNumber  ,id , added), scope);
 												num_added++;
 											}else{
@@ -1758,6 +1761,7 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 										sprintf(err_buf, "No new names on left hand side of := at line %zd" ,node->lineNumber);
 										add_msg_line(err_buf, current, node->lineNumber);
       								}
+      								node->nodeValue.shortDeclare.new_stuff = new_stuff;
       								return 0;
 }
 
