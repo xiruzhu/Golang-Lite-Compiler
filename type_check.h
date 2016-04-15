@@ -1750,8 +1750,9 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 													print_type_to_string(right->spec_type.list_type.type_list[counter], type_buf_extra);
 													sprintf(err_buf, "ID %s was previous declared with type %s. Assigned type is %s at line %zd" ,id->nodeValue.identifier,  type_buf, type_buf_extra ,node->lineNumber);
 													add_msg_line(err_buf, current, node->lineNumber);
-												return 0;
+													return 0;
 												}
+												id->sym_tbl_ptr = right->spec_type.list_type.type_list[counter];
 											}
 
 										}
