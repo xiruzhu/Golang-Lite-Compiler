@@ -1701,7 +1701,7 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
       								for(nodeAST * i = node->nodeValue.shortDeclare.left; i != NULL; i = i->nodeValue.exprList.next){
 										for(nodeAST * j = node->nodeValue.shortDeclare.left; j != NULL; j = j->nodeValue.exprList.next){
 											if(i != j){
-												if(strcmp(i->nodeValue.exprList.expr->nodeValue.identifier, j->nodeValue.exprList.expr->nodeValue.identifier) == 0){
+												if(strcmp(i->nodeValue.exprList.expr->nodeValue.identifier, j->nodeValue.exprList.expr->nodeValue.identifier) == 0 && strcmp(i->nodeValue.exprList.expr->nodeValue.identifier, "_") != 0){
 													sprintf(err_buf, "Repeated Variable in Short Decl. at line %zd" ,node->lineNumber);
 													add_msg_line(err_buf, current, node->lineNumber);
 													return 0;
@@ -1722,7 +1722,7 @@ int type_check_short_decl(nodeAST * node, sym_tbl * scope){
 											return 0;
 										}else{
 											tbl_entry * entry = sym_tbl_find_entry_scoped(id->nodeValue.identifier, scope);
-											if(strcmp(id->nodeValue.identifier, "_") == 0){
+											if(strcmp(id->nodeValue.identifier, "_") == 0L){
 
 											}
 											else if(entry == NULL){
