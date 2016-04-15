@@ -6,7 +6,7 @@
 #include "memory.h"
 #include "treeNode.h"
 #include "prettyPrint.h"
-//#include "type_check.h"
+#include "type_check.h"
 #include "weeding.h"
 #include "error.h"
 
@@ -15,7 +15,6 @@ nodeAST* _ast;
 
 int line_num = 1;
 int char_num = 1;
-int switchE = 0;
 int counter = 0;
 int forE = 0;
 char* tokens[3000];
@@ -33,7 +32,6 @@ letter			[a-bA-Z]|_
 decimal_lit		[1-9][0-9]*
 octal_lit		0[0-7]*
 hex_lit			0[xX][0-9A-Fa-f]+
-int_lit			{decimal_lit}|{octal_lit}|{hex_lit}
 
 decimal  		[0-9]+
 exponent		[eE][+-]{decimal}|[eE]{decimal}
@@ -44,7 +42,7 @@ raw_string_lit	\`[^`]*\`
 interpreted_string_lit	\"([^\\\"\n]|\\.)*\"
 rune_lit		(\'[^'\\\n]\')|(\'\\[abfnrtv\\’]\')
 
-ID				[a-zA-Z_][a-zA-Z0-9_]*
+ID		        [a-zA-Z_][a-zA-Z0-9_]*
 semi_colon		";"
 break			"break"
 case			"case"
@@ -180,7 +178,7 @@ colon 			":"
 {return} 		{prev_token = return_; return return_;}
 {select} 		{prev_token = select_; return select_;}
 {struct}		{prev_token = struct_; return struct_;}
-{switch}		{prev_token = switch_; switchE = 1; return switch_;}
+{switch}		{prev_token = switch_; return switch_;}
 {type}			{prev_token = type_; return type_;}
 {var}			{prev_token = var_; return var_;}
 {int} 	        {prev_token = int_; return int_;}
@@ -262,7 +260,60 @@ colon 			":"
 					return rune_lit_;
 				}
 
-{int_lit}		{
+{octal_lit}	 	{
+					int i;
+					errno = 0;
+					yylval.int_val = strtol(yytext, NULL, 8);
+					if(errno == ERANGE){
+						errno = 0;
+						//Ok check if we can strtof it instead
+						yylval.float_val = strtof(yytext, NULL);
+						if(errno == ERANGE){
+							printf("Error! Integer overflow. Cannot be represented as a float!\nLine[%d], char [%d]\n", line_num, char_num);
+							return error_;
+						}
+
+						for(i = 0; i < strlen(yytext); i++){
+							if(yytext[i] == 'e' || yytext[i] == 'E')
+								break;
+						}
+						if(i >= 16){
+							printf("Warning! Rounding error! \nLine[%d], char [%d]\n", line_num, char_num);
+						}
+						prev_token = int_lit_;
+						return float_lit_;
+					}
+					prev_token = int_lit_;
+					return int_lit_;
+				}
+{hex_lit}	{
+				int i;
+				errno = 0;
+				yylval.int_val = strtol(yytext, NULL, 16);
+				if(errno == ERANGE){
+					errno = 0;
+					//Ok check if we can strtof it instead
+					yylval.float_val = strtof(yytext, NULL);
+					if(errno == ERANGE){
+						printf("Error! Integer overflow. Cannot be represented as a float!\nLine[%d], char [%d]\n", line_num, char_num);
+						return error_;
+					}
+
+					for(i = 0; i < strlen(yytext); i++){
+						if(yytext[i] == 'e' || yytext[i] == 'E')
+							break;
+						}
+						if(i >= 16){
+							printf("Warning! Rounding error! \nLine[%d], char [%d]\n", line_num, char_num);
+						}
+						prev_token = int_lit_;
+						return float_lit_;
+					}
+					prev_token = int_lit_;
+					return int_lit_;
+			}
+
+{decimal_lit}	{
 					int i;
 					errno = 0;
 					yylval.int_val = strtol(yytext, NULL, 10);
@@ -356,16 +407,6 @@ colon 			":"
 							exit(1);
 						}
 					}
-					if(switchE && counter == 2){
-						if(prev_token == '{' || prev_token == '}'){
-							switchE = 0;
-							counter = 0;
-						}
-						else{
-							printf("Error: (line %d), syntax error: missing { after switch clause\n", line_num);
-							exit(1);
-						}
-					}
 					counter = 0;
 					line_num += 1;
 					temp = prev_token;
@@ -437,10 +478,10 @@ int main(int argc, char ** argv){
 		}
 	 }
 
-	// prettyPrint(_ast, stdout);
+	//prettyPrint(_ast, stdout);
 	weedingInit(_ast);
 	
-	//type_check_prog(_ast, 0);
+	type_check_prog(_ast, 0, fopen("test.txt", "r"));
 
 }
 
