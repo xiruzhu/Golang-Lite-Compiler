@@ -15,7 +15,6 @@ nodeAST* _ast;
 
 int line_num = 1;
 int char_num = 1;
-int counter = 0;
 int forE = 0;
 char* tokens[3000];
 size_t numToken = 0;
@@ -40,7 +39,7 @@ float_lit		{decimal}"."{decimal}|{decimal}"."|{decimal}"."{exponent}|{decimal}".
 string_lit		{interpreted_string_lit}|{raw_string_lit}
 raw_string_lit	\`[^`]*\`
 interpreted_string_lit	\"([^\\\"\n]|\\.)*\"
-rune_lit		(\'[^'\\\n]\')|(\'\\[abfnrtv\\’]\')
+rune_lit		(\'[^'\\\n]\')|(\'\\[abfnrtv\\']\')
 
 ID		        [a-zA-Z_][a-zA-Z0-9_]*
 semi_colon		";"
@@ -240,23 +239,18 @@ colon 			":"
 {vb}			{prev_token = '|'; return '|';}
 
 {rune_lit}		{
-					if(yytext[1] == 92 && yytext[2] != 39){
-						//printf("Test %d\n", yytext[2]);
-						switch(yytext[2]){
-							case 'a': yylval.rune_val = 7; break;
-							case 'b': yylval.rune_val = 8; break;
-							case 'f': yylval.rune_val = 12; break;
-							case 'n': yylval.rune_val = 10; break;
-							case 'r': yylval.rune_val = 13; break;
-							case 't': yylval.rune_val = 9; break;
-							case 'v': yylval.rune_val = 11; break;
-							case 92: yylval.rune_val = 92; break;
-							case 39: yylval.rune_val = 39; break;
-						}
+					switch(yytext[2]){
+						case 'a': yylval.rune_val = '\a'; break;
+						case 'b': yylval.rune_val = '\b'; break;
+						case 'f': yylval.rune_val = '\f'; break;
+						case 'n': yylval.rune_val = '\n'; break;
+						case 'r': yylval.rune_val = '\r'; break;
+						case 't': yylval.rune_val = '\t'; break;
+						case 'v': yylval.rune_val = '\v'; break;
+						case '\\': yylval.rune_val = '\\'; break;
+						case '\'': yylval.rune_val = '\''; break;
 					}
-					else
-						yylval.rune_val = yytext[1];
-						prev_token = rune_lit_;
+					prev_token = rune_lit_;
 					return rune_lit_;
 				}
 
@@ -372,7 +366,6 @@ colon 			":"
 				}
 
 {semi_colon}	{
-	                counter ++;
 					prev_token = ';';
 					return ';';
 				}
@@ -407,7 +400,6 @@ colon 			":"
 							exit(1);
 						}
 					}
-					counter = 0;
 					line_num += 1;
 					temp = prev_token;
 					prev_token = 0;
@@ -458,7 +450,7 @@ colon 			":"
 								case ']': return ';';
 								case ')': return ';';
 								case '}': return ';';
-							default: break;
+								default: break;
 							}
 						}
 
