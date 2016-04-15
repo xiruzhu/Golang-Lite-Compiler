@@ -948,15 +948,15 @@ void  codeGen_pattern_global_vardeclare(nodeAST* _dec, FILE* _ostream)  {
         }
     }
 }
-void  codeGen_debug(nodeAST* _ast, FILE* _ostream) {
+void  codeGen(nodeAST* _ast, FILE* _ostream) {
     if (_ast == NULL) return;
     switch (_ast->nodeType) {
         case PROG_PROGRAM:
-            codeGen_debug(_ast->nodeValue.program.program, _ostream);
+            codeGen(_ast->nodeValue.program.program, _ostream);
             return;
         case PROG_LIST:
-            codeGen_debug(_ast->nodeValue.progList.prog, _ostream);
-            codeGen_debug(_ast->nodeValue.progList.next, _ostream);
+            codeGen(_ast->nodeValue.progList.prog, _ostream);
+            codeGen(_ast->nodeValue.progList.next, _ostream);
             return;
         case PROG_FUNCTION:
             codeGen_pattern_function(_ast, _ostream);

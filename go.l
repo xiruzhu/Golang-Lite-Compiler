@@ -457,23 +457,17 @@ colon 			":"
 <REALLYEND><<EOF>>      { return 0; }
 %%
 
+#include "codeGenerate.h"
+
 int main(int argc, char ** argv){
-	FILE * stream = stdout;
 	_treeNodeAllocator = newMemoryList();
 	yyparse();
-
-
-	if(argc == 2){
-		stream = fopen(argv[1], "w+");
-		if(stream == NULL){
-			stream = stdout;
-		}
-	 }
-
-	//prettyPrint(_ast, stdout);
 	weedingInit(_ast);
-	
-	type_check_prog(_ast, 0, fopen("test.txt", "r"));
+	type_check_prog(_ast, 0, stdout);
 
+	struct_populate_global(_ast);
+	codeGen_helper_typeSign(_ast, stdout);
+	codeGen_helper_funcSign(_ast, stdout);
+	codeGen(_ast, stdout);
 }
 
