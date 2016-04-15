@@ -637,6 +637,7 @@ type                : basic_type                                  {$$ = $1;}
 								}
 								}
 							}
+							ret->spec_type.struct_type.current_scope = scope;
 							return ret;
 						}
 		default: 	return new_invalid_type();
