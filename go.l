@@ -257,6 +257,17 @@ colon 			":"
 {octal_lit}	 	{
 					int i;
 					errno = 0;
+					int length = strlen(yytext); 
+					if(length > 12){
+						printf("Error! overflow. \nLine[%d], char [%d]\n", line_num, char_num);
+						return error_;					
+					}
+					double stuff;
+					sscanf(yytext, "%lf", &stuff);
+					if(stuff >= 2147483647){
+						printf("Error! Integer overflow. \nLine[%d], char [%d]\n", line_num, char_num);
+						return error_;	
+					}
 					yylval.int_val = strtol(yytext, NULL, 8);
 					if(errno == ERANGE){
 						errno = 0;
@@ -282,7 +293,20 @@ colon 			":"
 				}
 {hex_lit}	{
 				int i;
+
 				errno = 0;
+				int length = strlen(yytext); 
+				if(length > 8){
+					printf("Error! overflow. \nLine[%d], char [%d]\n", line_num, char_num);
+					return error_;					
+				}
+				double stuff;
+				sscanf(yytext, "%lf", &stuff);
+				if(stuff >= 2147483647){
+					printf("Error! Integer overflow. \nLine[%d], char [%d]\n", line_num, char_num);
+					return error_;	
+				}
+
 				yylval.int_val = strtol(yytext, NULL, 16);
 				if(errno == ERANGE){
 					errno = 0;
@@ -310,7 +334,18 @@ colon 			":"
 {decimal_lit}	{
 					int i;
 					errno = 0;
-					yylval.int_val = strtol(yytext, NULL, 10);
+				int length = strlen(yytext); 
+				if(length > 10){
+					printf("Error! overflow. \nLine[%d], char [%d]\n", line_num, char_num);
+					return error_;					
+				}
+				double stuff;
+				sscanf(yytext, "%lf", &stuff);
+				if(stuff >= 2147483647){
+					printf("Error! Integer overflow. \nLine[%d], char [%d]\n", line_num, char_num);
+					return error_;	
+				}
+
 					if(errno == ERANGE){
 						errno = 0;
 						//Ok check if we can strtof it instead
