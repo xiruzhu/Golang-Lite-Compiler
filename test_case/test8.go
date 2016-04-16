@@ -1,3 +1,0 @@
-/* /* erroneous comment */ */
-
-package weird;
