@@ -9,6 +9,22 @@
 size_t struct_counter = 0L;
 size_t struct_dump_skip = 0L;
 
+char* struct_value_init(type* _type) {
+    if (_type == NULL) return strdup(" ");
+    switch (_type->type) {
+        case LITERAL_INT:    return strdup("0");
+        case LITERAL_FLOAT:  return strdup("0.0");
+        case LITERAL_RUNE:   return strdup("'\\0'");
+        case LITERAL_STRING: return strdup("\"\"");
+        case LITERAL_BOOL:   return strdup("false");
+        case ARRAY_TYPE:     return strdup(" ");
+        case SLICE_TYPE:     return strdup(" ");
+        case STRUCT_TYPE:    return strdup(" ");
+        case ALIAS_TYPE:     return struct_value_init(_type->spec_type.alias_type.a_type);
+        default:             return strdup(" ");
+    }
+}
+
 typedef struct struct_global_entry {
     type* struct_type;
     char* alter_name;
@@ -99,7 +115,12 @@ void  struct_global_dump_all    (FILE* _ostream) {
         type* struct_type = entry->struct_type;
         for (int iter = 0; iter < struct_type->spec_type.struct_type.list_size; iter++) {
             struct_global_print_single(struct_type->spec_type.struct_type.type_list[iter], _ostream);
-            fprintf(_ostream, " %s;\n", struct_type->spec_type.struct_type.id_list[iter]);
+            char* init_expr = struct_value_init(struct_type->spec_type.struct_type.type_list[iter]);
+            if (strcmp(init_expr, " ") == 0) {
+                fprintf(_ostream, " %s;\n", struct_type->spec_type.struct_type.id_list[iter]);
+            } else {
+                fprintf(_ostream, " %s = %s;\n", struct_type->spec_type.struct_type.id_list[iter], init_expr);
+            }
         }
         fprintf(_ostream, "} %s;\n", entry->alter_name);
         entry = entry->next;
@@ -225,7 +246,13 @@ void struct_local_scan_struct   (type* _type, FILE* _ostream){
     fprintf(_ostream, "typedef struct{\n");
     for (int iter = 0; iter < _type->spec_type.struct_type.list_size; iter++) {
         struct_local_print_single(_type->spec_type.struct_type.type_list[iter], _ostream);
-        fprintf(_ostream, " %s;\n", _type->spec_type.struct_type.id_list[iter]);
+        char* init_expr = struct_value_init(_type->spec_type.struct_type.type_list[iter]);
+        if (strcmp(init_expr, " ") == 0) {
+            fprintf(_ostream, " %s;\n", _type->spec_type.struct_type.id_list[iter]);
+        } else {
+            fprintf(_ostream, " %s = %s;\n", _type->spec_type.struct_type.id_list[iter], init_expr);
+        }
+        free(init_expr);
     }
     fprintf(_ostream, "} %s;\n", struct_local_insert(_type));
 }

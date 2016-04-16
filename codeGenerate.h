@@ -13,6 +13,7 @@ void  codeGen_pattern_funcBody (nodeAST* _declare, FILE* _ostream);
 
 size_t codeGen_temp_counter = 0L;
 size_t codeGen_discard_counter = 0L;
+bool   codeGen_in_main = false;
 
 char*  codeGen_stringFix(const char* _str) {
     char* ret = (char*)malloc(sizeof(char)*(strlen(_str)+1)*2);
@@ -70,7 +71,7 @@ void   codeGen_pattern_expr(nodeAST* _expr, FILE* _ostream) {
         }
         case LITERAL_STRING: {
             char* str = codeGen_stringFix(_expr->nodeValue.stringValue);
-            fprintf(_ostream, "%s", str);
+            fprintf(_ostream, "std::string(%s)", str);
             free(str);
             return;
         }
@@ -354,7 +355,7 @@ void  codeGen_pattern_local_typedeclare(nodeAST* _declare, FILE* _ostream) {
         fprintf(_ostream, "typedef ");
         struct_local_print_single(alias_type->spec_type.alias_type.a_type, _ostream);
         fprintf(_ostream, " %s;\n", cur_declare->nodeValue.typeDeclare.identifier->
-                                    nodeValue.identifier);
+                nodeValue.identifier);
     }
 }
 void  codeGen_pattern_local_vardeclare (nodeAST* _declare, FILE* _ostream) {
@@ -449,6 +450,10 @@ void  codeGen_pattern_local_println  (nodeAST* _println, FILE* _ostream) {
 }
 void  codeGen_pattern_local_return   (nodeAST* _ret, FILE* _ostream) {
     assert(_ret->nodeType == STATE_RETURN);
+    if (codeGen_in_main) {
+        fprintf(_ostream, "return 0;\n");
+        return;
+    }
     if (_ret->nodeValue.ret.expr == NULL) {
         fprintf(_ostream, "return;\n");
         return;
@@ -882,6 +887,9 @@ void  codeGen_pattern_funcBody (nodeAST* _declare, FILE* _ostream) {
 
 void  codeGen_pattern_function(nodeAST* _function, FILE* _ostream) {
     assert(_function->nodeType == PROG_FUNCTION);
+    if (strcmp(_function->nodeValue.function.identifier->nodeValue.identifier, "main") == 0) {
+        codeGen_in_main = true;
+    }
     nodeAST* pramList = _function->nodeValue.function.pramList;
     type* func_type = _function->nodeValue.function.identifier->sym_tbl_ptr;
     type* ret_type = func_type->spec_type.func_type.return_type;
@@ -915,6 +923,7 @@ void  codeGen_pattern_function(nodeAST* _function, FILE* _ostream) {
     codeGen_pattern_funcBody(_function->nodeValue.function.block, _ostream);
     
     fprintf(_ostream, "}\n");
+    codeGen_in_main = false;
 }
 
 void  codeGen_pattern_global_vardeclare(nodeAST* _dec, FILE* _ostream)  {
