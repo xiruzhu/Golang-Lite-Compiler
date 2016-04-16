@@ -345,6 +345,7 @@ colon 			":"
 					printf("Error! Integer overflow. \nLine[%d], char [%d]\n", line_num, char_num);
 					return error_;	
 				}
+				yylval.int_val = strtol(yytext, NULL, 10);
 
 					if(errno == ERANGE){
 						errno = 0;
